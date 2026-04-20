@@ -39,8 +39,8 @@ const Onboarding = () => {
   };
 
   const plans = [
-    { id: "starter" as const, name: "Starter", price: "7.60", original: "19.00", features: ["1 workspace", "50 slideshows / month", "500 image uploads", "All AI features"] },
-    { id: "pro" as const, name: "Pro", price: "19.60", original: "49.00", popular: true, features: ["5 workspaces", "Unlimited slideshows", "Unlimited uploads", "Priority AI", "Priority support"] },
+    { id: "starter" as const, name: "Starter", price: "7.60", original: "19.00", renewal: "19", features: ["1 workspace", "50 slideshows / month", "500 image uploads", "All AI features"] },
+    { id: "pro" as const, name: "Pro", price: "19.60", original: "49.00", renewal: "49", popular: true, features: ["5 workspaces", "Unlimited slideshows", "Unlimited uploads", "Priority AI", "Priority support"] },
   ];
 
   return (
@@ -61,11 +61,12 @@ const Onboarding = () => {
                 <span className="absolute -top-3 left-6 bg-success text-success-foreground text-xs font-bold px-3 py-1 rounded-full">60% OFF</span>
                 {p.popular && <span className="absolute -top-3 right-6 bg-gradient-primary text-primary-foreground text-xs font-bold px-3 py-1 rounded-full">RECOMMENDED</span>}
                 <h3 className="font-display text-2xl font-bold">{p.name}</h3>
-                <div className="my-4 flex items-baseline gap-2">
+                <div className="mt-4 mb-1 flex items-baseline gap-2">
                   <span className="text-5xl font-bold font-display">${p.price}</span>
                   <span className="text-muted-foreground line-through">${p.original}</span>
                   <span className="text-muted-foreground">/mo</span>
                 </div>
+                <p className="text-xs text-muted-foreground mb-6">${p.price} first month, then ${p.renewal}/mo. Cancel anytime.</p>
                 <ul className="space-y-2 mb-8 text-sm">
                   {p.features.map((f) => <li key={f} className="flex gap-2 items-center"><Check className="h-4 w-4 text-success" />{f}</li>)}
                 </ul>
