@@ -4,7 +4,7 @@ project_id = "ctqiwyifqoufvjxauliz"
 verify_jwt = false
 
 [functions.generate-slideshow]
-verify_jwt = true
+verify_jwt = false
 
 [functions.create-checkout]
 verify_jwt = true
