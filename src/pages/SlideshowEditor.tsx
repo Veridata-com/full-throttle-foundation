@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
+import { Textarea } from "@/components/ui/textarea";
 import { Loader2, Download, Save, ArrowLeft, Type } from "lucide-react";
 import { toast } from "sonner";
 import { SEO } from "@/components/SEO";
@@ -30,6 +31,34 @@ interface Slide {
 const CANVAS_W = 1080;
 const CANVAS_H = 1920;
 const DISPLAY_W = 360;
+// Clean caption font stack — system UI sans, regular weight, like reference reels
+const CAPTION_FONT = '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Segoe UI", system-ui, sans-serif';
+
+function addCaption(canvas: fabric.Canvas | fabric.StaticCanvas, slide: Slide, opts?: { interactive?: boolean }) {
+  const h = slide.layout.headline;
+  const text = new fabric.Textbox(slide.headline || "", {
+    left: h.x,
+    top: h.y,
+    width: h.maxWidth,
+    fontSize: h.fontSize,
+    fill: h.color || "#FFFFFF",
+    fontFamily: CAPTION_FONT,
+    fontWeight: 400,
+    textAlign: "center",
+    originX: "center",
+    originY: "center",
+    lineHeight: 1.15,
+    // Soft drop shadow for legibility on busy photos — no stroke, no outline
+    shadow: new fabric.Shadow({ color: "rgba(0,0,0,0.55)", blur: 14, offsetX: 0, offsetY: 2 }),
+    selectable: !!opts?.interactive,
+    evented: !!opts?.interactive,
+    editable: !!opts?.interactive,
+    lockUniScaling: true,
+  });
+  (text as any).set("data", { role: "headline" });
+  canvas.add(text);
+  return text;
+}
 
 const SlideshowEditor = () => {
   const { id } = useParams();
@@ -38,14 +67,13 @@ const SlideshowEditor = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricRef = useRef<fabric.Canvas | null>(null);
   const [slideshow, setSlideshow] = useState<any>(null);
-  const [imageMap, setImageMap] = useState<Record<string, string>>({}); // image_id -> signed url
+  const [imageMap, setImageMap] = useState<Record<string, string>>({});
   const [activeIdx, setActiveIdx] = useState(0);
   const [saving, setSaving] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [headlineText, setHeadlineText] = useState("");
-  const [subtextText, setSubtextText] = useState("");
-  const [headlineSize, setHeadlineSize] = useState(88);
+  const [headlineSize, setHeadlineSize] = useState(64);
 
   // Load slideshow + signed image URLs
   useEffect(() => {
@@ -101,67 +129,14 @@ const SlideshowEditor = () => {
             selectable: false, evented: false,
           });
           canvas.add(img);
-
-          // dark gradient overlay for text legibility
-          const overlay = new fabric.Rect({
-            left: 0, top: CANVAS_H * 0.15, width: CANVAS_W, height: CANVAS_H * 0.55,
-            fill: new fabric.Gradient({
-              type: "linear",
-              coords: { x1: 0, y1: 0, x2: 0, y2: CANVAS_H * 0.55 },
-              colorStops: [
-                { offset: 0, color: "rgba(0,0,0,0.7)" },
-                { offset: 1, color: "rgba(0,0,0,0)" },
-              ],
-            }) as any,
-            selectable: false, evented: false,
-          });
-          canvas.add(overlay);
           resolve();
         }, { crossOrigin: "anonymous" });
       });
     }
 
-    const headline = new fabric.Textbox(slide.headline, {
-      left: slide.layout.headline.x,
-      top: slide.layout.headline.y,
-      width: slide.layout.headline.maxWidth,
-      fontSize: slide.layout.headline.fontSize,
-      fill: slide.layout.headline.color,
-      stroke: slide.layout.headline.stroke,
-      strokeWidth: slide.layout.headline.strokeWidth,
-      paintFirst: "stroke",
-      fontFamily: "Syne, system-ui, sans-serif",
-      fontWeight: slide.layout.headline.fontWeight,
-      textAlign: slide.layout.headline.textAlign as any,
-      originX: "center", originY: "center",
-      lockUniScaling: true,
-    });
-    headline.set("data", { role: "headline" });
-    canvas.add(headline);
-
-    if (slide.subtext) {
-      const sub = new fabric.Textbox(slide.subtext, {
-        left: slide.layout.subtext.x,
-        top: slide.layout.subtext.y,
-        width: slide.layout.subtext.maxWidth,
-        fontSize: slide.layout.subtext.fontSize,
-        fill: slide.layout.subtext.color,
-        stroke: slide.layout.subtext.stroke,
-        strokeWidth: slide.layout.subtext.strokeWidth,
-        paintFirst: "stroke",
-        fontFamily: "DM Sans, system-ui, sans-serif",
-        fontWeight: slide.layout.subtext.fontWeight,
-        textAlign: slide.layout.subtext.textAlign as any,
-        originX: "center", originY: "center",
-        lockUniScaling: true,
-      });
-      sub.set("data", { role: "subtext" });
-      canvas.add(sub);
-    }
-
+    addCaption(canvas, slide, { interactive: true });
     canvas.renderAll();
-    setHeadlineText(slide.headline);
-    setSubtextText(slide.subtext || "");
+    setHeadlineText(slide.headline || "");
     setHeadlineSize(slide.layout.headline.fontSize);
   }, [imageMap]);
 
@@ -169,31 +144,23 @@ const SlideshowEditor = () => {
     if (active) renderSlide(active);
   }, [active, renderSlide]);
 
-  // Capture changes to slide layout from canvas
+  // Capture current canvas state into a Slide
   const captureLayout = (): Slide | null => {
     if (!active || !fabricRef.current) return null;
     const objs = fabricRef.current.getObjects();
     const headline = objs.find((o: any) => o.data?.role === "headline") as fabric.Textbox | undefined;
-    const sub = objs.find((o: any) => o.data?.role === "subtext") as fabric.Textbox | undefined;
-    const updated: Slide = { ...active };
+    const updated: Slide = { ...active, subtext: null };
     if (headline) {
       updated.headline = headline.text || "";
-      updated.layout.headline = {
-        ...updated.layout.headline,
-        x: Math.round(headline.left || 0),
-        y: Math.round(headline.top || 0),
-        fontSize: Math.round((headline.fontSize || 0) * (headline.scaleX || 1)),
-        maxWidth: Math.round((headline.width || 0) * (headline.scaleX || 1)),
-      };
-    }
-    if (sub) {
-      updated.subtext = sub.text || "";
-      updated.layout.subtext = {
-        ...updated.layout.subtext,
-        x: Math.round(sub.left || 0),
-        y: Math.round(sub.top || 0),
-        fontSize: Math.round((sub.fontSize || 0) * (sub.scaleX || 1)),
-        maxWidth: Math.round((sub.width || 0) * (sub.scaleX || 1)),
+      updated.layout = {
+        ...updated.layout,
+        headline: {
+          ...updated.layout.headline,
+          x: Math.round(headline.left || 0),
+          y: Math.round(headline.top || 0),
+          fontSize: Math.round((headline.fontSize || 0) * (headline.scaleX || 1)),
+          maxWidth: Math.round((headline.width || 0) * (headline.scaleX || 1)),
+        },
       };
     }
     return updated;
@@ -216,12 +183,11 @@ const SlideshowEditor = () => {
     toast.success("Saved");
   };
 
-  const updateText = (field: "headline" | "subtext", value: string) => {
-    if (!fabricRef.current || !active) return;
-    const objs = fabricRef.current.getObjects();
-    const obj = objs.find((o: any) => o.data?.role === field) as fabric.Textbox | undefined;
+  const updateHeadline = (value: string) => {
+    if (!fabricRef.current) return;
+    const obj = fabricRef.current.getObjects().find((o: any) => o.data?.role === "headline") as fabric.Textbox | undefined;
     if (obj) { obj.set("text", value); fabricRef.current.renderAll(); }
-    if (field === "headline") setHeadlineText(value); else setSubtextText(value);
+    setHeadlineText(value);
   };
 
   const updateHeadlineSize = (size: number) => {
@@ -236,7 +202,6 @@ const SlideshowEditor = () => {
     setExporting(true);
     const zip = new JSZip();
     try {
-      // Save current slide first
       const currentUpdated = captureLayout();
       const workingSlides = currentUpdated ? slides.map((s, i) => i === activeIdx ? currentUpdated : s) : slides;
 
@@ -256,36 +221,12 @@ const SlideshowEditor = () => {
               img.scale(scale);
               img.set({ left: CANVAS_W / 2, top: CANVAS_H / 2, originX: "center", originY: "center" });
               offCanvas.add(img);
-              const overlay = new fabric.Rect({
-                left: 0, top: CANVAS_H * 0.15, width: CANVAS_W, height: CANVAS_H * 0.55,
-                fill: new fabric.Gradient({
-                  type: "linear",
-                  coords: { x1: 0, y1: 0, x2: 0, y2: CANVAS_H * 0.55 },
-                  colorStops: [{ offset: 0, color: "rgba(0,0,0,0.7)" }, { offset: 1, color: "rgba(0,0,0,0)" }],
-                }) as any,
-              });
-              offCanvas.add(overlay);
               resolve();
             }, { crossOrigin: "anonymous" });
           });
         }
 
-        const h = slide.layout.headline;
-        offCanvas.add(new fabric.Textbox(slide.headline, {
-          left: h.x, top: h.y, width: h.maxWidth, fontSize: h.fontSize, fill: h.color,
-          stroke: h.stroke, strokeWidth: h.strokeWidth, paintFirst: "stroke",
-          fontFamily: "Syne, system-ui, sans-serif", fontWeight: h.fontWeight,
-          textAlign: h.textAlign as any, originX: "center", originY: "center",
-        }));
-        if (slide.subtext) {
-          const s = slide.layout.subtext;
-          offCanvas.add(new fabric.Textbox(slide.subtext, {
-            left: s.x, top: s.y, width: s.maxWidth, fontSize: s.fontSize, fill: s.color,
-            stroke: s.stroke, strokeWidth: s.strokeWidth, paintFirst: "stroke",
-            fontFamily: "DM Sans, system-ui, sans-serif", fontWeight: s.fontWeight,
-            textAlign: s.textAlign as any, originX: "center", originY: "center",
-          }));
-        }
+        addCaption(offCanvas, slide);
         offCanvas.renderAll();
         const dataUrl = offCanvas.toDataURL({ format: "png", quality: 1 });
         const base64 = dataUrl.split(",")[1];
@@ -341,7 +282,7 @@ const SlideshowEditor = () => {
 
           {/* Canvas */}
           <Card className="p-4 shadow-card flex items-center justify-center bg-muted/30">
-            <div style={{ width: DISPLAY_W, height: DISPLAY_W * (CANVAS_H / CANVAS_W) }} className="relative">
+            <div style={{ width: DISPLAY_W, height: DISPLAY_W * (CANVAS_H / CANVAS_W) }} className="relative overflow-hidden">
               <div style={{ transform: `scale(${DISPLAY_W / CANVAS_W})`, transformOrigin: "top left", width: CANVAS_W, height: CANVAS_H }}>
                 <canvas ref={canvasRef} />
               </div>
@@ -352,25 +293,19 @@ const SlideshowEditor = () => {
           <Card className="p-5 shadow-card space-y-4 h-fit">
             <h3 className="font-display font-bold flex items-center gap-2"><Type className="h-4 w-4" /> Slide {activeIdx + 1}</h3>
             <div className="space-y-2">
-              <Label>Headline</Label>
-              <Textarea value={headlineText} onChange={e => updateText("headline", e.target.value)} rows={2} />
+              <Label>Caption</Label>
+              <Textarea value={headlineText} onChange={e => updateHeadline(e.target.value)} rows={4} placeholder="Use a line break between sentences for a soft pause." />
             </div>
             <div className="space-y-2">
-              <Label>Headline size: {headlineSize}px</Label>
-              <Slider value={[headlineSize]} min={32} max={160} step={2} onValueChange={v => updateHeadlineSize(v[0])} />
+              <Label>Caption size: {headlineSize}px</Label>
+              <Slider value={[headlineSize]} min={32} max={120} step={2} onValueChange={v => updateHeadlineSize(v[0])} />
             </div>
-            <div className="space-y-2">
-              <Label>Subtext</Label>
-              <Textarea value={subtextText} onChange={e => updateText("subtext", e.target.value)} rows={3} placeholder="Optional supporting text" />
-            </div>
-            <p className="text-xs text-muted-foreground">Tip: drag text on the canvas to reposition. Click Save when done.</p>
+            <p className="text-xs text-muted-foreground">Drag the caption on the canvas to reposition. Click Save when done.</p>
           </Card>
         </div>
       </div>
     </>
   );
 };
-
-import { Textarea } from "@/components/ui/textarea";
 
 export default SlideshowEditor;
