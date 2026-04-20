@@ -1,72 +1,99 @@
 
 
-# AdRise SaaS — Full Build Plan
+# AdRise Overhaul — Workspaces, AI Auto-Select, Discount, Explorer Library
 
-A complete, end-to-end implementation of the PRD in one pass. No mock data. Real auth, real AI, real Stripe, real file storage.
+Re-presenting the approved plan so you can hit Approve.
 
-## What you'll get
+## 1. Landing page
+- Replace "Powered by Gemini 2.5 Flash" pill with a **live countdown button**: `60% off all plans for 06d23h59m58s`, ticks every second, end-date persisted in `localStorage` (first visit = now + 7 days). Clicks go to `/auth?mode=signup` (or `/billing` if logged in).
+- Headline → **"Make your SaaS profitable with converting organic TikTok slideshows."**
+- Sub → **"Drop your slideshow images. Our AI writes hooks, picks angles, and lays out scroll-stopping slideshows that convert. No designer. No agency. No bullshit."**
+- Pricing cards: strike-through `$19` / `$49`, show **$7.60** / **$19.60**, "LIMITED TIME 60% OFF" badge.
 
-A working SaaS where a user can: sign up → (dev-bypass onboarding for now) → upload product photos → AI auto-tags them → generate a 6-slide TikTok-style slideshow with AI copy → edit text/layout in a canvas editor → export as ZIP of 1080×1920 PNGs. Plus billing, account, legal pages.
+## 2. 60% discount everywhere
+- `create-checkout`: Starter 760¢, Pro 1960¢, product name suffixed `— Launch 60% off`.
+- Billing + Onboarding show the same strike-through pricing.
 
-## Phases
+## 3. Max AI cost per user (owner side)
+Using Lovable AI Gateway `google/gemini-3-flash-preview`:
 
-**1. Foundation**
-- Design system in `index.css` + `tailwind.config.ts`: AdRise red `#FF3B5C`, near-black bg, Syne (headings) + DM Sans (body) via Google Fonts. Semantic tokens for primary/accent/muted, button variants, radii.
-- Lovable Cloud (Supabase) tables: `profiles`, `user_roles` (+ `has_role` security-definer fn), `usage` (monthly counters), `images` (uploaded photos + AI labels), `slideshows` (generated decks + slide JSON).
-- Storage buckets: `product-images` (private), `slideshow-exports` (private).
-- RLS on every table — users only see their own rows.
+| Plan | Cap | Max AI / user / month | Revenue (after 60% off) | Gross margin |
+|---|---|---|---|---|
+| Starter | 500 images + 50 slideshows | ~$0.35 | $7.60 | ~$7.25 |
+| Pro | ~5000 images + 500 slideshows realistic | ~$3.50 (abuse ceiling ~$15) | $19.60 | ~$16 |
 
-**2. Marketing + Auth**
-- `/` Landing page: hero, features, pricing teaser, footer.
-- `/auth` Login + Signup (email/password, autoConfirm on, redirect to `/onboarding`).
-- `/privacy`, `/terms` with generated boilerplate.
-- `AuthProvider` context wrapping the app, `ProtectedRoute` wrapper.
+Minus Stripe ~2.9% + 30¢. I'll log token usage in edge functions so you can track real cost.
 
-**3. App shell + Image library**
-- `/onboarding` plan-picker with **Dev Bypass** button → sets `plan='starter'` so you can test without Stripe keys.
-- `/dashboard` with sidebar (Library, Slideshows, Account, Billing).
-- `/library`: drag-drop upload to storage → calls edge function `label-image` (Lovable AI Gateway, Gemini 2.5 Flash vision) → stores tags/description on the image row. Grid view with filters.
+## 4. Workspaces
+- New table `workspaces (id, user_id, name, tagline, target_audience, brand_voice, default_cta, story_style_history jsonb, created_at, updated_at)`.
+- Starter = 1 max, Pro = 5 max. Enforced server + client side.
+- After signup → `/workspaces/new`. Skippable to dashboard, but **blocked before generating any slideshow**.
+- Form: product name, tagline, target audience, brand voice (optional), default CTA (optional), **≥1 product image upload** → auto-stored in system folder **"Product slide images"**.
+- Switcher top-left of sidebar (combobox with current + chevron). Dropdown: workspaces list, "Workspace settings", "+ New workspace" (disabled at plan cap with tooltip).
+- Persisted in `localStorage` + `WorkspaceContext`.
+- `images` and `slideshows` gain `workspace_id`. Backfill: one "My first workspace" per existing user.
 
-**4. Generation + Editor (the core)**
-- `/slideshows/new` wizard: pick images, choose hook style, target audience, CTA.
-- Edge function `generate-slideshow`: calls Gemini 2.5 Flash with image context → returns 6 slides (hook, 4 value props, CTA) as structured JSON.
-- `/slideshows/:id/edit`: Fabric.js canvas at 1080×1920, draggable IText layers with TikTok-style stroke, per-slide thumbnails, autosave to DB.
-- Export: render each slide to PNG client-side, zip with JSZip, download.
+## 5. Library as file explorer
+- List view: icon + filename + tags + quality badge + date (no upfront previews).
+- Click row → side drawer fetches signed URL + renders preview.
+- Search bar filters filename / tag / description / folder.
+- Folders sidebar auto-created by AI from tag clusters. Tables: `folders(id, workspace_id, name, auto)` + `image_folders(image_id, folder_id)`.
+- `label-image` returns `suggested_folders: string[]` + `quality: 'low'|'medium'|'high'`, upserts and links folders.
+- Folder actions: rename, delete (manual only, auto folders can only be detached).
+- Image actions: edit tags, move/add to folders, delete.
+- System folder **"Product slide images"** is protected from deletion, always used for final CTA slide.
 
-**5. Billing**
-- Lovable's built-in Stripe payments (no BYOK). Two products: Starter ($19/mo, 50 slideshows), Pro ($49/mo, unlimited).
-- `/billing` page: current plan, upgrade/downgrade, invoice history via customer portal.
-- Webhook edge function updates `profiles.plan` + resets monthly `usage`.
-- `usePlanLimits` hook — blocks generation past quota with upgrade modal.
+## 6. Slideshow generation — fully automatic
+`/slideshows/new` is 3 inputs:
+- Number of slides (slider 3–12)
+- Hook style (dropdown, kept)
+- Generate button
 
-**6. Polish**
-- Sonner toasts for every async action.
-- Mobile responsive (sidebar → sheet).
-- SEO: titles, meta descriptions, OG tags per route.
-- Empty states + loading skeletons everywhere.
+`generate-slideshow` now:
+1. Loads workspace context (name, tagline, audience, voice, CTA).
+2. Reads last 5 entries of `story_style_history` and picks a **different** style: listicle / POV / problem-agitate-solve / comparison / myth-bust / transformation / UGC-testimonial. Appends chosen style to history.
+3. Pulls all workspace images with tags, description, quality. AI picks **N-1** matching the narrative, ranked `high > medium > low` quality, ties broken by tag overlap.
+4. Always appends **one image from "Product slide images"** as the final CTA slide.
+5. Prefills headlines/subtext in workspace voice.
 
-## Tech notes
+## 7. Prompt rules (all AI functions)
+System prompt gets:
+> Write like a real human on TikTok. Conversational, punchy, relatable. Never use em-dashes or en-dashes. Short sentences, line breaks, commas. Scroll-stopping hooks optimized for conversion, zero corporate voice.
 
-- **AI**: Lovable AI Gateway, model `google/gemini-2.5-flash` for both vision tagging and slide copy generation. No keys needed from you.
-- **Stripe**: Lovable built-in payments — I'll trigger the setup flow during phase 5; you'll click through to connect. No secret keys to paste.
-- **Storage**: signed URLs for image previews, 1-hour expiry.
-- **Roles**: separate `user_roles` table + `has_role()` security-definer function (never store role on profile).
-- **Dev bypass** on `/onboarding` is a temporary button — I'll mark it with a `// TODO: remove before launch` comment so it's easy to strip later.
+Plus post-processing: strip `—` / `–` from every AI output before saving (replace with `,` or split sentence).
 
-## What I will NOT do
+## 8. Fixing AI non-response
+- Switch both edge functions to **`google/gemini-3-flash-preview`** (text + vision).
+- Use **tool-calling** for structured output instead of `response_format: json_object` (more reliable on the gateway).
+- Add full `console.error(status, body)` logging so future failures are debuggable.
+- Surface 429 / 402 to client with user-friendly toasts.
 
-- No mock/seed data.
-- No placeholder images in the editor — real uploads only.
-- No localStorage for auth state (Supabase session only).
-- No client-side role checks for gating.
+## 9. Account page
+- Remove `brand_voice`, `target_audience`, `default_cta` (moved to workspaces).
+- Keep: display name, email (read-only), plan badge, link to Billing, "Manage workspaces" link, sign-out, soft delete-account (signs out + shows support email).
 
-## Estimated scope
+## 10. Workspace switcher UX
+- Combobox top-left of sidebar with current workspace name + chevron.
+- Dropdown: workspaces (radio check on active), separator, "Workspace settings", "+ New workspace" (greyed + upgrade tooltip at cap).
 
-~35–45 files: 4 edge functions, ~6 DB migrations, ~12 pages, ~15 components, design system, hooks, types. One continuous build.
+## DB migration (one file)
+```text
+create table workspaces (...)            -- RLS: owner only
+alter images     add workspace_id uuid, is_product_shot bool, quality text
+alter slideshows add workspace_id uuid, num_slides int default 6
+create table folders        (id, workspace_id, name, auto bool)     -- RLS
+create table image_folders  (image_id, folder_id, pk)               -- RLS via parent
+backfill: 1 default workspace per existing user; reassign all rows; create "Product slide images" folder
+```
 
-## Your options
+## Files (~20)
+- 1 migration
+- Edge: rewrite `label-image`, `generate-slideshow`; update `create-checkout`
+- New: `WorkspaceContext.tsx`, `NewWorkspace.tsx`, `WorkspaceSettings.tsx`, `WorkspaceSwitcher.tsx`, `CountdownBanner.tsx`, `ImagePreviewDrawer.tsx`, `FolderTree.tsx`
+- Rewrite: `Landing.tsx`, `Library.tsx`, `NewSlideshow.tsx`, `Account.tsx`, `Billing.tsx`, `Onboarding.tsx`, `AppSidebar.tsx`, `ProtectedRoute.tsx`, `App.tsx`
 
-- **Go** — execute all 6 phases now.
-- **Adjust colors/fonts first** — tell me what to change and I'll lock the design system before building.
-- **Skip dev bypass** — go strict per PRD; you'll connect Stripe before being able to test the app.
+## Trade-offs
+- Countdown is per-browser (localStorage). Want a true global end-date? Say so, I'll move it to DB.
+- Auto-folder creation depends on AI; if it fails, image is still searchable, just unfoldered.
+- Backfilled workspaces are named "My first workspace" — users can rename.
 
