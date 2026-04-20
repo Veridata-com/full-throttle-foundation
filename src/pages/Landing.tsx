@@ -1,13 +1,16 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Sparkles, Image as ImageIcon, Wand2, Download, Check, ArrowRight } from "lucide-react";
+import { Image as ImageIcon, Wand2, Download, Check, ArrowRight, LogOut } from "lucide-react";
 import { SEO } from "@/components/SEO";
 import { useAuth } from "@/contexts/AuthContext";
 import { CountdownBanner } from "@/components/CountdownBanner";
+import { Logo } from "@/components/Logo";
 
 const Landing = () => {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
+  const handleSignOut = async () => { await signOut(); navigate("/"); };
   return (
     <>
       <SEO title="AdRise — Make your SaaS profitable with organic TikTok slideshows" description="AI-powered slideshow generator. Drop your images, get scroll-stopping TikTok-ready ads that convert. No designer, no agency." canonical="/" />
@@ -15,14 +18,17 @@ const Landing = () => {
         <header className="border-b">
           <div className="container flex h-16 items-center justify-between">
             <Link to="/" className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-primary shadow-glow">
-                <Sparkles className="h-4 w-4 text-primary-foreground" />
-              </div>
+              <Logo className="h-8 w-8" />
               <span className="font-display text-xl font-bold">AdRise</span>
             </Link>
             <nav className="flex items-center gap-2">
               {user ? (
-                <Button asChild><Link to="/dashboard">Dashboard</Link></Button>
+                <>
+                  <Button asChild><Link to="/dashboard">Dashboard</Link></Button>
+                  <Button variant="ghost" size="icon" onClick={handleSignOut} aria-label="Sign out">
+                    <LogOut className="h-4 w-4" />
+                  </Button>
+                </>
               ) : (
                 <>
                   <Button variant="ghost" asChild><Link to="/auth">Log in</Link></Button>

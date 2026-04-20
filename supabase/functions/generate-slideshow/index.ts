@@ -53,6 +53,14 @@ Deno.serve(async (req) => {
       if ((usage?.slideshows_generated || 0) >= 50) return j({ error: 'quota_exceeded' }, 402);
     }
 
+    // Hard cost cap (abuse ceiling): Starter $5/mo, Pro $15/mo. Reserve ~3 cents per generation.
+    const { data: capOk, error: capErr } = await admin.rpc('check_and_increment_ai_cost', { _user_id: user.id, _cost_cents: 3 });
+    if (capErr) console.error('cost cap rpc error', capErr);
+    if (capOk === false) {
+      await admin.from('slideshows').update({ status: 'failed', generation_error: 'Monthly AI cost cap reached for your plan.' }).eq('id', slideshowId);
+      return j({ error: 'cost_cap_reached' }, 402);
+    }
+
     const { data: workspace } = await admin.from('workspaces').select('*').eq('id', slideshow.workspace_id).single();
     if (!workspace) return j({ error: 'workspace_not_found' }, 404);
 
