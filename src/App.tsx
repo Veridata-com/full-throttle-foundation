@@ -24,6 +24,8 @@ import Terms from "./pages/Terms";
 import NotFound from "./pages/NotFound";
 import NewWorkspace from "./pages/NewWorkspace";
 import WorkspaceSettings from "./pages/WorkspaceSettings";
+import Workspaces from "./pages/Workspaces";
+import ResetPassword from "./pages/ResetPassword";
 
 const queryClient = new QueryClient();
 
@@ -39,6 +41,7 @@ const App = () => (
               <Routes>
                 <Route path="/" element={<Landing />} />
                 <Route path="/auth" element={<Auth />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/privacy" element={<Privacy />} />
                 <Route path="/terms" element={<Terms />} />
                 <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
@@ -53,6 +56,7 @@ const App = () => (
                   <Route path="/slideshows/:id/edit" element={<SlideshowEditor />} />
                   <Route path="/account" element={<Account />} />
                   <Route path="/billing" element={<Billing />} />
+                  <Route path="/workspaces" element={<Workspaces />} />
                   <Route path="/workspaces/settings" element={<WorkspaceSettings />} />
                 </Route>
 

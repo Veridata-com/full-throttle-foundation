@@ -54,8 +54,8 @@ const Billing = () => {
   };
 
   const plans = [
-    { id: "starter" as const, name: "Starter", price: 7.60, original: 19, features: ["1 workspace", "50 slideshows / month", "500 image uploads", "All AI features"] },
-    { id: "pro" as const, name: "Pro", price: 19.60, original: 49, popular: true, features: ["5 workspaces", "Unlimited slideshows", "Unlimited uploads", "Priority AI", "Priority support"] },
+    { id: "starter" as const, name: "Starter", price: "7.60", original: "19.00", features: ["1 workspace", "50 slideshows / month", "500 image uploads", "All AI features"] },
+    { id: "pro" as const, name: "Pro", price: "19.60", original: "49.00", popular: true, features: ["5 workspaces", "Unlimited slideshows", "Unlimited uploads", "Priority AI", "Priority support"] },
   ];
 
   const currentPlan = profile?.plan || "none";

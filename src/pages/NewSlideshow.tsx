@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Sparkles } from "lucide-react";
+import { Loader2, Sparkles, Upload, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { SEO } from "@/components/SEO";
 
@@ -19,6 +19,14 @@ const NewSlideshow = () => {
   const [numSlides, setNumSlides] = useState(6);
   const [hookStyle, setHookStyle] = useState("curiosity");
   const [loading, setLoading] = useState(false);
+  const [productCount, setProductCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!current) return;
+    supabase.from("images").select("id", { count: "exact", head: true })
+      .eq("workspace_id", current.id).eq("is_product_shot", true)
+      .then(({ count }) => setProductCount(count || 0));
+  }, [current]);
 
   if (!current) {
     return (
@@ -26,6 +34,26 @@ const NewSlideshow = () => {
         <p className="text-muted-foreground mb-4">Create a workspace first.</p>
         <Button asChild><Link to="/workspaces/new">New workspace</Link></Button>
       </div>
+    );
+  }
+
+  if (productCount === 0) {
+    return (
+      <>
+        <SEO title="New slideshow" description="Generate a slideshow." />
+        <div className="container py-16 max-w-xl">
+          <Card className="p-8 text-center shadow-card border-destructive/30">
+            <AlertCircle className="h-10 w-10 text-destructive mx-auto mb-3" />
+            <h2 className="font-display text-2xl font-bold mb-2">Add a product slide image first</h2>
+            <p className="text-muted-foreground mb-6">
+              Every slideshow ends with one of your product shots. Upload at least one to <strong>{current.name}</strong> before generating.
+            </p>
+            <Button asChild size="lg" className="shadow-glow">
+              <Link to="/library?upload=product"><Upload className="h-4 w-4" /> Upload product slide image</Link>
+            </Button>
+          </Card>
+        </div>
+      </>
     );
   }
 
@@ -52,6 +80,7 @@ const NewSlideshow = () => {
         if (err === "no_product_shot") { toast.error("Upload a product image in workspace settings."); return; }
         if (err === "rate_limit") { toast.error("Rate limited, try again in a moment."); return; }
         if (err === "payment_required") { toast.error("AI credits needed. Add credits in Lovable workspace."); return; }
+        if (err === "cost_cap_reached") { toast.error("Monthly AI cost cap reached for your plan. Resets next month."); return; }
         throw new Error(err);
       }
 

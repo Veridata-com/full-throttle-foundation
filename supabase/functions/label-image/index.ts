@@ -40,6 +40,14 @@ Deno.serve(async (req) => {
     const { data: img } = await admin.from('images').select('user_id, workspace_id').eq('id', body.imageId).single();
     if (!img || img.user_id !== user.id) return j({ error: 'forbidden' }, 403);
 
+    // Hard cost cap: ~0.05 cents per label call
+    const { data: capOk, error: capErr } = await admin.rpc('check_and_increment_ai_cost', { _user_id: user.id, _cost_cents: 1 });
+    if (capErr) console.error('cost cap rpc error', capErr);
+    if (capOk === false) {
+      await admin.from('images').update({ ai_status: 'failed', ai_error: 'cost cap reached' }).eq('id', body.imageId);
+      return j({ error: 'cost_cap_reached' }, 402);
+    }
+
     await admin.from('images').update({ ai_status: 'processing', ai_error: null }).eq('id', body.imageId);
 
     const tool = {

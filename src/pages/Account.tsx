@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, CreditCard, Layers, LogOut } from "lucide-react";
+import { Loader2, CreditCard, Layers, LogOut, KeyRound } from "lucide-react";
 import { toast } from "sonner";
 import { SEO } from "@/components/SEO";
 
@@ -15,6 +15,9 @@ const Account = () => {
   const { user, profile, refreshProfile, signOut } = useAuth();
   const [displayName, setDisplayName] = useState("");
   const [saving, setSaving] = useState(false);
+  const [pwd, setPwd] = useState("");
+  const [pwd2, setPwd2] = useState("");
+  const [pwdSaving, setPwdSaving] = useState(false);
 
   useEffect(() => { setDisplayName(profile?.display_name || ""); }, [profile]);
 
@@ -26,6 +29,18 @@ const Account = () => {
     if (error) { toast.error(error.message); return; }
     await refreshProfile();
     toast.success("Saved");
+  };
+
+  const changePassword = async (e: FormEvent) => {
+    e.preventDefault();
+    if (pwd.length < 6) { toast.error("Password must be at least 6 characters"); return; }
+    if (pwd !== pwd2) { toast.error("Passwords do not match"); return; }
+    setPwdSaving(true);
+    const { error } = await supabase.auth.updateUser({ password: pwd });
+    setPwdSaving(false);
+    if (error) { toast.error(error.message); return; }
+    setPwd(""); setPwd2("");
+    toast.success("Password updated");
   };
 
   return (
@@ -54,12 +69,32 @@ const Account = () => {
         </Card>
 
         <Card className="p-6 shadow-card mb-4">
+          <div className="flex items-center gap-2 mb-4">
+            <KeyRound className="h-4 w-4" />
+            <h2 className="font-semibold">Change password</h2>
+          </div>
+          <form onSubmit={changePassword} className="space-y-3">
+            <div className="space-y-2">
+              <Label>New password</Label>
+              <Input type="password" value={pwd} onChange={(e) => setPwd(e.target.value)} placeholder="At least 6 characters" minLength={6} />
+            </div>
+            <div className="space-y-2">
+              <Label>Confirm new password</Label>
+              <Input type="password" value={pwd2} onChange={(e) => setPwd2(e.target.value)} minLength={6} />
+            </div>
+            <Button type="submit" disabled={pwdSaving || !pwd}>
+              {pwdSaving && <Loader2 className="h-4 w-4 animate-spin" />} Update password
+            </Button>
+          </form>
+        </Card>
+
+        <Card className="p-6 shadow-card mb-4">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="font-semibold">Workspaces</h2>
               <p className="text-sm text-muted-foreground">Product brand settings live inside each workspace.</p>
             </div>
-            <Button variant="outline" asChild><Link to="/workspaces/settings"><Layers className="h-4 w-4" /> Manage</Link></Button>
+            <Button variant="outline" asChild><Link to="/workspaces"><Layers className="h-4 w-4" /> Manage</Link></Button>
           </div>
         </Card>
 

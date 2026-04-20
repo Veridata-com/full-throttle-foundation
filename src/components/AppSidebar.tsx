@@ -1,5 +1,5 @@
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
-import { Image, Film, CreditCard, User, LogOut, LayoutDashboard } from "lucide-react";
+import { Image, Film, CreditCard, User, LogOut, LayoutDashboard, Layers } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
   SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar, SidebarHeader, SidebarFooter,
@@ -12,6 +12,7 @@ const items = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
   { title: "Library", url: "/library", icon: Image },
   { title: "Slideshows", url: "/slideshows", icon: Film },
+  { title: "Workspaces", url: "/workspaces", icon: Layers },
   { title: "Account", url: "/account", icon: User },
   { title: "Billing", url: "/billing", icon: CreditCard },
 ];

@@ -268,6 +268,7 @@ export type Database = {
       }
       usage: {
         Row: {
+          ai_cost_cents: number
           created_at: string
           id: string
           images_uploaded: number
@@ -277,6 +278,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          ai_cost_cents?: number
           created_at?: string
           id?: string
           images_uploaded?: number
@@ -286,6 +288,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          ai_cost_cents?: number
           created_at?: string
           id?: string
           images_uploaded?: number
@@ -361,6 +364,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_and_increment_ai_cost: {
+        Args: { _cost_cents: number; _user_id: string }
+        Returns: boolean
+      }
       create_workspace_with_folder: {
         Args: {
           _audience: string
