@@ -14,6 +14,83 @@ export type Database = {
   }
   public: {
     Tables: {
+      folders: {
+        Row: {
+          auto: boolean
+          created_at: string
+          id: string
+          name: string
+          system: boolean
+          updated_at: string
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          auto?: boolean
+          created_at?: string
+          id?: string
+          name: string
+          system?: boolean
+          updated_at?: string
+          user_id: string
+          workspace_id: string
+        }
+        Update: {
+          auto?: boolean
+          created_at?: string
+          id?: string
+          name?: string
+          system?: boolean
+          updated_at?: string
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "folders_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      image_folders: {
+        Row: {
+          created_at: string
+          folder_id: string
+          image_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          folder_id: string
+          image_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          folder_id?: string
+          image_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "image_folders_folder_id_fkey"
+            columns: ["folder_id"]
+            isOneToOne: false
+            referencedRelation: "folders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "image_folders_image_id_fkey"
+            columns: ["image_id"]
+            isOneToOne: false
+            referencedRelation: "images"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       images: {
         Row: {
           ai_description: string | null
@@ -25,12 +102,15 @@ export type Database = {
           file_name: string | null
           height: number | null
           id: string
+          is_product_shot: boolean
           mime_type: string | null
+          quality: string | null
           size_bytes: number | null
           storage_path: string
           updated_at: string
           user_id: string
           width: number | null
+          workspace_id: string | null
         }
         Insert: {
           ai_description?: string | null
@@ -42,12 +122,15 @@ export type Database = {
           file_name?: string | null
           height?: number | null
           id?: string
+          is_product_shot?: boolean
           mime_type?: string | null
+          quality?: string | null
           size_bytes?: number | null
           storage_path: string
           updated_at?: string
           user_id: string
           width?: number | null
+          workspace_id?: string | null
         }
         Update: {
           ai_description?: string | null
@@ -59,14 +142,25 @@ export type Database = {
           file_name?: string | null
           height?: number | null
           id?: string
+          is_product_shot?: boolean
           mime_type?: string | null
+          quality?: string | null
           size_bytes?: number | null
           storage_path?: string
           updated_at?: string
           user_id?: string
           width?: number | null
+          workspace_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "images_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -121,12 +215,14 @@ export type Database = {
           hook_style: string | null
           id: string
           image_ids: string[]
+          num_slides: number
           slides: Json
           status: Database["public"]["Enums"]["slideshow_status"]
           target_audience: string | null
           title: string
           updated_at: string
           user_id: string
+          workspace_id: string | null
         }
         Insert: {
           created_at?: string
@@ -135,12 +231,14 @@ export type Database = {
           hook_style?: string | null
           id?: string
           image_ids?: string[]
+          num_slides?: number
           slides?: Json
           status?: Database["public"]["Enums"]["slideshow_status"]
           target_audience?: string | null
           title?: string
           updated_at?: string
           user_id: string
+          workspace_id?: string | null
         }
         Update: {
           created_at?: string
@@ -149,14 +247,24 @@ export type Database = {
           hook_style?: string | null
           id?: string
           image_ids?: string[]
+          num_slides?: number
           slides?: Json
           status?: Database["public"]["Enums"]["slideshow_status"]
           target_audience?: string | null
           title?: string
           updated_at?: string
           user_id?: string
+          workspace_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "slideshows_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       usage: {
         Row: {
@@ -209,11 +317,60 @@ export type Database = {
         }
         Relationships: []
       }
+      workspaces: {
+        Row: {
+          brand_voice: string | null
+          created_at: string
+          default_cta: string | null
+          id: string
+          name: string
+          story_style_history: Json
+          tagline: string | null
+          target_audience: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          brand_voice?: string | null
+          created_at?: string
+          default_cta?: string | null
+          id?: string
+          name?: string
+          story_style_history?: Json
+          tagline?: string | null
+          target_audience?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          brand_voice?: string | null
+          created_at?: string
+          default_cta?: string | null
+          id?: string
+          name?: string
+          story_style_history?: Json
+          tagline?: string | null
+          target_audience?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      create_workspace_with_folder: {
+        Args: {
+          _audience: string
+          _brand_voice: string
+          _cta: string
+          _name: string
+          _tagline: string
+        }
+        Returns: string
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

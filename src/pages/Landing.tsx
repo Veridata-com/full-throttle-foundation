@@ -1,17 +1,17 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Sparkles, Image as ImageIcon, Wand2, Download, Check, ArrowRight, Zap } from "lucide-react";
+import { Sparkles, Image as ImageIcon, Wand2, Download, Check, ArrowRight } from "lucide-react";
 import { SEO } from "@/components/SEO";
 import { useAuth } from "@/contexts/AuthContext";
+import { CountdownBanner } from "@/components/CountdownBanner";
 
 const Landing = () => {
   const { user } = useAuth();
   return (
     <>
-      <SEO title="AdRise — Turn product photos into TikTok ads in 60 seconds" description="AI-powered slideshow ad generator. Upload photos, get scroll-stopping 6-slide TikTok-ready ads with hooks and CTAs. No design skills needed." canonical="/" />
+      <SEO title="AdRise — Make your SaaS profitable with organic TikTok slideshows" description="AI-powered slideshow generator. Drop your images, get scroll-stopping TikTok-ready ads that convert. No designer, no agency." canonical="/" />
       <div className="min-h-screen bg-background">
-        {/* Nav */}
         <header className="border-b">
           <div className="container flex h-16 items-center justify-between">
             <Link to="/" className="flex items-center gap-2">
@@ -33,18 +33,13 @@ const Landing = () => {
           </div>
         </header>
 
-        {/* Hero */}
         <section className="container py-20 md:py-32 text-center">
-          <div className="inline-flex items-center gap-2 rounded-full border bg-muted/50 px-4 py-1.5 text-sm font-medium text-muted-foreground mb-8 animate-fade-in">
-            <Zap className="h-3.5 w-3.5 text-primary" />
-            Powered by Gemini 2.5 Flash
-          </div>
-          <h1 className="font-display text-5xl md:text-7xl font-bold tracking-tighter mb-6 animate-fade-in">
-            Turn product photos into <span className="text-gradient">TikTok ads</span>
-            <br />in 60 seconds.
+          <div className="mb-8"><CountdownBanner /></div>
+          <h1 className="font-display text-4xl md:text-7xl font-bold tracking-tighter mb-6 animate-fade-in">
+            Make your SaaS profitable with <span className="text-gradient">converting organic TikTok slideshows.</span>
           </h1>
           <p className="mx-auto max-w-2xl text-lg md:text-xl text-muted-foreground mb-10 animate-fade-in">
-            Drop your product images. Our AI writes hooks, picks angles, and lays out 6 scroll-stopping slides ready to export. No designer. No agency. No bullshit.
+            Drop your slideshow images. Our AI writes hooks, picks angles, and lays out scroll-stopping slideshows that convert. No designer. No agency. No bullshit.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center animate-fade-in">
             <Button size="lg" className="text-base h-12 px-8 shadow-glow" asChild>
@@ -56,13 +51,12 @@ const Landing = () => {
           </div>
         </section>
 
-        {/* Features */}
         <section className="container py-20 border-t">
           <div className="grid md:grid-cols-3 gap-6">
             {[
-              { icon: ImageIcon, title: "Smart image library", desc: "Upload once. AI auto-tags every product so you can search and reuse fast." },
-              { icon: Wand2, title: "AI writes the script", desc: "Hook, four value props, and a CTA. Tuned for TikTok-native voice." },
-              { icon: Download, title: "Export & post", desc: "1080×1920 PNGs, zipped and ready for TikTok, Reels, or Shorts." },
+              { icon: ImageIcon, title: "Smart image library", desc: "Upload once. AI auto-tags and sorts every image so you can find it fast." },
+              { icon: Wand2, title: "AI writes the script", desc: "Hooks, value props, and CTAs. Tuned for TikTok-native, human voice." },
+              { icon: Download, title: "Export & post", desc: "1080x1920 PNGs, zipped and ready for TikTok, Reels, or Shorts." },
             ].map((f) => (
               <Card key={f.title} className="p-8 shadow-card border-2 hover:border-primary/30 transition-colors">
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-primary shadow-glow mb-4">
@@ -75,31 +69,39 @@ const Landing = () => {
           </div>
         </section>
 
-        {/* Pricing */}
         <section id="pricing" className="container py-20 border-t">
           <div className="text-center mb-12">
             <h2 className="font-display text-4xl md:text-5xl font-bold mb-4">Simple, honest pricing</h2>
-            <p className="text-muted-foreground text-lg">Start free, upgrade when you scale.</p>
+            <p className="text-muted-foreground text-lg">Limited time launch discount. Cancel anytime.</p>
           </div>
           <div className="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto">
-            <Card className="p-8 shadow-card">
+            <Card className="p-8 shadow-card relative">
+              <span className="absolute -top-3 left-6 bg-success text-success-foreground text-xs font-bold px-3 py-1 rounded-full">60% OFF</span>
               <h3 className="font-display text-2xl font-bold mb-1">Starter</h3>
               <p className="text-muted-foreground mb-6">For solo creators getting going</p>
-              <div className="mb-6"><span className="text-5xl font-bold font-display">$19</span><span className="text-muted-foreground">/mo</span></div>
+              <div className="mb-6 flex items-baseline gap-2">
+                <span className="text-5xl font-bold font-display">$7.60</span>
+                <span className="text-muted-foreground line-through">$19</span>
+                <span className="text-muted-foreground">/mo</span>
+              </div>
               <ul className="space-y-3 mb-8 text-sm">
-                {["50 slideshows / month","500 image uploads","All AI features","ZIP export"].map(f => (
+                {["1 workspace", "50 slideshows / month", "500 image uploads", "All AI features", "ZIP export"].map(f => (
                   <li key={f} className="flex items-center gap-2"><Check className="h-4 w-4 text-success" />{f}</li>
                 ))}
               </ul>
               <Button variant="outline" className="w-full" asChild><Link to="/auth?mode=signup">Get Starter</Link></Button>
             </Card>
             <Card className="p-8 shadow-glow border-primary border-2 relative">
-              <span className="absolute -top-3 right-6 bg-gradient-primary text-primary-foreground text-xs font-bold px-3 py-1 rounded-full">POPULAR</span>
+              <span className="absolute -top-3 right-6 bg-gradient-primary text-primary-foreground text-xs font-bold px-3 py-1 rounded-full">POPULAR · 60% OFF</span>
               <h3 className="font-display text-2xl font-bold mb-1">Pro</h3>
               <p className="text-muted-foreground mb-6">For teams shipping ads daily</p>
-              <div className="mb-6"><span className="text-5xl font-bold font-display">$49</span><span className="text-muted-foreground">/mo</span></div>
+              <div className="mb-6 flex items-baseline gap-2">
+                <span className="text-5xl font-bold font-display">$19.60</span>
+                <span className="text-muted-foreground line-through">$49</span>
+                <span className="text-muted-foreground">/mo</span>
+              </div>
               <ul className="space-y-3 mb-8 text-sm">
-                {["Unlimited slideshows","Unlimited uploads","Priority AI processing","ZIP export","Priority support"].map(f => (
+                {["5 workspaces", "Unlimited slideshows", "Unlimited uploads", "Priority AI processing", "ZIP export", "Priority support"].map(f => (
                   <li key={f} className="flex items-center gap-2"><Check className="h-4 w-4 text-success" />{f}</li>
                 ))}
               </ul>

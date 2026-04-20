@@ -5,6 +5,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { WorkspaceProvider } from "@/contexts/WorkspaceContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { AppLayout } from "@/components/AppLayout";
 
@@ -21,6 +22,8 @@ import Billing from "./pages/Billing";
 import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
 import NotFound from "./pages/NotFound";
+import NewWorkspace from "./pages/NewWorkspace";
+import WorkspaceSettings from "./pages/WorkspaceSettings";
 
 const queryClient = new QueryClient();
 
@@ -32,26 +35,30 @@ const App = () => (
         <Sonner position="top-right" />
         <BrowserRouter>
           <AuthProvider>
-            <Routes>
-              <Route path="/" element={<Landing />} />
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/privacy" element={<Privacy />} />
-              <Route path="/terms" element={<Terms />} />
-              <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
+            <WorkspaceProvider>
+              <Routes>
+                <Route path="/" element={<Landing />} />
+                <Route path="/auth" element={<Auth />} />
+                <Route path="/privacy" element={<Privacy />} />
+                <Route path="/terms" element={<Terms />} />
+                <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
+                <Route path="/workspaces/new" element={<ProtectedRoute requirePlan><NewWorkspace /></ProtectedRoute>} />
 
-              {/* App shell — requires plan */}
-              <Route element={<ProtectedRoute requirePlan><AppLayout /></ProtectedRoute>}>
-                <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/library" element={<Library />} />
-                <Route path="/slideshows" element={<Slideshows />} />
-                <Route path="/slideshows/new" element={<NewSlideshow />} />
-                <Route path="/slideshows/:id/edit" element={<SlideshowEditor />} />
-                <Route path="/account" element={<Account />} />
-                <Route path="/billing" element={<Billing />} />
-              </Route>
+                {/* App shell */}
+                <Route element={<ProtectedRoute requirePlan><AppLayout /></ProtectedRoute>}>
+                  <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/library" element={<Library />} />
+                  <Route path="/slideshows" element={<Slideshows />} />
+                  <Route path="/slideshows/new" element={<ProtectedRoute requirePlan requireWorkspace><NewSlideshow /></ProtectedRoute>} />
+                  <Route path="/slideshows/:id/edit" element={<SlideshowEditor />} />
+                  <Route path="/account" element={<Account />} />
+                  <Route path="/billing" element={<Billing />} />
+                  <Route path="/workspaces/settings" element={<WorkspaceSettings />} />
+                </Route>
 
-              <Route path="*" element={<NotFound />} />
-            </Routes>
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </WorkspaceProvider>
           </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>
