@@ -30,10 +30,9 @@ Deno.serve(async (req) => {
     if (!lovableKey) return j({ error: 'LOVABLE_API_KEY missing' }, 500);
 
     const userClient = createClient(supabaseUrl, anonKey, { global: { headers: { Authorization: authHeader } } });
-    const token = authHeader.replace('Bearer ', '');
-    const { data: claimsData, error: claimsError } = await userClient.auth.getClaims(token);
-    const userId = claimsData?.claims?.sub;
-    if (claimsError || !userId) return j({ error: 'unauthorized' }, 401);
+    const { data: { user } } = await userClient.auth.getUser();
+    const userId = user?.id;
+    if (!userId) return j({ error: 'unauthorized' }, 401);
 
     const { slideshowId } = (await req.json()) as Body;
     if (!slideshowId) return j({ error: 'slideshowId required' }, 400);
