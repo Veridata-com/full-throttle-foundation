@@ -8,7 +8,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { UploadCloud, Loader2, FileImage, Search, Folder, FolderOpen, Sparkles, Edit2, Check, X, Package } from "lucide-react";
+import { UploadCloud, Loader2, FileImage, Search, Folder, FolderOpen, Sparkles, Edit2, Check, X, Package, RotateCw, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { SEO } from "@/components/SEO";
 import { ImagePreviewDrawer } from "@/components/ImagePreviewDrawer";
@@ -21,6 +21,7 @@ interface ImageRow {
   ai_status: string;
   ai_description: string | null;
   ai_tags: string[] | null;
+  ai_error: string | null;
   quality: string | null;
   is_product_shot: boolean;
   created_at: string;
@@ -118,7 +119,13 @@ const Library = () => {
         }
         const { data: signed } = await supabase.storage.from("product-images").createSignedUrl(path, 3600);
         if (signed?.signedUrl) {
-          supabase.functions.invoke("label-image", { body: { imageId: row.id, signedUrl: signed.signedUrl, workspaceId: current.id } }).catch(() => {});
+          supabase.functions.invoke("label-image", { body: { imageId: row.id, signedUrl: signed.signedUrl, workspaceId: current.id } })
+            .then(({ error }) => {
+              if (error) {
+                console.error("label-image invoke failed", error);
+                supabase.from("images").update({ ai_status: "failed", ai_error: error.message || "invoke failed" }).eq("id", row.id).then(() => {});
+              }
+            });
         }
       }
       toast.success(`Uploaded ${files.length} ${isProduct ? "product " : ""}file${files.length > 1 ? "s" : ""}`);
@@ -157,6 +164,21 @@ const Library = () => {
     const { error } = await supabase.from("folders").delete().eq("id", f.id);
     if (error) { toast.error(error.message); return; }
     if (activeFolder === f.id) setActiveFolder(null);
+    load();
+  };
+
+  const retryTagging = async (img: ImageRow, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!current) return;
+    await supabase.from("images").update({ ai_status: "pending", ai_error: null }).eq("id", img.id);
+    const { data: signed } = await supabase.storage.from("product-images").createSignedUrl(img.storage_path, 3600);
+    if (!signed?.signedUrl) { toast.error("Could not get image URL"); return; }
+    toast.info("Retrying AI tagging...");
+    const { error } = await supabase.functions.invoke("label-image", {
+      body: { imageId: img.id, signedUrl: signed.signedUrl, workspaceId: current.id },
+    });
+    if (error) toast.error(error.message);
+    else toast.success("Tagging started");
     load();
   };
 
@@ -254,37 +276,44 @@ const Library = () => {
               </div>
             ) : (
               <div className="divide-y">
-                <div className="grid grid-cols-[auto_1fr_120px_100px_120px] gap-3 px-4 py-2 text-xs uppercase tracking-wider text-muted-foreground bg-muted/30">
+                <div className="grid grid-cols-[auto_1fr_140px_100px_120px] gap-3 px-4 py-2 text-xs uppercase tracking-wider text-muted-foreground bg-muted/30">
                   <span></span><span>Name</span><span>Quality</span><span>Tags</span><span>Date</span>
                 </div>
                 {filtered.map((img) => (
-                  <button
+                  <div
                     key={img.id}
                     onClick={() => setPreviewId(img.id)}
-                    className="w-full grid grid-cols-[auto_1fr_120px_100px_120px] gap-3 px-4 py-2.5 hover:bg-muted/50 text-left items-center text-sm"
+                    className="w-full grid grid-cols-[auto_1fr_140px_100px_120px] gap-3 px-4 py-2.5 hover:bg-muted/50 text-left items-center text-sm cursor-pointer"
                   >
                     <FileImage className="h-4 w-4 text-muted-foreground" />
                     <div className="min-w-0">
                       <p className="truncate font-medium">{img.file_name || "Untitled"}</p>
                       {img.ai_status === "processing" || img.ai_status === "pending" ? (
                         <p className="text-xs text-primary flex items-center gap-1"><Sparkles className="h-3 w-3 animate-pulse" /> Tagging...</p>
+                      ) : img.ai_status === "failed" ? (
+                        <p className="text-xs text-destructive flex items-center gap-1 truncate"><AlertCircle className="h-3 w-3" /> {img.ai_error || "Tagging failed"}</p>
                       ) : img.ai_description && (
                         <p className="text-xs text-muted-foreground truncate">{img.ai_description}</p>
                       )}
                     </div>
-                    <div>
+                    <div className="flex items-center gap-1">
                       {img.quality && (
                         <Badge variant={img.quality === "high" ? "default" : img.quality === "low" ? "destructive" : "secondary"} className="text-[10px]">
                           {img.quality}
                         </Badge>
                       )}
-                      {img.is_product_shot && <Badge className="ml-1 text-[10px]">product</Badge>}
+                      {img.is_product_shot && <Badge className="text-[10px]">product</Badge>}
+                      {img.ai_status === "failed" && (
+                        <Button size="icon" variant="ghost" className="h-6 w-6" onClick={(e) => retryTagging(img, e)} title="Retry tagging">
+                          <RotateCw className="h-3 w-3" />
+                        </Button>
+                      )}
                     </div>
                     <div className="flex gap-1 flex-wrap min-w-0">
                       {(img.ai_tags || []).slice(0, 2).map((t) => <Badge key={t} variant="secondary" className="text-[10px]">{t}</Badge>)}
                     </div>
                     <span className="text-xs text-muted-foreground">{new Date(img.created_at).toLocaleDateString()}</span>
-                  </button>
+                  </div>
                 ))}
               </div>
             )}
