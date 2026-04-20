@@ -115,12 +115,12 @@ Deno.serve(async (req) => {
       `#${idx} [${i.quality || 'medium'}] ${i.ai_description || i.file_name || 'image'} | tags: ${(i.ai_tags || []).join(', ')}`
     ).join('\n');
 
-    const prompt = `Generate a ${numSlides}-slide TikTok slideshow for:
+    const prompt = `Write a ${numSlides}-slide TikTok storytelling slideshow for:
 
 PRODUCT: ${workspace.name}
 TAGLINE: ${workspace.tagline || '(none)'}
 AUDIENCE: ${workspace.target_audience || 'general'}
-BRAND VOICE: ${workspace.brand_voice || 'punchy, human, TikTok-native'}
+BRAND VOICE: ${workspace.brand_voice || 'reflective, human, story-driven'}
 DEFAULT CTA: ${workspace.default_cta || 'Try it now'}
 
 NARRATIVE STYLE THIS TIME: ${chosenStyle}
@@ -129,13 +129,15 @@ HOOK STYLE: ${slideshow.hook_style || 'curiosity'}
 AVAILABLE IMAGES (pick ${needNonProduct} of these by index, prefer high quality and tag relevance):
 ${imageContext || '(no images, reuse index 0)'}
 
-Rules:
-- Slide 1 = HOOK (scroll-stopper, max 8 words)
-- Middle slides = VALUE props following the ${chosenStyle} narrative (max 14 words each)
-- Final slide = CTA (provided separately, you only output ${needNonProduct} slides here)
-- Each slide: ONE short punchy headline + optional subtext
-- Never use em-dashes or en-dashes
-- Sound human, not corporate`;
+What to write:
+- Each slide gets ONE caption. One short, quiet, story-shaped thought. Two sentences max.
+- Use a single line break (\\n) between sentences when the pause matters.
+- Slide 1 is the HOOK: a curiosity, a wound, a question, a confession. Make them stop scrolling.
+- Middle slides build the story arc following the ${chosenStyle} narrative. Each one should feel like a turn of the page.
+- Final CTA slide is also a caption, not a sales pitch. End on a feeling that makes them want to act.
+- Sentence case only. No ALL CAPS, no bold, no em-dashes, no emoji, no markdown.
+- Aim for the late-night-reel-caption feeling: reflective, a little raw, deeply human.
+- Each caption should be readable in under 3 seconds.`;
 
     const tool = {
       type: 'function',
@@ -151,15 +153,13 @@ Rules:
                 type: 'object',
                 properties: {
                   type: { type: 'string', enum: ['hook', 'value'] },
-                  headline: { type: 'string' },
-                  subtext: { type: 'string' },
+                  headline: { type: 'string', description: 'The full slide caption. One or two short sentences, sentence case, line break between sentences if any.' },
                   image_index: { type: 'number', description: 'Index from AVAILABLE IMAGES list' },
                 },
                 required: ['type', 'headline', 'image_index'],
               },
             },
-            cta_headline: { type: 'string', description: 'Headline for final CTA slide' },
-            cta_subtext: { type: 'string' },
+            cta_headline: { type: 'string', description: 'Caption for final CTA slide. Same storytelling tone, sentence case, no caps, no markdown.' },
           },
           required: ['slides', 'cta_headline'],
         },
