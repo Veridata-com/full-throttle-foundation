@@ -100,7 +100,7 @@ Deno.serve(async (req) => {
           { role: 'system', content: SYSTEM },
           { role: 'user', content: [
             { type: 'text', text: 'Analyze this product image and call label_image with the results.' },
-            { type: 'image_url', image_url: { url: body.signedUrl } },
+            { type: 'image_url', image_url: { url: dataUrl } },
           ]},
         ],
         tools: [tool],
