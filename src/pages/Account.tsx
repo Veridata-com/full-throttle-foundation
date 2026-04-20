@@ -1,63 +1,77 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Loader2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Loader2, CreditCard, Layers, LogOut } from "lucide-react";
 import { toast } from "sonner";
 import { SEO } from "@/components/SEO";
 
 const Account = () => {
-  const { user, profile, refreshProfile } = useAuth();
-  const [displayName, setDisplayName] = useState(profile?.display_name || "");
-  const [brandVoice, setBrandVoice] = useState(profile?.brand_voice || "");
-  const [audience, setAudience] = useState(profile?.target_audience || "");
-  const [cta, setCta] = useState(profile?.default_cta || "");
+  const { user, profile, refreshProfile, signOut } = useAuth();
+  const [displayName, setDisplayName] = useState("");
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => { setDisplayName(profile?.display_name || ""); }, [profile]);
 
   const save = async () => {
     if (!user) return;
     setSaving(true);
-    const { error } = await supabase.from("profiles").update({
-      display_name: displayName, brand_voice: brandVoice, target_audience: audience, default_cta: cta,
-    }).eq("id", user.id);
+    const { error } = await supabase.from("profiles").update({ display_name: displayName }).eq("id", user.id);
     setSaving(false);
     if (error) { toast.error(error.message); return; }
     await refreshProfile();
-    toast.success("Profile saved");
+    toast.success("Saved");
   };
 
   return (
     <>
-      <SEO title="Account" description="Manage your AdRise account and brand defaults." />
+      <SEO title="Account" description="Manage your AdRise account." />
       <div className="container py-8 max-w-2xl">
-        <h1 className="font-display text-3xl font-bold mb-2">Account</h1>
-        <p className="text-muted-foreground mb-6">Brand defaults are auto-applied to new slideshows.</p>
-        <Card className="p-6 space-y-4 shadow-card">
+        <h1 className="font-display text-3xl font-bold mb-6">Account</h1>
+
+        <Card className="p-6 space-y-4 shadow-card mb-4">
           <div className="space-y-2">
             <Label>Email</Label>
             <Input value={user?.email || ""} disabled />
           </div>
           <div className="space-y-2">
             <Label>Display name</Label>
-            <Input value={displayName} onChange={e => setDisplayName(e.target.value)} />
+            <Input value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
           </div>
           <div className="space-y-2">
-            <Label>Brand voice</Label>
-            <Textarea value={brandVoice} onChange={e => setBrandVoice(e.target.value)} rows={3} placeholder="e.g. Direct, playful, Gen Z slang. No corporate." />
+            <Label>Plan</Label>
+            <div className="flex items-center gap-3">
+              <Badge className="capitalize">{profile?.plan || "none"}</Badge>
+              <Button size="sm" variant="outline" asChild><Link to="/billing"><CreditCard className="h-3.5 w-3.5" /> Manage billing</Link></Button>
+            </div>
           </div>
-          <div className="space-y-2">
-            <Label>Default audience</Label>
-            <Textarea value={audience} onChange={e => setAudience(e.target.value)} rows={2} placeholder="e.g. 18-25 skincare buyers" />
+          <Button onClick={save} disabled={saving}>{saving && <Loader2 className="h-4 w-4 animate-spin" />} Save</Button>
+        </Card>
+
+        <Card className="p-6 shadow-card mb-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="font-semibold">Workspaces</h2>
+              <p className="text-sm text-muted-foreground">Product brand settings live inside each workspace.</p>
+            </div>
+            <Button variant="outline" asChild><Link to="/workspaces/settings"><Layers className="h-4 w-4" /> Manage</Link></Button>
           </div>
-          <div className="space-y-2">
-            <Label>Default CTA</Label>
-            <Input value={cta} onChange={e => setCta(e.target.value)} placeholder="Shop now" />
+        </Card>
+
+        <Card className="p-6 shadow-card border-destructive/30">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="font-semibold">Sign out</h2>
+              <p className="text-sm text-muted-foreground">End this session.</p>
+            </div>
+            <Button variant="outline" onClick={signOut}><LogOut className="h-4 w-4" /> Sign out</Button>
           </div>
-          <Button onClick={save} disabled={saving}>{saving && <Loader2 className="h-4 w-4 animate-spin" />} Save changes</Button>
+          <p className="text-xs text-muted-foreground mt-4">To permanently delete your account, email <a className="underline" href="mailto:support@adrise.app">support@adrise.app</a>.</p>
         </Card>
       </div>
     </>

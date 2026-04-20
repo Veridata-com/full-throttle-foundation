@@ -28,7 +28,6 @@ const Onboarding = () => {
     }
   };
 
-  // TODO: remove before launch — temporary dev bypass while Stripe is being configured
   const devBypass = async () => {
     if (!user) return;
     setLoading("dev");
@@ -36,17 +35,17 @@ const Onboarding = () => {
     if (error) { toast.error(error.message); setLoading(null); return; }
     await refreshProfile();
     toast.success("Dev bypass activated — Starter plan");
-    navigate("/dashboard");
+    navigate("/workspaces/new");
   };
 
   const plans = [
-    { id: "starter" as const, name: "Starter", price: 19, features: ["50 slideshows / month", "500 image uploads", "All AI features", "ZIP export"] },
-    { id: "pro" as const, name: "Pro", price: 49, popular: true, features: ["Unlimited slideshows", "Unlimited uploads", "Priority AI", "ZIP export", "Priority support"] },
+    { id: "starter" as const, name: "Starter", price: 7.60, original: 19, features: ["1 workspace", "50 slideshows / month", "500 image uploads", "All AI features"] },
+    { id: "pro" as const, name: "Pro", price: 19.60, original: 49, popular: true, features: ["5 workspaces", "Unlimited slideshows", "Unlimited uploads", "Priority AI", "Priority support"] },
   ];
 
   return (
     <>
-      <SEO title="Choose your plan" description="Pick a plan to start creating AI-powered TikTok ads with AdRise." />
+      <SEO title="Choose your plan" description="Pick a plan to start AdRise." />
       <div className="min-h-screen bg-gradient-dark py-16 px-4">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12 text-white">
@@ -54,16 +53,21 @@ const Onboarding = () => {
               <Sparkles className="h-5 w-5 text-primary-foreground" />
             </div>
             <h1 className="font-display text-4xl md:text-5xl font-bold mb-3">Pick your plan</h1>
-            <p className="text-white/70 text-lg">Cancel anytime. Upgrade or downgrade whenever.</p>
+            <p className="text-white/70 text-lg">🔥 Limited time: 60% off. Cancel anytime.</p>
           </div>
           <div className="grid md:grid-cols-2 gap-6 mb-8">
             {plans.map((p) => (
-              <Card key={p.id} className={`p-8 ${p.popular ? "border-primary border-2 shadow-glow" : "shadow-card"}`}>
-                {p.popular && <span className="inline-block bg-gradient-primary text-primary-foreground text-xs font-bold px-3 py-1 rounded-full mb-3">RECOMMENDED</span>}
+              <Card key={p.id} className={`p-8 relative ${p.popular ? "border-primary border-2 shadow-glow" : "shadow-card"}`}>
+                <span className="absolute -top-3 left-6 bg-success text-success-foreground text-xs font-bold px-3 py-1 rounded-full">60% OFF</span>
+                {p.popular && <span className="absolute -top-3 right-6 bg-gradient-primary text-primary-foreground text-xs font-bold px-3 py-1 rounded-full">RECOMMENDED</span>}
                 <h3 className="font-display text-2xl font-bold">{p.name}</h3>
-                <div className="my-4"><span className="text-5xl font-bold font-display">${p.price}</span><span className="text-muted-foreground">/mo</span></div>
+                <div className="my-4 flex items-baseline gap-2">
+                  <span className="text-5xl font-bold font-display">${p.price}</span>
+                  <span className="text-muted-foreground line-through">${p.original}</span>
+                  <span className="text-muted-foreground">/mo</span>
+                </div>
                 <ul className="space-y-2 mb-8 text-sm">
-                  {p.features.map(f => <li key={f} className="flex gap-2 items-center"><Check className="h-4 w-4 text-success" />{f}</li>)}
+                  {p.features.map((f) => <li key={f} className="flex gap-2 items-center"><Check className="h-4 w-4 text-success" />{f}</li>)}
                 </ul>
                 <Button className={`w-full ${p.popular ? "shadow-glow" : ""}`} variant={p.popular ? "default" : "outline"} onClick={() => startCheckout(p.id)} disabled={loading !== null}>
                   {loading === p.id && <Loader2 className="h-4 w-4 animate-spin" />}
@@ -72,7 +76,6 @@ const Onboarding = () => {
               </Card>
             ))}
           </div>
-          {/* TODO: remove before launch — dev bypass while Stripe keys are being configured */}
           <Card className="p-4 bg-muted/50 border-dashed">
             <div className="flex items-center justify-between gap-4 flex-wrap">
               <div>

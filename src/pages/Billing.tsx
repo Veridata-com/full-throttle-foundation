@@ -35,7 +35,7 @@ const Billing = () => {
       if (data?.url) window.location.href = data.url;
       else throw new Error(data?.error || "Failed");
     } catch (err: any) {
-      toast.error(err.message || "Checkout failed. Make sure Stripe is configured.");
+      toast.error(err.message || "Checkout failed");
       setLoading(null);
     }
   };
@@ -54,8 +54,8 @@ const Billing = () => {
   };
 
   const plans = [
-    { id: "starter" as const, name: "Starter", price: 19, features: ["50 slideshows / month", "500 image uploads", "All AI features"] },
-    { id: "pro" as const, name: "Pro", price: 49, popular: true, features: ["Unlimited slideshows", "Unlimited uploads", "Priority AI", "Priority support"] },
+    { id: "starter" as const, name: "Starter", price: 7.60, original: 19, features: ["1 workspace", "50 slideshows / month", "500 image uploads", "All AI features"] },
+    { id: "pro" as const, name: "Pro", price: 19.60, original: 49, popular: true, features: ["5 workspaces", "Unlimited slideshows", "Unlimited uploads", "Priority AI", "Priority support"] },
   ];
 
   const currentPlan = profile?.plan || "none";
@@ -66,9 +66,13 @@ const Billing = () => {
       <div className="container py-8 max-w-3xl">
         <h1 className="font-display text-3xl font-bold mb-2">Billing</h1>
         <p className="text-muted-foreground mb-6">
-          Current plan: <Badge className="ml-1">{currentPlan}</Badge>
+          Current plan: <Badge className="ml-1 capitalize">{currentPlan}</Badge>
           {syncing && <Loader2 className="inline h-3 w-3 animate-spin ml-2" />}
         </p>
+
+        <div className="mb-6 rounded-lg border-2 border-primary/40 bg-primary/5 p-4 text-center">
+          <p className="text-sm font-semibold text-primary">🔥 Limited time: 60% off all plans</p>
+        </div>
 
         {currentPlan !== "none" && (
           <Card className="p-5 mb-6 flex items-center justify-between gap-4 flex-wrap shadow-card">
@@ -84,15 +88,20 @@ const Billing = () => {
         )}
 
         <div className="grid sm:grid-cols-2 gap-4">
-          {plans.map(p => (
-            <Card key={p.id} className={`p-6 ${p.popular ? "border-primary border-2 shadow-glow" : "shadow-card"} ${currentPlan === p.id ? "ring-2 ring-primary" : ""}`}>
+          {plans.map((p) => (
+            <Card key={p.id} className={`p-6 relative ${p.popular ? "border-primary border-2 shadow-glow" : "shadow-card"} ${currentPlan === p.id ? "ring-2 ring-primary" : ""}`}>
+              <span className="absolute -top-3 left-4 bg-success text-success-foreground text-[10px] font-bold px-2 py-0.5 rounded-full">60% OFF</span>
               <div className="flex items-center justify-between mb-2">
                 <h3 className="font-display text-xl font-bold">{p.name}</h3>
                 {currentPlan === p.id && <Badge className="bg-success text-success-foreground">Active</Badge>}
               </div>
-              <div className="mb-4"><span className="text-3xl font-bold font-display">${p.price}</span><span className="text-muted-foreground">/mo</span></div>
+              <div className="mb-4 flex items-baseline gap-2">
+                <span className="text-3xl font-bold font-display">${p.price}</span>
+                <span className="text-muted-foreground line-through text-sm">${p.original}</span>
+                <span className="text-muted-foreground text-sm">/mo</span>
+              </div>
               <ul className="space-y-2 mb-6 text-sm">
-                {p.features.map(f => <li key={f} className="flex gap-2 items-center"><Check className="h-4 w-4 text-success" />{f}</li>)}
+                {p.features.map((f) => <li key={f} className="flex gap-2 items-center"><Check className="h-4 w-4 text-success" />{f}</li>)}
               </ul>
               <Button className="w-full" variant={currentPlan === p.id ? "outline" : "default"} disabled={loading !== null || currentPlan === p.id} onClick={() => checkout(p.id)}>
                 {loading === p.id && <Loader2 className="h-4 w-4 animate-spin" />}
@@ -102,9 +111,7 @@ const Billing = () => {
           ))}
         </div>
 
-        <p className="text-xs text-muted-foreground mt-6 text-center">
-          Stripe-powered. Cancel anytime.
-        </p>
+        <p className="text-xs text-muted-foreground mt-6 text-center">Cancel anytime.</p>
       </div>
     </>
   );

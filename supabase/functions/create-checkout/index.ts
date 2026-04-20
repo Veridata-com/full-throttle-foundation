@@ -1,4 +1,4 @@
-// Create a Stripe Checkout session for Starter or Pro plan
+// Create a Stripe Checkout session for Starter or Pro plan — 60% launch discount
 import Stripe from "https://esm.sh/stripe@14.21.0?target=deno";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
@@ -7,9 +7,10 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// 60% off launch pricing: $19 -> $7.60 (760c), $49 -> $19.60 (1960c)
 const PRICES: Record<string, { amount: number; name: string }> = {
-  starter: { amount: 1900, name: 'AdRise Starter' },
-  pro: { amount: 4900, name: 'AdRise Pro' },
+  starter: { amount: 760, name: 'AdRise Starter — Launch 60% off' },
+  pro:     { amount: 1960, name: 'AdRise Pro — Launch 60% off' },
 };
 
 Deno.serve(async (req) => {
@@ -57,6 +58,7 @@ Deno.serve(async (req) => {
 
     return j({ url: session.url });
   } catch (e: any) {
+    console.error('create-checkout error', e);
     return j({ error: e.message }, 500);
   }
 });
