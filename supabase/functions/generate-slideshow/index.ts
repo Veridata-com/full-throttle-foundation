@@ -30,7 +30,19 @@ Examples of the tone you write in (DO NOT copy these, only match the feel):
 
 function clean(s: any): string {
   if (typeof s !== 'string') return '';
-  return s.replace(/[—–]/g, ', ').replace(/\s+,/g, ',').replace(/,\s*,/g, ',').trim();
+  let t = s.replace(/[—–]/g, ', ').replace(/\*+/g, '').replace(/_+/g, '').replace(/\s+,/g, ',').replace(/,\s*,/g, ',').trim();
+  // De-shout: any sentence in ALL CAPS gets converted to sentence case.
+  t = t.split('\n').map((line) =>
+    line.split(/(?<=[.!?])\s+/).map((sent) => {
+      const letters = sent.replace(/[^A-Za-z]/g, '');
+      if (letters.length >= 3 && letters === letters.toUpperCase()) {
+        const lower = sent.toLowerCase();
+        return lower.charAt(0).toUpperCase() + lower.slice(1);
+      }
+      return sent;
+    }).join(' ')
+  ).join('\n');
+  return t;
 }
 
 Deno.serve(async (req) => {
