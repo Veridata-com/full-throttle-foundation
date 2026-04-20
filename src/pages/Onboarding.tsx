@@ -1,0 +1,94 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Check, Loader2, Sparkles } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { SEO } from "@/components/SEO";
+
+const Onboarding = () => {
+  const { user, refreshProfile } = useAuth();
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState<string | null>(null);
+
+  const startCheckout = async (plan: "starter" | "pro") => {
+    setLoading(plan);
+    try {
+      const { data, error } = await supabase.functions.invoke("create-checkout", {
+        body: { plan, origin: window.location.origin },
+      });
+      if (error) throw error;
+      if (data?.url) window.location.href = data.url;
+      else throw new Error(data?.error || "Could not create checkout");
+    } catch (err: any) {
+      toast.error(err.message || "Could not start checkout. You can still use the dev bypass below.");
+      setLoading(null);
+    }
+  };
+
+  // TODO: remove before launch — temporary dev bypass while Stripe is being configured
+  const devBypass = async () => {
+    if (!user) return;
+    setLoading("dev");
+    const { error } = await supabase.from("profiles").update({ plan: "starter" }).eq("id", user.id);
+    if (error) { toast.error(error.message); setLoading(null); return; }
+    await refreshProfile();
+    toast.success("Dev bypass activated — Starter plan");
+    navigate("/dashboard");
+  };
+
+  const plans = [
+    { id: "starter" as const, name: "Starter", price: 19, features: ["50 slideshows / month", "500 image uploads", "All AI features", "ZIP export"] },
+    { id: "pro" as const, name: "Pro", price: 49, popular: true, features: ["Unlimited slideshows", "Unlimited uploads", "Priority AI", "ZIP export", "Priority support"] },
+  ];
+
+  return (
+    <>
+      <SEO title="Choose your plan" description="Pick a plan to start creating AI-powered TikTok ads with AdRise." />
+      <div className="min-h-screen bg-gradient-dark py-16 px-4">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-12 text-white">
+            <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-primary shadow-glow mb-6">
+              <Sparkles className="h-5 w-5 text-primary-foreground" />
+            </div>
+            <h1 className="font-display text-4xl md:text-5xl font-bold mb-3">Pick your plan</h1>
+            <p className="text-white/70 text-lg">Cancel anytime. Upgrade or downgrade whenever.</p>
+          </div>
+          <div className="grid md:grid-cols-2 gap-6 mb-8">
+            {plans.map((p) => (
+              <Card key={p.id} className={`p-8 ${p.popular ? "border-primary border-2 shadow-glow" : "shadow-card"}`}>
+                {p.popular && <span className="inline-block bg-gradient-primary text-primary-foreground text-xs font-bold px-3 py-1 rounded-full mb-3">RECOMMENDED</span>}
+                <h3 className="font-display text-2xl font-bold">{p.name}</h3>
+                <div className="my-4"><span className="text-5xl font-bold font-display">${p.price}</span><span className="text-muted-foreground">/mo</span></div>
+                <ul className="space-y-2 mb-8 text-sm">
+                  {p.features.map(f => <li key={f} className="flex gap-2 items-center"><Check className="h-4 w-4 text-success" />{f}</li>)}
+                </ul>
+                <Button className={`w-full ${p.popular ? "shadow-glow" : ""}`} variant={p.popular ? "default" : "outline"} onClick={() => startCheckout(p.id)} disabled={loading !== null}>
+                  {loading === p.id && <Loader2 className="h-4 w-4 animate-spin" />}
+                  Choose {p.name}
+                </Button>
+              </Card>
+            ))}
+          </div>
+          {/* TODO: remove before launch — dev bypass while Stripe keys are being configured */}
+          <Card className="p-4 bg-muted/50 border-dashed">
+            <div className="flex items-center justify-between gap-4 flex-wrap">
+              <div>
+                <p className="text-sm font-semibold">Dev mode</p>
+                <p className="text-xs text-muted-foreground">Skip Stripe and unlock the app for testing.</p>
+              </div>
+              <Button variant="outline" size="sm" onClick={devBypass} disabled={loading !== null}>
+                {loading === "dev" && <Loader2 className="h-4 w-4 animate-spin" />}
+                Dev bypass → Starter
+              </Button>
+            </div>
+          </Card>
+        </div>
+      </div>
+    </>
+  );
+};
+
+export default Onboarding;
