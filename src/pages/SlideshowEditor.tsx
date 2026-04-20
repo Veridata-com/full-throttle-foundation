@@ -202,7 +202,7 @@ const SlideshowEditor = () => {
   const persistSlides = async (next: Slide[]) => {
     if (!id) return;
     setSaving(true);
-    const { error } = await supabase.from("slideshows").update({ slides: next }).eq("id", id);
+    const { error } = await supabase.from("slideshows").update({ slides: next as any }).eq("id", id);
     setSaving(false);
     if (error) toast.error(error.message);
   };
