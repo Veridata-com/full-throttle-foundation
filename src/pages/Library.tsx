@@ -280,33 +280,40 @@ const Library = () => {
                   <span></span><span>Name</span><span>Quality</span><span>Tags</span><span>Date</span>
                 </div>
                 {filtered.map((img) => (
-                  <button
+                  <div
                     key={img.id}
                     onClick={() => setPreviewId(img.id)}
-                    className="w-full grid grid-cols-[auto_1fr_120px_100px_120px] gap-3 px-4 py-2.5 hover:bg-muted/50 text-left items-center text-sm"
+                    className="w-full grid grid-cols-[auto_1fr_140px_100px_120px] gap-3 px-4 py-2.5 hover:bg-muted/50 text-left items-center text-sm cursor-pointer"
                   >
                     <FileImage className="h-4 w-4 text-muted-foreground" />
                     <div className="min-w-0">
                       <p className="truncate font-medium">{img.file_name || "Untitled"}</p>
                       {img.ai_status === "processing" || img.ai_status === "pending" ? (
                         <p className="text-xs text-primary flex items-center gap-1"><Sparkles className="h-3 w-3 animate-pulse" /> Tagging...</p>
+                      ) : img.ai_status === "failed" ? (
+                        <p className="text-xs text-destructive flex items-center gap-1 truncate"><AlertCircle className="h-3 w-3" /> {img.ai_error || "Tagging failed"}</p>
                       ) : img.ai_description && (
                         <p className="text-xs text-muted-foreground truncate">{img.ai_description}</p>
                       )}
                     </div>
-                    <div>
+                    <div className="flex items-center gap-1">
                       {img.quality && (
                         <Badge variant={img.quality === "high" ? "default" : img.quality === "low" ? "destructive" : "secondary"} className="text-[10px]">
                           {img.quality}
                         </Badge>
                       )}
-                      {img.is_product_shot && <Badge className="ml-1 text-[10px]">product</Badge>}
+                      {img.is_product_shot && <Badge className="text-[10px]">product</Badge>}
+                      {img.ai_status === "failed" && (
+                        <Button size="icon" variant="ghost" className="h-6 w-6" onClick={(e) => retryTagging(img, e)} title="Retry tagging">
+                          <RotateCw className="h-3 w-3" />
+                        </Button>
+                      )}
                     </div>
                     <div className="flex gap-1 flex-wrap min-w-0">
                       {(img.ai_tags || []).slice(0, 2).map((t) => <Badge key={t} variant="secondary" className="text-[10px]">{t}</Badge>)}
                     </div>
                     <span className="text-xs text-muted-foreground">{new Date(img.created_at).toLocaleDateString()}</span>
-                  </button>
+                  </div>
                 ))}
               </div>
             )}
