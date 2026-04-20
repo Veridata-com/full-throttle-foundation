@@ -31,7 +31,8 @@ Deno.serve(async (req) => {
 
     const userClient = createClient(supabaseUrl, anonKey, { global: { headers: { Authorization: authHeader } } });
     const { data: { user } } = await userClient.auth.getUser();
-    if (!user) return j({ error: 'unauthorized' }, 401);
+    const userId = user?.id;
+    if (!userId) return j({ error: 'unauthorized' }, 401);
 
     const { slideshowId } = (await req.json()) as Body;
     if (!slideshowId) return j({ error: 'slideshowId required' }, 400);
@@ -40,21 +41,21 @@ Deno.serve(async (req) => {
 
     const { data: slideshow, error: ssErr } = await admin
       .from('slideshows').select('*').eq('id', slideshowId).single();
-    if (ssErr || !slideshow || slideshow.user_id !== user.id) return j({ error: 'forbidden' }, 403);
+    if (ssErr || !slideshow || slideshow.user_id !== userId) return j({ error: 'forbidden' }, 403);
     if (!slideshow.workspace_id) return j({ error: 'workspace_required' }, 400);
 
-    const { data: profile } = await admin.from('profiles').select('plan').eq('id', user.id).single();
+    const { data: profile } = await admin.from('profiles').select('plan').eq('id', userId).single();
     if (!profile || profile.plan === 'none') return j({ error: 'plan_required' }, 402);
 
     if (profile.plan === 'starter') {
       const periodStart = new Date(); periodStart.setDate(1);
       const ps = periodStart.toISOString().slice(0, 10);
-      const { data: usage } = await admin.from('usage').select('slideshows_generated').eq('user_id', user.id).eq('period_start', ps).maybeSingle();
+      const { data: usage } = await admin.from('usage').select('slideshows_generated').eq('user_id', userId).eq('period_start', ps).maybeSingle();
       if ((usage?.slideshows_generated || 0) >= 50) return j({ error: 'quota_exceeded' }, 402);
     }
 
     // Hard cost cap (abuse ceiling): Starter $5/mo, Pro $15/mo. Reserve ~3 cents per generation.
-    const { data: capOk, error: capErr } = await admin.rpc('check_and_increment_ai_cost', { _user_id: user.id, _cost_cents: 3 });
+    const { data: capOk, error: capErr } = await admin.rpc('check_and_increment_ai_cost', { _user_id: userId, _cost_cents: 3 });
     if (capErr) console.error('cost cap rpc error', capErr);
     if (capOk === false) {
       await admin.from('slideshows').update({ status: 'failed', generation_error: 'Monthly AI cost cap reached for your plan.' }).eq('id', slideshowId);
@@ -226,11 +227,11 @@ Rules:
     // Usage increment
     const periodStart = new Date(); periodStart.setDate(1);
     const ps = periodStart.toISOString().slice(0, 10);
-    const { data: existing } = await admin.from('usage').select('id, slideshows_generated').eq('user_id', user.id).eq('period_start', ps).maybeSingle();
+    const { data: existing } = await admin.from('usage').select('id, slideshows_generated').eq('user_id', userId).eq('period_start', ps).maybeSingle();
     if (existing) {
       await admin.from('usage').update({ slideshows_generated: (existing.slideshows_generated || 0) + 1 }).eq('id', existing.id);
     } else {
-      await admin.from('usage').insert({ user_id: user.id, period_start: ps, slideshows_generated: 1 });
+      await admin.from('usage').insert({ user_id: userId, period_start: ps, slideshows_generated: 1 });
     }
 
     return j({ ok: true, slides, style: chosenStyle });
