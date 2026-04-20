@@ -228,11 +228,11 @@ Rules:
     // Usage increment
     const periodStart = new Date(); periodStart.setDate(1);
     const ps = periodStart.toISOString().slice(0, 10);
-    const { data: existing } = await admin.from('usage').select('id, slideshows_generated').eq('user_id', user.id).eq('period_start', ps).maybeSingle();
+    const { data: existing } = await admin.from('usage').select('id, slideshows_generated').eq('user_id', userId).eq('period_start', ps).maybeSingle();
     if (existing) {
       await admin.from('usage').update({ slideshows_generated: (existing.slideshows_generated || 0) + 1 }).eq('id', existing.id);
     } else {
-      await admin.from('usage').insert({ user_id: user.id, period_start: ps, slideshows_generated: 1 });
+      await admin.from('usage').insert({ user_id: userId, period_start: ps, slideshows_generated: 1 });
     }
 
     return j({ ok: true, slides, style: chosenStyle });
