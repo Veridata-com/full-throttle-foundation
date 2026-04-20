@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { useDropzone } from "react-dropzone";
+import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
@@ -7,7 +8,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { UploadCloud, Loader2, FileImage, Search, Folder, FolderOpen, Sparkles, Edit2, Check, X } from "lucide-react";
+import { UploadCloud, Loader2, FileImage, Search, Folder, FolderOpen, Sparkles, Edit2, Check, X, Package } from "lucide-react";
 import { toast } from "sonner";
 import { SEO } from "@/components/SEO";
 import { ImagePreviewDrawer } from "@/components/ImagePreviewDrawer";
@@ -30,6 +31,7 @@ interface FolderRow { id: string; name: string; auto: boolean; system: boolean; 
 const Library = () => {
   const { user } = useAuth();
   const { current } = useWorkspace();
+  const [params, setParams] = useSearchParams();
   const [images, setImages] = useState<ImageRow[]>([]);
   const [folders, setFolders] = useState<FolderRow[]>([]);
   const [imageFolders, setImageFolders] = useState<Record<string, string[]>>({});
@@ -40,6 +42,18 @@ const Library = () => {
   const [previewId, setPreviewId] = useState<string | null>(null);
   const [editingFolder, setEditingFolder] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
+  const [uploadMode, setUploadMode] = useState<"regular" | "product">(
+    params.get("upload") === "product" ? "product" : "regular"
+  );
+
+  useEffect(() => {
+    if (params.get("upload") === "product") {
+      setUploadMode("product");
+      params.delete("upload");
+      setParams(params, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const load = useCallback(async () => {
     if (!user || !current) { setLoading(false); return; }
