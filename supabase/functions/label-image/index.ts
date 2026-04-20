@@ -50,6 +50,28 @@ Deno.serve(async (req) => {
 
     await admin.from('images').update({ ai_status: 'processing', ai_error: null }).eq('id', body.imageId);
 
+    // Download the image and convert to base64 data URL — Gemini via Lovable AI is more reliable with inline data than remote URLs
+    let dataUrl = body.signedUrl;
+    try {
+      const imgRes = await fetch(body.signedUrl);
+      if (imgRes.ok) {
+        const ct = imgRes.headers.get('content-type') || 'image/jpeg';
+        const buf = new Uint8Array(await imgRes.arrayBuffer());
+        // base64 encode
+        let binary = '';
+        const chunk = 0x8000;
+        for (let i = 0; i < buf.length; i += chunk) {
+          binary += String.fromCharCode.apply(null, Array.from(buf.subarray(i, i + chunk)) as any);
+        }
+        const b64 = btoa(binary);
+        dataUrl = `data:${ct};base64,${b64}`;
+      } else {
+        console.error('failed to download image', imgRes.status);
+      }
+    } catch (e) {
+      console.error('image download error', e);
+    }
+
     const tool = {
       type: 'function',
       function: {
