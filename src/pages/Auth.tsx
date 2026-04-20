@@ -76,49 +76,76 @@ const Auth = () => {
             <span className="font-display text-2xl font-bold text-white">AdRise</span>
           </Link>
           <Card className="p-8">
-            <h1 className="font-display text-2xl font-bold mb-1">
-              {mode === "signup" ? "Create your account" : mode === "forgot" ? "Reset your password" : "Welcome back"}
-            </h1>
-            <p className="text-sm text-muted-foreground mb-6">
-              {mode === "signup" ? "Start generating slideshows in seconds." : mode === "forgot" ? "We'll email you a reset link." : "Log in to your AdRise account."}
-            </p>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@brand.com" />
-              </div>
-              {mode !== "forgot" && (
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="password">Password</Label>
-                    {mode === "login" && (
-                      <button type="button" className="text-xs text-primary hover:underline" onClick={() => setMode("forgot")}>
-                        Forgot password?
-                      </button>
-                    )}
-                  </div>
-                  <Input id="password" type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="At least 6 characters" />
+            {signupSent ? (
+              <div className="text-center space-y-4">
+                <div className="mx-auto w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Mail className="h-7 w-7 text-primary" />
                 </div>
-              )}
-              <Button type="submit" className="w-full shadow-glow" disabled={loading}>
-                {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-                {mode === "signup" ? "Create account" : mode === "forgot" ? "Send reset link" : "Log in"}
-              </Button>
-            </form>
-            <p className="text-sm text-center mt-6 text-muted-foreground">
-              {mode === "forgot" ? (
-                <button type="button" className="text-primary font-medium hover:underline" onClick={() => setMode("login")}>
+                <h1 className="font-display text-2xl font-bold">Check your email</h1>
+                <p className="text-sm text-muted-foreground">
+                  We sent a verification link to <span className="font-medium text-foreground">{email}</span>.
+                  Click the link in that email to activate your account, then come back here to log in.
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Didn't get it? Check your spam folder, or wait a minute and try signing up again.
+                </p>
+                <Button variant="outline" className="w-full" onClick={() => { setSignupSent(false); setMode("login"); }}>
                   Back to log in
-                </button>
-              ) : (
-                <>
-                  {mode === "signup" ? "Already have an account?" : "Don't have an account?"}{" "}
-                  <button type="button" className="text-primary font-medium hover:underline" onClick={() => setMode(mode === "signup" ? "login" : "signup")}>
-                    {mode === "signup" ? "Log in" : "Sign up"}
-                  </button>
-                </>
-              )}
-            </p>
+                </Button>
+              </div>
+            ) : (
+              <>
+                <h1 className="font-display text-2xl font-bold mb-1">
+                  {mode === "signup" ? "Create your account" : mode === "forgot" ? "Reset your password" : "Welcome back"}
+                </h1>
+                <p className="text-sm text-muted-foreground mb-6">
+                  {mode === "signup" ? "Start generating slideshows in seconds." : mode === "forgot" ? "We'll email you a reset link." : "Log in to your AdRise account."}
+                </p>
+                {mode === "signup" && (
+                  <div className="mb-5 flex items-start gap-2 rounded-lg border border-primary/30 bg-primary/5 p-3 text-xs text-foreground/90">
+                    <Mail className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                    <span>After signing up, <strong>check your inbox</strong> for a verification email. You must click that link to activate your account before you can log in.</span>
+                  </div>
+                )}
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@brand.com" />
+                  </div>
+                  {mode !== "forgot" && (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="password">Password</Label>
+                        {mode === "login" && (
+                          <button type="button" className="text-xs text-primary hover:underline" onClick={() => setMode("forgot")}>
+                            Forgot password?
+                          </button>
+                        )}
+                      </div>
+                      <Input id="password" type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="At least 6 characters" />
+                    </div>
+                  )}
+                  <Button type="submit" className="w-full shadow-glow" disabled={loading}>
+                    {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+                    {mode === "signup" ? "Create account" : mode === "forgot" ? "Send reset link" : "Log in"}
+                  </Button>
+                </form>
+                <p className="text-sm text-center mt-6 text-muted-foreground">
+                  {mode === "forgot" ? (
+                    <button type="button" className="text-primary font-medium hover:underline" onClick={() => setMode("login")}>
+                      Back to log in
+                    </button>
+                  ) : (
+                    <>
+                      {mode === "signup" ? "Already have an account?" : "Don't have an account?"}{" "}
+                      <button type="button" className="text-primary font-medium hover:underline" onClick={() => setMode(mode === "signup" ? "login" : "signup")}>
+                        {mode === "signup" ? "Log in" : "Sign up"}
+                      </button>
+                    </>
+                  )}
+                </p>
+              </>
+            )}
           </Card>
           <p className="text-xs text-center mt-6 text-white/60">
             By continuing you agree to our <Link to="/terms" className="underline">Terms</Link> and <Link to="/privacy" className="underline">Privacy Policy</Link>.
