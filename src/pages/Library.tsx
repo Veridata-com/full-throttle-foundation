@@ -276,7 +276,7 @@ const Library = () => {
               </div>
             ) : (
               <div className="divide-y">
-                <div className="grid grid-cols-[auto_1fr_120px_100px_120px] gap-3 px-4 py-2 text-xs uppercase tracking-wider text-muted-foreground bg-muted/30">
+                <div className="grid grid-cols-[auto_1fr_140px_100px_120px] gap-3 px-4 py-2 text-xs uppercase tracking-wider text-muted-foreground bg-muted/30">
                   <span></span><span>Name</span><span>Quality</span><span>Tags</span><span>Date</span>
                 </div>
                 {filtered.map((img) => (
