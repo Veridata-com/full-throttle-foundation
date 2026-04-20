@@ -14,16 +14,218 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      images: {
+        Row: {
+          ai_description: string | null
+          ai_error: string | null
+          ai_palette: Json | null
+          ai_status: string
+          ai_tags: string[] | null
+          created_at: string
+          file_name: string | null
+          height: number | null
+          id: string
+          mime_type: string | null
+          size_bytes: number | null
+          storage_path: string
+          updated_at: string
+          user_id: string
+          width: number | null
+        }
+        Insert: {
+          ai_description?: string | null
+          ai_error?: string | null
+          ai_palette?: Json | null
+          ai_status?: string
+          ai_tags?: string[] | null
+          created_at?: string
+          file_name?: string | null
+          height?: number | null
+          id?: string
+          mime_type?: string | null
+          size_bytes?: number | null
+          storage_path: string
+          updated_at?: string
+          user_id: string
+          width?: number | null
+        }
+        Update: {
+          ai_description?: string | null
+          ai_error?: string | null
+          ai_palette?: Json | null
+          ai_status?: string
+          ai_tags?: string[] | null
+          created_at?: string
+          file_name?: string | null
+          height?: number | null
+          id?: string
+          mime_type?: string | null
+          size_bytes?: number | null
+          storage_path?: string
+          updated_at?: string
+          user_id?: string
+          width?: number | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          brand_voice: string | null
+          created_at: string
+          current_period_end: string | null
+          default_cta: string | null
+          display_name: string | null
+          email: string | null
+          id: string
+          plan: Database["public"]["Enums"]["plan_tier"]
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          target_audience: string | null
+          updated_at: string
+        }
+        Insert: {
+          brand_voice?: string | null
+          created_at?: string
+          current_period_end?: string | null
+          default_cta?: string | null
+          display_name?: string | null
+          email?: string | null
+          id: string
+          plan?: Database["public"]["Enums"]["plan_tier"]
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          target_audience?: string | null
+          updated_at?: string
+        }
+        Update: {
+          brand_voice?: string | null
+          created_at?: string
+          current_period_end?: string | null
+          default_cta?: string | null
+          display_name?: string | null
+          email?: string | null
+          id?: string
+          plan?: Database["public"]["Enums"]["plan_tier"]
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          target_audience?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      slideshows: {
+        Row: {
+          created_at: string
+          cta: string | null
+          generation_error: string | null
+          hook_style: string | null
+          id: string
+          image_ids: string[]
+          slides: Json
+          status: Database["public"]["Enums"]["slideshow_status"]
+          target_audience: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          cta?: string | null
+          generation_error?: string | null
+          hook_style?: string | null
+          id?: string
+          image_ids?: string[]
+          slides?: Json
+          status?: Database["public"]["Enums"]["slideshow_status"]
+          target_audience?: string | null
+          title?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          cta?: string | null
+          generation_error?: string | null
+          hook_style?: string | null
+          id?: string
+          image_ids?: string[]
+          slides?: Json
+          status?: Database["public"]["Enums"]["slideshow_status"]
+          target_audience?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      usage: {
+        Row: {
+          created_at: string
+          id: string
+          images_uploaded: number
+          period_start: string
+          slideshows_generated: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          images_uploaded?: number
+          period_start?: string
+          slideshows_generated?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          images_uploaded?: number
+          period_start?: string
+          slideshows_generated?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "user"
+      plan_tier: "none" | "starter" | "pro"
+      slideshow_status: "draft" | "generating" | "ready" | "failed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +352,10 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "user"],
+      plan_tier: ["none", "starter", "pro"],
+      slideshow_status: ["draft", "generating", "ready", "failed"],
+    },
   },
 } as const
