@@ -8,7 +8,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { UploadCloud, Loader2, FileImage, Search, Folder, FolderOpen, Sparkles, Edit2, Check, X, Package } from "lucide-react";
+import { UploadCloud, Loader2, FileImage, Search, Folder, FolderOpen, Sparkles, Edit2, Check, X, Package, RotateCw, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { SEO } from "@/components/SEO";
 import { ImagePreviewDrawer } from "@/components/ImagePreviewDrawer";
@@ -21,6 +21,7 @@ interface ImageRow {
   ai_status: string;
   ai_description: string | null;
   ai_tags: string[] | null;
+  ai_error: string | null;
   quality: string | null;
   is_product_shot: boolean;
   created_at: string;
@@ -163,6 +164,21 @@ const Library = () => {
     const { error } = await supabase.from("folders").delete().eq("id", f.id);
     if (error) { toast.error(error.message); return; }
     if (activeFolder === f.id) setActiveFolder(null);
+    load();
+  };
+
+  const retryTagging = async (img: ImageRow, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!current) return;
+    await supabase.from("images").update({ ai_status: "pending", ai_error: null }).eq("id", img.id);
+    const { data: signed } = await supabase.storage.from("product-images").createSignedUrl(img.storage_path, 3600);
+    if (!signed?.signedUrl) { toast.error("Could not get image URL"); return; }
+    toast.info("Retrying AI tagging...");
+    const { error } = await supabase.functions.invoke("label-image", {
+      body: { imageId: img.id, signedUrl: signed.signedUrl, workspaceId: current.id },
+    });
+    if (error) toast.error(error.message);
+    else toast.success("Tagging started");
     load();
   };
 
