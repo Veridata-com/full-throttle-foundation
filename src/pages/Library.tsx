@@ -88,25 +88,43 @@ const Library = () => {
   const onDrop = useCallback(async (files: File[]) => {
     if (!user || !current) return;
     setUploading(true);
+    const isProduct = uploadMode === "product";
     try {
+      let productFolderId: string | null = null;
+      if (isProduct) {
+        const { data: sys } = await supabase.from("folders").select("id")
+          .eq("workspace_id", current.id).eq("system", true).maybeSingle();
+        productFolderId = sys?.id || null;
+        if (!productFolderId) {
+          const { data: newF } = await supabase.from("folders").insert({
+            workspace_id: current.id, user_id: user.id, name: "Product slide images", system: true,
+          }).select("id").single();
+          productFolderId = newF?.id || null;
+        }
+      }
+
       for (const file of files) {
         const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
         const path = `${user.id}/${current.id}/${crypto.randomUUID()}.${ext}`;
         const { error: upErr } = await supabase.storage.from("product-images").upload(path, file, { contentType: file.type });
         if (upErr) { toast.error(`${file.name}: ${upErr.message}`); continue; }
         const { data: row } = await supabase.from("images").insert({
-          user_id: user.id, workspace_id: current.id, storage_path: path, file_name: file.name, mime_type: file.type, size_bytes: file.size,
+          user_id: user.id, workspace_id: current.id, storage_path: path, file_name: file.name,
+          mime_type: file.type, size_bytes: file.size, is_product_shot: isProduct,
         }).select().single();
         if (!row) continue;
+        if (isProduct && productFolderId) {
+          await supabase.from("image_folders").insert({ image_id: row.id, folder_id: productFolderId, user_id: user.id });
+        }
         const { data: signed } = await supabase.storage.from("product-images").createSignedUrl(path, 3600);
         if (signed?.signedUrl) {
           supabase.functions.invoke("label-image", { body: { imageId: row.id, signedUrl: signed.signedUrl, workspaceId: current.id } }).catch(() => {});
         }
       }
-      toast.success(`Uploaded ${files.length} file${files.length > 1 ? "s" : ""}`);
+      toast.success(`Uploaded ${files.length} ${isProduct ? "product " : ""}file${files.length > 1 ? "s" : ""}`);
       await load();
     } finally { setUploading(false); }
-  }, [user, current, load]);
+  }, [user, current, load, uploadMode]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop, accept: { "image/*": [".png", ".jpg", ".jpeg", ".webp"] }, maxSize: 10 * 1024 * 1024,
@@ -160,10 +178,20 @@ const Library = () => {
           <p className="text-muted-foreground">Upload, tag, and organize images for {current.name}.</p>
         </header>
 
-        <div {...getRootProps()} className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-colors mb-6 ${isDragActive ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"}`}>
+        <div className="flex gap-2 mb-3">
+          <Button size="sm" variant={uploadMode === "regular" ? "default" : "outline"} onClick={() => setUploadMode("regular")}>
+            <UploadCloud className="h-3.5 w-3.5" /> Regular images
+          </Button>
+          <Button size="sm" variant={uploadMode === "product" ? "default" : "outline"} onClick={() => setUploadMode("product")}>
+            <Package className="h-3.5 w-3.5" /> Product slide images
+          </Button>
+        </div>
+        <div {...getRootProps()} className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-colors mb-6 ${isDragActive ? "border-primary bg-primary/5" : uploadMode === "product" ? "border-primary/60 bg-primary/5" : "border-border hover:border-primary/40"}`}>
           <input {...getInputProps()} />
-          <UploadCloud className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-          <p className="text-sm font-medium">{isDragActive ? "Drop them here" : "Drag or click to upload"}</p>
+          {uploadMode === "product" ? <Package className="h-8 w-8 mx-auto mb-2 text-primary" /> : <UploadCloud className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />}
+          <p className="text-sm font-medium">
+            {isDragActive ? "Drop them here" : uploadMode === "product" ? "Upload product slide images (used as final CTA slide)" : "Drag or click to upload regular images"}
+          </p>
           {uploading && <div className="mt-2 inline-flex items-center gap-2 text-sm text-primary"><Loader2 className="h-4 w-4 animate-spin" /> Uploading...</div>}
         </div>
 
