@@ -37,10 +37,12 @@ Deno.serve(async (req) => {
     const subs = await stripe.subscriptions.list({ customer: customer.id, status: 'active', limit: 1 });
     const sub = subs.data[0];
 
+    // Classify by full monthly price (discounts don't change unit_amount):
+    // Pro = $49 (4900c), Starter = $19 (1900c). Threshold at 3000c safely separates them.
     let plan: 'none' | 'starter' | 'pro' = 'none';
     if (sub) {
       const amount = sub.items.data[0]?.price?.unit_amount || 0;
-      if (amount >= 4000) plan = 'pro';
+      if (amount >= 3000) plan = 'pro';
       else if (amount > 0) plan = 'starter';
     }
 

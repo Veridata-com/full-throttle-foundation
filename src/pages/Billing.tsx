@@ -54,8 +54,8 @@ const Billing = () => {
   };
 
   const plans = [
-    { id: "starter" as const, name: "Starter", price: "7.60", original: "19.00", features: ["1 workspace", "50 slideshows / month", "500 image uploads", "All AI features"] },
-    { id: "pro" as const, name: "Pro", price: "19.60", original: "49.00", popular: true, features: ["5 workspaces", "Unlimited slideshows", "Unlimited uploads", "Priority AI", "Priority support"] },
+    { id: "starter" as const, name: "Starter", price: "7.60", original: "19.00", renewal: "19", features: ["1 workspace", "50 slideshows / month", "500 image uploads", "All AI features"] },
+    { id: "pro" as const, name: "Pro", price: "19.60", original: "49.00", renewal: "49", popular: true, features: ["5 workspaces", "Unlimited slideshows", "Unlimited uploads", "Priority AI", "Priority support"] },
   ];
 
   const currentPlan = profile?.plan || "none";
@@ -95,11 +95,12 @@ const Billing = () => {
                 <h3 className="font-display text-xl font-bold">{p.name}</h3>
                 {currentPlan === p.id && <Badge className="bg-success text-success-foreground">Active</Badge>}
               </div>
-              <div className="mb-4 flex items-baseline gap-2">
+              <div className="mt-2 mb-1 flex items-baseline gap-2">
                 <span className="text-3xl font-bold font-display">${p.price}</span>
                 <span className="text-muted-foreground line-through text-sm">${p.original}</span>
                 <span className="text-muted-foreground text-sm">/mo</span>
               </div>
+              <p className="text-xs text-muted-foreground mb-4">${p.price} first month, then ${p.renewal}/mo</p>
               <ul className="space-y-2 mb-6 text-sm">
                 {p.features.map((f) => <li key={f} className="flex gap-2 items-center"><Check className="h-4 w-4 text-success" />{f}</li>)}
               </ul>

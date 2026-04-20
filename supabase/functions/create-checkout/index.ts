@@ -1,4 +1,4 @@
-// Create a Stripe Checkout session for Starter or Pro plan — 60% launch discount
+// Create a Stripe Checkout session — full price with auto-applied 60% off first month coupon
 import Stripe from "https://esm.sh/stripe@14.21.0?target=deno";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
@@ -7,11 +7,30 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// 60% off launch pricing: $19 -> $7.60 (760c), $49 -> $19.60 (1960c)
+// Full monthly price; coupon `launch60` discounts first invoice by 60%
 const PRICES: Record<string, { amount: number; name: string }> = {
-  starter: { amount: 760, name: 'AdRise Starter — Launch 60% off' },
-  pro:     { amount: 1960, name: 'AdRise Pro — Launch 60% off' },
+  starter: { amount: 1900, name: 'AdRise Starter' },
+  pro:     { amount: 4900, name: 'AdRise Pro' },
 };
+
+const COUPON_ID = 'launch60';
+
+async function ensureLaunchCoupon(stripe: Stripe) {
+  try {
+    await stripe.coupons.retrieve(COUPON_ID);
+  } catch (e: any) {
+    if (e?.statusCode === 404 || e?.code === 'resource_missing') {
+      await stripe.coupons.create({
+        id: COUPON_ID,
+        percent_off: 60,
+        duration: 'once',
+        name: 'Launch 60% off (first month)',
+      });
+    } else {
+      throw e;
+    }
+  }
+}
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
@@ -33,6 +52,8 @@ Deno.serve(async (req) => {
 
     const stripe = new Stripe(stripeKey, { apiVersion: '2024-06-20' });
 
+    await ensureLaunchCoupon(stripe);
+
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
     const customerId = customers.data[0]?.id;
 
@@ -40,7 +61,8 @@ Deno.serve(async (req) => {
       customer: customerId,
       customer_email: customerId ? undefined : user.email,
       mode: 'subscription',
-      allow_promotion_codes: true,
+      allow_promotion_codes: false,
+      discounts: [{ coupon: COUPON_ID }],
       line_items: [{
         price_data: {
           currency: 'usd',
