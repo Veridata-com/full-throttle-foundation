@@ -118,7 +118,13 @@ const Library = () => {
         }
         const { data: signed } = await supabase.storage.from("product-images").createSignedUrl(path, 3600);
         if (signed?.signedUrl) {
-          supabase.functions.invoke("label-image", { body: { imageId: row.id, signedUrl: signed.signedUrl, workspaceId: current.id } }).catch(() => {});
+          supabase.functions.invoke("label-image", { body: { imageId: row.id, signedUrl: signed.signedUrl, workspaceId: current.id } })
+            .then(({ error }) => {
+              if (error) {
+                console.error("label-image invoke failed", error);
+                supabase.from("images").update({ ai_status: "failed", ai_error: error.message || "invoke failed" }).eq("id", row.id).then(() => {});
+              }
+            });
         }
       }
       toast.success(`Uploaded ${files.length} ${isProduct ? "product " : ""}file${files.length > 1 ? "s" : ""}`);
