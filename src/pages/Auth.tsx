@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import { Loader2 } from "lucide-react";
+import { Loader2, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { SEO } from "@/components/SEO";
 import { Logo } from "@/components/Logo";
@@ -20,6 +20,7 @@ const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [signupSent, setSignupSent] = useState(false);
   const navigate = useNavigate();
   const { user } = useAuth();
 
@@ -32,13 +33,19 @@ const Auth = () => {
     setLoading(true);
     try {
       if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email, password,
           options: { emailRedirectTo: `${window.location.origin}/onboarding` },
         });
         if (error) throw error;
-        toast.success("Account created!");
-        navigate("/onboarding");
+        // If email confirmation is required, session will be null
+        if (!data.session) {
+          setSignupSent(true);
+          toast.success("Check your email to verify your account.");
+        } else {
+          toast.success("Account created!");
+          navigate("/onboarding");
+        }
       } else if (mode === "login") {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
