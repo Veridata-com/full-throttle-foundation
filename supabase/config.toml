@@ -1,7 +1,7 @@
 project_id = "ctqiwyifqoufvjxauliz"
 
 [functions.label-image]
-verify_jwt = true
+verify_jwt = false
 
 [functions.generate-slideshow]
 verify_jwt = true
