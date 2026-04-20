@@ -10,11 +10,39 @@ interface Body { slideshowId: string; }
 
 const STORY_STYLES = ['listicle','pov','problem-agitate-solve','comparison','myth-bust','transformation','ugc-testimonial'] as const;
 
-const SYSTEM = `You are a TikTok-native copywriter. Write like a real human. Conversational, punchy, relatable. Never use em-dashes or en-dashes. Use short sentences, line breaks, commas. Scroll-stopping hooks optimized for conversion. Zero corporate voice.`;
+const SYSTEM = `You are a TikTok storyteller who writes captions that stop the scroll because they FEEL like something. You write the way a real person texts a close friend at 1am, reflective, raw, a little vulnerable, sometimes painful, sometimes wise, sometimes wildly curious.
+
+Voice rules, absolute:
+- Sentence case only. Capitalize the first letter of each sentence and proper nouns. Nothing else.
+- NEVER use ALL CAPS. Not for emphasis, not ever.
+- NEVER use bold, italics, asterisks, underscores, or any markdown.
+- NEVER use em-dashes or en-dashes. Use commas, periods, or line breaks instead.
+- NEVER use emoji.
+- Short. Quiet. Confident. Two short sentences max per slide.
+- Use a soft line break (\n) between two thoughts when it makes the pause hit harder.
+- The reader should feel something: ache, recognition, hope, hunger, curiosity, a little sting.
+- Write like the captions on viral late-night walking-shot reels. Reflective. Story-driven. Human.
+
+Examples of the tone you write in (DO NOT copy these, only match the feel):
+"Trading can give you everything you've ever wanted.\nBut only after it teaches you everything you need to learn."
+"Most people quit right before the part that would have changed their life."
+"You don't need motivation. You need to remember why you started."`;
 
 function clean(s: any): string {
   if (typeof s !== 'string') return '';
-  return s.replace(/[—–]/g, ', ').replace(/\s+,/g, ',').replace(/,\s*,/g, ',').trim();
+  let t = s.replace(/[—–]/g, ', ').replace(/\*+/g, '').replace(/_+/g, '').replace(/\s+,/g, ',').replace(/,\s*,/g, ',').trim();
+  // De-shout: any sentence in ALL CAPS gets converted to sentence case.
+  t = t.split('\n').map((line) =>
+    line.split(/(?<=[.!?])\s+/).map((sent) => {
+      const letters = sent.replace(/[^A-Za-z]/g, '');
+      if (letters.length >= 3 && letters === letters.toUpperCase()) {
+        const lower = sent.toLowerCase();
+        return lower.charAt(0).toUpperCase() + lower.slice(1);
+      }
+      return sent;
+    }).join(' ')
+  ).join('\n');
+  return t;
 }
 
 Deno.serve(async (req) => {
@@ -99,12 +127,12 @@ Deno.serve(async (req) => {
       `#${idx} [${i.quality || 'medium'}] ${i.ai_description || i.file_name || 'image'} | tags: ${(i.ai_tags || []).join(', ')}`
     ).join('\n');
 
-    const prompt = `Generate a ${numSlides}-slide TikTok slideshow for:
+    const prompt = `Write a ${numSlides}-slide TikTok storytelling slideshow for:
 
 PRODUCT: ${workspace.name}
 TAGLINE: ${workspace.tagline || '(none)'}
 AUDIENCE: ${workspace.target_audience || 'general'}
-BRAND VOICE: ${workspace.brand_voice || 'punchy, human, TikTok-native'}
+BRAND VOICE: ${workspace.brand_voice || 'reflective, human, story-driven'}
 DEFAULT CTA: ${workspace.default_cta || 'Try it now'}
 
 NARRATIVE STYLE THIS TIME: ${chosenStyle}
@@ -113,13 +141,15 @@ HOOK STYLE: ${slideshow.hook_style || 'curiosity'}
 AVAILABLE IMAGES (pick ${needNonProduct} of these by index, prefer high quality and tag relevance):
 ${imageContext || '(no images, reuse index 0)'}
 
-Rules:
-- Slide 1 = HOOK (scroll-stopper, max 8 words)
-- Middle slides = VALUE props following the ${chosenStyle} narrative (max 14 words each)
-- Final slide = CTA (provided separately, you only output ${needNonProduct} slides here)
-- Each slide: ONE short punchy headline + optional subtext
-- Never use em-dashes or en-dashes
-- Sound human, not corporate`;
+What to write:
+- Each slide gets ONE caption. One short, quiet, story-shaped thought. Two sentences max.
+- Use a single line break (\\n) between sentences when the pause matters.
+- Slide 1 is the HOOK: a curiosity, a wound, a question, a confession. Make them stop scrolling.
+- Middle slides build the story arc following the ${chosenStyle} narrative. Each one should feel like a turn of the page.
+- Final CTA slide is also a caption, not a sales pitch. End on a feeling that makes them want to act.
+- Sentence case only. No ALL CAPS, no bold, no em-dashes, no emoji, no markdown.
+- Aim for the late-night-reel-caption feeling: reflective, a little raw, deeply human.
+- Each caption should be readable in under 3 seconds.`;
 
     const tool = {
       type: 'function',
@@ -135,15 +165,13 @@ Rules:
                 type: 'object',
                 properties: {
                   type: { type: 'string', enum: ['hook', 'value'] },
-                  headline: { type: 'string' },
-                  subtext: { type: 'string' },
+                  headline: { type: 'string', description: 'The full slide caption. One or two short sentences, sentence case, line break between sentences if any.' },
                   image_index: { type: 'number', description: 'Index from AVAILABLE IMAGES list' },
                 },
                 required: ['type', 'headline', 'image_index'],
               },
             },
-            cta_headline: { type: 'string', description: 'Headline for final CTA slide' },
-            cta_subtext: { type: 'string' },
+            cta_headline: { type: 'string', description: 'Caption for final CTA slide. Same storytelling tone, sentence case, no caps, no markdown.' },
           },
           required: ['slides', 'cta_headline'],
         },
@@ -181,8 +209,8 @@ Rules:
     const rawSlides = Array.isArray(parsed.slides) ? parsed.slides.slice(0, needNonProduct) : [];
 
     const defaultLayout = {
-      headline: { x: 540, y: 480, fontSize: 88, color: '#FFFFFF', stroke: '#000000', strokeWidth: 6, fontWeight: 800, textAlign: 'center', maxWidth: 920 },
-      subtext:  { x: 540, y: 720, fontSize: 48, color: '#FFFFFF', stroke: '#000000', strokeWidth: 4, fontWeight: 600, textAlign: 'center', maxWidth: 920 },
+      headline: { x: 540, y: 960, fontSize: 64, color: '#FFFFFF', stroke: '', strokeWidth: 0, fontWeight: 400, textAlign: 'center', maxWidth: 880 },
+      subtext:  { x: 540, y: 1200, fontSize: 40, color: '#FFFFFF', stroke: '', strokeWidth: 0, fontWeight: 400, textAlign: 'center', maxWidth: 880 },
     };
 
     const pickedImageIds: string[] = [];
@@ -193,8 +221,8 @@ Rules:
       return {
         id: crypto.randomUUID(),
         type: s.type || (idx === 0 ? 'hook' : 'value'),
-        headline: clean(s.headline).slice(0, 120),
-        subtext: s.subtext ? clean(s.subtext).slice(0, 200) : null,
+        headline: clean(s.headline).slice(0, 200),
+        subtext: null,
         image_id: pick?.id || null,
         layout: defaultLayout,
       };
@@ -205,8 +233,8 @@ Rules:
     slides.push({
       id: crypto.randomUUID(),
       type: 'cta',
-      headline: clean(parsed.cta_headline || workspace.default_cta || 'Try it now').slice(0, 120),
-      subtext: parsed.cta_subtext ? clean(parsed.cta_subtext).slice(0, 200) : null,
+      headline: clean(parsed.cta_headline || workspace.default_cta || 'Try it now').slice(0, 200),
+      subtext: null,
       image_id: productShot.id,
       layout: defaultLayout,
     });
