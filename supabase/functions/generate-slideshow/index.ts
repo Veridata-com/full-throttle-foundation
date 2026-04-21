@@ -6,7 +6,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-interface Body { slideshowId: string; }
+interface Body { slideshowId: string; image_source?: 'both' | 'own_only'; }
 
 const STORY_STYLES = ['listicle','pov','problem-agitate-solve','comparison','myth-bust','transformation','ugc-testimonial'] as const;
 
@@ -61,7 +61,8 @@ Deno.serve(async (req) => {
     const userId = user?.id;
     if (!userId) return j({ error: 'unauthorized' }, 401);
 
-    const { slideshowId } = (await req.json()) as Body;
+    const body = (await req.json()) as Body;
+    const { slideshowId } = body;
     if (!slideshowId) return j({ error: 'slideshowId required' }, 400);
 
     const admin = createClient(supabaseUrl, serviceKey);
