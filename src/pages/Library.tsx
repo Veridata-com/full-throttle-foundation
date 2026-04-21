@@ -230,6 +230,25 @@ const Library = () => {
           <p className="text-muted-foreground">Upload, tag, and organize images for {current.name}.</p>
         </header>
 
+        {/* Tabs */}
+        <div className="inline-flex items-center gap-2 mb-4">
+          {(["mine", "stock"] as const).map((t) => (
+            <button
+              key={t}
+              onClick={() => setTab(t)}
+              className={cn(
+                "rounded-lg px-4 py-1.5 text-sm font-semibold transition-colors",
+                tab === t
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground hover:text-foreground",
+              )}
+            >
+              {t === "mine" ? "My Images" : "Stock Images"}
+            </button>
+          ))}
+        </div>
+
+        {tab === "mine" ? (<>
         <div className="flex gap-2 mb-3">
           <Button size="sm" variant={uploadMode === "regular" ? "default" : "outline"} onClick={() => setUploadMode("regular")}>
             <UploadCloud className="h-3.5 w-3.5" /> Regular images
