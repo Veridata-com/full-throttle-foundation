@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, CreditCard, Layers, LogOut, KeyRound } from "lucide-react";
 import { toast } from "sonner";
 import { SEO } from "@/components/SEO";
+import { ImageSourceToggle, type ImageSource } from "@/components/ImageSourceToggle";
 
 const Account = () => {
   const { user, profile, refreshProfile, signOut } = useAuth();
@@ -18,8 +19,13 @@ const Account = () => {
   const [pwd, setPwd] = useState("");
   const [pwd2, setPwd2] = useState("");
   const [pwdSaving, setPwdSaving] = useState(false);
+  const [imageSource, setImageSource] = useState<ImageSource>("both");
+  const [prefSaving, setPrefSaving] = useState(false);
 
-  useEffect(() => { setDisplayName(profile?.display_name || ""); }, [profile]);
+  useEffect(() => {
+    setDisplayName(profile?.display_name || "");
+    setImageSource((profile?.default_image_source as ImageSource) || "both");
+  }, [profile]);
 
   const save = async () => {
     if (!user) return;
