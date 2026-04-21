@@ -617,11 +617,9 @@ const SlideshowEditor = () => {
 
             {/* Canvas area */}
             <main className="flex-1 min-h-0 flex flex-col" style={{ background: C.bg }}>
-              <div ref={stageRef} className="flex-1 flex items-center justify-center overflow-hidden" style={{ padding: 8 }}>
-                <div style={{ position: "relative" }}>
-                  <div ref={wrapperRef} style={{ width: CANVAS_W, height: CANVAS_H, position: "relative" }}>
-                    <canvas ref={canvasRef} id="fabric-canvas" />
-                  </div>
+              <div ref={stageRef} className="flex-1 min-h-0 flex items-center justify-center overflow-hidden" style={{ padding: 8 }}>
+                <div ref={wrapperRef} style={{ position: "relative" }}>
+                  <canvas ref={canvasRef} id="fabric-canvas" />
                 </div>
               </div>
             </main>
