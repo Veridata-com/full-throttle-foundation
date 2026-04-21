@@ -110,12 +110,36 @@ Deno.serve(async (req) => {
       .eq('workspace_id', workspace.id)
       .eq('ai_status', 'done');
 
-    const nonProduct = (allImages || []).filter((i: any) => !i.is_product_shot);
+    const userNonProduct = (allImages || []).filter((i: any) => !i.is_product_shot)
+      .map((i: any) => ({ ...i, is_stock: false, public_url: null }));
     const productShots = (allImages || []).filter((i: any) => i.is_product_shot);
 
     if (productShots.length === 0) {
       await admin.from('slideshows').update({ status: 'failed', generation_error: 'No product shot in workspace. Upload at least one in "Product slide images".' }).eq('id', slideshowId);
       return j({ error: 'no_product_shot' }, 400);
+    }
+
+    // Optionally pull stock images from the platform library
+    let stockNonProduct: any[] = [];
+    if (imageSource === 'both') {
+      const { data: stock } = await admin.from('stock_images').select('id, ai_description, ai_tags, public_url, category');
+      stockNonProduct = (stock || []).map((s: any) => ({
+        id: s.id,
+        ai_description: s.ai_description,
+        ai_tags: s.ai_tags || [],
+        quality: 'medium',
+        is_product_shot: false,
+        file_name: s.category,
+        is_stock: true,
+        public_url: s.public_url,
+      }));
+    }
+
+    const nonProduct = [...userNonProduct, ...stockNonProduct];
+
+    if (nonProduct.length === 0) {
+      await admin.from('slideshows').update({ status: 'failed', generation_error: 'No images available. Upload images or enable stock images.' }).eq('id', slideshowId);
+      return j({ error: 'no_images' }, 400);
     }
 
     const qualityRank = (q: string) => q === 'high' ? 3 : q === 'medium' ? 2 : q === 'low' ? 1 : 2;
