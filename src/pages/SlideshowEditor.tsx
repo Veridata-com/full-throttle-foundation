@@ -158,15 +158,19 @@ const SlideshowEditor = () => {
       setSlideshow(ss);
       setTitle(ss.title || "Untitled");
       const ids: string[] = ss.image_ids || [];
+      const map: Record<string, string> = {};
       if (ids.length) {
         const { data: imgs } = await supabase.from("images").select("id, storage_path").in("id", ids);
-        const map: Record<string, string> = {};
         await Promise.all((imgs || []).map(async (i: any) => {
           const { data } = await supabase.storage.from("product-images").createSignedUrl(i.storage_path, 3600);
           if (data?.signedUrl) map[i.id] = data.signedUrl;
         }));
-        setImageMap(map);
       }
+      // Stock-image slides carry their own public URL — index by slide id
+      ((ss.slides as any[]) || []).forEach((s: any) => {
+        if (s.image_url) map[`stock:${s.id}`] = s.image_url;
+      });
+      setImageMap(map);
       setLoading(false);
     })();
   }, [user, id, navigate]);
