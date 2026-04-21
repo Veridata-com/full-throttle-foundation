@@ -49,6 +49,16 @@ const Account = () => {
     toast.success("Password updated");
   };
 
+  const savePreference = async () => {
+    if (!user) return;
+    setPrefSaving(true);
+    const { error } = await supabase.from("profiles").update({ default_image_source: imageSource } as any).eq("id", user.id);
+    setPrefSaving(false);
+    if (error) { toast.error(error.message); return; }
+    await refreshProfile();
+    toast.success("Preference saved");
+  };
+
   return (
     <>
       <SEO title="Account" description="Manage your AdRise account." />
