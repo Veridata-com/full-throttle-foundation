@@ -168,6 +168,7 @@ export type Database = {
           created_at: string
           current_period_end: string | null
           default_cta: string | null
+          default_image_source: string
           display_name: string | null
           email: string | null
           id: string
@@ -182,6 +183,7 @@ export type Database = {
           created_at?: string
           current_period_end?: string | null
           default_cta?: string | null
+          default_image_source?: string
           display_name?: string | null
           email?: string | null
           id: string
@@ -196,6 +198,7 @@ export type Database = {
           created_at?: string
           current_period_end?: string | null
           default_cta?: string | null
+          default_image_source?: string
           display_name?: string | null
           email?: string | null
           id?: string
@@ -265,6 +268,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      stock_images: {
+        Row: {
+          ai_description: string
+          ai_tags: string[]
+          category: string
+          created_at: string
+          filename: string
+          id: string
+          public_url: string
+          storage_path: string
+        }
+        Insert: {
+          ai_description?: string
+          ai_tags?: string[]
+          category?: string
+          created_at?: string
+          filename: string
+          id?: string
+          public_url: string
+          storage_path: string
+        }
+        Update: {
+          ai_description?: string
+          ai_tags?: string[]
+          category?: string
+          created_at?: string
+          filename?: string
+          id?: string
+          public_url?: string
+          storage_path?: string
+        }
+        Relationships: []
       }
       usage: {
         Row: {

@@ -6,7 +6,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-interface Body { slideshowId: string; }
+interface Body { slideshowId: string; image_source?: 'both' | 'own_only'; }
 
 const STORY_STYLES = ['listicle','pov','problem-agitate-solve','comparison','myth-bust','transformation','ugc-testimonial'] as const;
 
@@ -61,7 +61,8 @@ Deno.serve(async (req) => {
     const userId = user?.id;
     if (!userId) return j({ error: 'unauthorized' }, 401);
 
-    const { slideshowId } = (await req.json()) as Body;
+    const body = (await req.json()) as Body;
+    const { slideshowId } = body;
     if (!slideshowId) return j({ error: 'slideshowId required' }, 400);
 
     const admin = createClient(supabaseUrl, serviceKey);
@@ -71,8 +72,10 @@ Deno.serve(async (req) => {
     if (ssErr || !slideshow || slideshow.user_id !== userId) return j({ error: 'forbidden' }, 403);
     if (!slideshow.workspace_id) return j({ error: 'workspace_required' }, 400);
 
-    const { data: profile } = await admin.from('profiles').select('plan').eq('id', userId).single();
+    const { data: profile } = await admin.from('profiles').select('plan, default_image_source').eq('id', userId).single();
     if (!profile || profile.plan === 'none') return j({ error: 'plan_required' }, 402);
+
+    const imageSource: 'both' | 'own_only' = body.image_source || (profile as any).default_image_source || 'both';
 
     if (profile.plan === 'starter') {
       const periodStart = new Date(); periodStart.setDate(1);
@@ -107,12 +110,36 @@ Deno.serve(async (req) => {
       .eq('workspace_id', workspace.id)
       .eq('ai_status', 'done');
 
-    const nonProduct = (allImages || []).filter((i: any) => !i.is_product_shot);
+    const userNonProduct = (allImages || []).filter((i: any) => !i.is_product_shot)
+      .map((i: any) => ({ ...i, is_stock: false, public_url: null }));
     const productShots = (allImages || []).filter((i: any) => i.is_product_shot);
 
     if (productShots.length === 0) {
       await admin.from('slideshows').update({ status: 'failed', generation_error: 'No product shot in workspace. Upload at least one in "Product slide images".' }).eq('id', slideshowId);
       return j({ error: 'no_product_shot' }, 400);
+    }
+
+    // Optionally pull stock images from the platform library
+    let stockNonProduct: any[] = [];
+    if (imageSource === 'both') {
+      const { data: stock } = await admin.from('stock_images').select('id, ai_description, ai_tags, public_url, category');
+      stockNonProduct = (stock || []).map((s: any) => ({
+        id: s.id,
+        ai_description: s.ai_description,
+        ai_tags: s.ai_tags || [],
+        quality: 'medium',
+        is_product_shot: false,
+        file_name: s.category,
+        is_stock: true,
+        public_url: s.public_url,
+      }));
+    }
+
+    const nonProduct = [...userNonProduct, ...stockNonProduct];
+
+    if (nonProduct.length === 0) {
+      await admin.from('slideshows').update({ status: 'failed', generation_error: 'No images available. Upload images or enable stock images.' }).eq('id', slideshowId);
+      return j({ error: 'no_images' }, 400);
     }
 
     const qualityRank = (q: string) => q === 'high' ? 3 : q === 'medium' ? 2 : q === 'low' ? 1 : 2;
@@ -209,23 +236,28 @@ What to write:
     const slides = rawSlides.map((s: any, idx: number) => {
       const imgIdx = typeof s.image_index === 'number' ? s.image_index : idx;
       const pick = nonProduct[Math.min(Math.max(imgIdx, 0), nonProduct.length - 1)] || nonProduct[0];
-      if (pick) pickedImageIds.push(pick.id);
+      // Only track user-image IDs in the slideshow's image_ids array (used for editor lookup)
+      if (pick && !pick.is_stock) pickedImageIds.push(pick.id);
       return {
         id: crypto.randomUUID(),
         type: s.type || (idx === 0 ? 'hook' : 'value'),
         text: clean(s.text).slice(0, 400),
-        image_id: pick?.id || null,
+        image_id: pick && !pick.is_stock ? pick.id : null,
+        image_url: pick?.is_stock ? pick.public_url : null,
+        is_stock: !!pick?.is_stock,
         fabric_state: null,
       };
     });
 
-    // Append final CTA slide using a product shot
+    // Append final CTA slide using a product shot (always a user image)
     const productShot = productShots[Math.floor(Math.random() * productShots.length)];
     slides.push({
       id: crypto.randomUUID(),
       type: 'cta',
       text: clean(parsed.cta_text || workspace.default_cta || 'try it now').slice(0, 400),
       image_id: productShot.id,
+      image_url: null,
+      is_stock: false,
       fabric_state: null,
     });
 

@@ -13,6 +13,18 @@ import { toast } from "sonner";
 import { SEO } from "@/components/SEO";
 import { ImagePreviewDrawer } from "@/components/ImagePreviewDrawer";
 import { Link } from "react-router-dom";
+import { cn } from "@/lib/utils";
+
+interface StockImage {
+  id: string;
+  filename: string;
+  public_url: string;
+  ai_description: string;
+  ai_tags: string[] | null;
+  category: string;
+}
+
+const STOCK_CATEGORIES = ["all", "workspace", "lifestyle", "money", "tech", "minimal", "people"] as const;
 
 interface ImageRow {
   id: string;
@@ -46,6 +58,24 @@ const Library = () => {
   const [uploadMode, setUploadMode] = useState<"regular" | "product">(
     params.get("upload") === "product" ? "product" : "regular"
   );
+  const [tab, setTab] = useState<"mine" | "stock">("mine");
+  const [stockImages, setStockImages] = useState<StockImage[]>([]);
+  const [stockCategory, setStockCategory] = useState<string>("all");
+  const [stockLoading, setStockLoading] = useState(false);
+
+  useEffect(() => {
+    if (tab !== "stock") return;
+    setStockLoading(true);
+    supabase
+      .from("stock_images" as any)
+      .select("id, filename, public_url, ai_description, ai_tags, category")
+      .order("created_at", { ascending: false })
+      .then(({ data, error }) => {
+        if (error) console.error(error);
+        setStockImages((data as any) || []);
+        setStockLoading(false);
+      });
+  }, [tab]);
 
   useEffect(() => {
     if (params.get("upload") === "product") {
@@ -200,6 +230,25 @@ const Library = () => {
           <p className="text-muted-foreground">Upload, tag, and organize images for {current.name}.</p>
         </header>
 
+        {/* Tabs */}
+        <div className="inline-flex items-center gap-2 mb-4">
+          {(["mine", "stock"] as const).map((t) => (
+            <button
+              key={t}
+              onClick={() => setTab(t)}
+              className={cn(
+                "rounded-lg px-4 py-1.5 text-sm font-semibold transition-colors",
+                tab === t
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground hover:text-foreground",
+              )}
+            >
+              {t === "mine" ? "My Images" : "Stock Images"}
+            </button>
+          ))}
+        </div>
+
+        {tab === "mine" ? (<>
         <div className="flex gap-2 mb-3">
           <Button size="sm" variant={uploadMode === "regular" ? "default" : "outline"} onClick={() => setUploadMode("regular")}>
             <UploadCloud className="h-3.5 w-3.5" /> Regular images
@@ -319,6 +368,56 @@ const Library = () => {
             )}
           </Card>
         </div>
+        </>) : (
+          <>
+            {/* Category filter pills */}
+            <div className="flex flex-wrap gap-2 mb-4">
+              {STOCK_CATEGORIES.map((c) => (
+                <button
+                  key={c}
+                  onClick={() => setStockCategory(c)}
+                  className={cn(
+                    "rounded-lg px-3 py-1 text-xs font-semibold capitalize transition-colors border",
+                    stockCategory === c
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "bg-muted text-muted-foreground border-border hover:text-foreground",
+                  )}
+                >
+                  {c}
+                </button>
+              ))}
+            </div>
+
+            <Card className="shadow-card p-4">
+              {stockLoading ? (
+                <div className="text-center py-12"><Loader2 className="h-6 w-6 animate-spin mx-auto" /></div>
+              ) : (() => {
+                const list = stockImages.filter((s) => stockCategory === "all" || s.category === stockCategory);
+                if (list.length === 0) {
+                  return (
+                    <div className="text-center py-16 text-muted-foreground text-sm">
+                      No stock images yet — your founder hasn't uploaded any to this category.
+                    </div>
+                  );
+                }
+                return (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                    {list.map((s) => (
+                      <div key={s.id} className="group relative rounded-lg overflow-hidden border border-border bg-muted/30 aspect-[3/4]">
+                        <img src={s.public_url} alt={s.ai_description} loading="lazy" className="w-full h-full object-cover" />
+                        <span className="absolute top-1.5 right-1.5 text-[10px] font-medium bg-background/80 text-muted-foreground border border-border rounded px-1.5 py-0.5 backdrop-blur">Stock</span>
+                        <div className="absolute inset-x-0 bottom-0 p-2 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+                          <p className="text-[11px] text-white line-clamp-2">{s.ai_description}</p>
+                          <span className="inline-block mt-1 text-[9px] font-semibold uppercase tracking-wider text-white/70">{s.category}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
+            </Card>
+          </>
+        )}
       </div>
 
       <ImagePreviewDrawer imageId={previewId} onClose={() => setPreviewId(null)} onChanged={load} />

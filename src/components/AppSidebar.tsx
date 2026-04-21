@@ -7,6 +7,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
+import { UsageWidgetCompact } from "@/components/UsageWidget";
 
 const items = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
@@ -58,11 +59,14 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-sidebar-border">
-        <Button variant="ghost" size="sm" className="justify-start text-sidebar-foreground hover:bg-sidebar-accent" onClick={handleSignOut}>
-          <LogOut className="h-4 w-4" />
-          {!collapsed && <span className="ml-2">Sign out</span>}
-        </Button>
+      <SidebarFooter className="border-t border-sidebar-border p-0">
+        {!collapsed && <UsageWidgetCompact />}
+        <div className="p-2">
+          <Button variant="ghost" size="sm" className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent" onClick={handleSignOut}>
+            <LogOut className="h-4 w-4" />
+            {!collapsed && <span className="ml-2">Sign out</span>}
+          </Button>
+        </div>
       </SidebarFooter>
     </Sidebar>
   );

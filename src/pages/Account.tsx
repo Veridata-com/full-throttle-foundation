@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, CreditCard, Layers, LogOut, KeyRound } from "lucide-react";
 import { toast } from "sonner";
 import { SEO } from "@/components/SEO";
+import { ImageSourceToggle, type ImageSource } from "@/components/ImageSourceToggle";
 
 const Account = () => {
   const { user, profile, refreshProfile, signOut } = useAuth();
@@ -18,8 +19,13 @@ const Account = () => {
   const [pwd, setPwd] = useState("");
   const [pwd2, setPwd2] = useState("");
   const [pwdSaving, setPwdSaving] = useState(false);
+  const [imageSource, setImageSource] = useState<ImageSource>("both");
+  const [prefSaving, setPrefSaving] = useState(false);
 
-  useEffect(() => { setDisplayName(profile?.display_name || ""); }, [profile]);
+  useEffect(() => {
+    setDisplayName(profile?.display_name || "");
+    setImageSource((profile?.default_image_source as ImageSource) || "both");
+  }, [profile]);
 
   const save = async () => {
     if (!user) return;
@@ -41,6 +47,16 @@ const Account = () => {
     if (error) { toast.error(error.message); return; }
     setPwd(""); setPwd2("");
     toast.success("Password updated");
+  };
+
+  const savePreference = async () => {
+    if (!user) return;
+    setPrefSaving(true);
+    const { error } = await supabase.from("profiles").update({ default_image_source: imageSource } as any).eq("id", user.id);
+    setPrefSaving(false);
+    if (error) { toast.error(error.message); return; }
+    await refreshProfile();
+    toast.success("Preference saved");
   };
 
   return (
@@ -86,6 +102,19 @@ const Account = () => {
               {pwdSaving && <Loader2 className="h-4 w-4 animate-spin" />} Update password
             </Button>
           </form>
+        </Card>
+
+        <Card className="p-6 shadow-card mb-4 space-y-3">
+          <div>
+            <h2 className="text-[15px] font-semibold">Default image source</h2>
+            <p className="text-[13px] text-muted-foreground">Choose whether AI slideshows use stock images by default.</p>
+          </div>
+          <ImageSourceToggle value={imageSource} onChange={setImageSource} />
+          <div>
+            <Button size="sm" onClick={savePreference} disabled={prefSaving || imageSource === ((profile?.default_image_source as ImageSource) || "both")}>
+              {prefSaving && <Loader2 className="h-4 w-4 animate-spin" />} Save preference
+            </Button>
+          </div>
         </Card>
 
         <Card className="p-6 shadow-card mb-4">

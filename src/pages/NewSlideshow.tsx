@@ -11,15 +11,22 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Loader2, Sparkles, Upload, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { SEO } from "@/components/SEO";
+import { ImageSourceToggle, type ImageSource } from "@/components/ImageSourceToggle";
 
 const NewSlideshow = () => {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const { current } = useWorkspace();
   const navigate = useNavigate();
   const [numSlides, setNumSlides] = useState(6);
   const [hookStyle, setHookStyle] = useState("curiosity");
   const [loading, setLoading] = useState(false);
   const [productCount, setProductCount] = useState<number | null>(null);
+  const [imageSource, setImageSource] = useState<ImageSource>("both");
+  const [noImagesErr, setNoImagesErr] = useState(false);
+
+  useEffect(() => {
+    setImageSource((profile?.default_image_source as ImageSource) || "both");
+  }, [profile]);
 
   useEffect(() => {
     if (!current) return;
@@ -71,13 +78,14 @@ const NewSlideshow = () => {
       }).select().single();
       if (error) throw error;
 
-      const { error: fnErr, data: fnData } = await supabase.functions.invoke("generate-slideshow", { body: { slideshowId: ss.id } });
+      const { error: fnErr, data: fnData } = await supabase.functions.invoke("generate-slideshow", { body: { slideshowId: ss.id, image_source: imageSource } });
       if (fnErr) throw fnErr;
       const err = (fnData as any)?.error;
       if (err) {
         if (err === "plan_required") { toast.error("Active plan required."); navigate("/billing"); return; }
         if (err === "quota_exceeded") { toast.error("Starter monthly limit reached. Upgrade to Pro."); navigate("/billing"); return; }
         if (err === "no_product_shot") { toast.error("Upload a product image in workspace settings."); return; }
+        if (err === "no_images") { setNoImagesErr(true); return; }
         if (err === "rate_limit") { toast.error("Rate limited, try again in a moment."); return; }
         if (err === "payment_required") { toast.error("AI credits needed. Add credits in Lovable workspace."); return; }
         if (err === "cost_cap_reached") { toast.error("Monthly AI cost cap reached for your plan. Resets next month."); return; }
@@ -122,6 +130,24 @@ const NewSlideshow = () => {
               </SelectContent>
             </Select>
           </div>
+
+          <div className="space-y-2">
+            <Label>Image source</Label>
+            <ImageSourceToggle value={imageSource} onChange={(v) => { setImageSource(v); setNoImagesErr(false); }} />
+            <p className="text-xs text-muted-foreground">
+              Stock + Mine uses AdRise's curated library alongside your uploads for more variety.
+            </p>
+          </div>
+
+          {noImagesErr && (
+            <div className="rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive flex items-start gap-2">
+              <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+              <span>
+                You have no uploaded images yet. Switch to "Stock + Mine" or{" "}
+                <Link to="/library" className="underline font-medium">upload images in your library</Link>.
+              </span>
+            </div>
+          )}
 
           <Button className="w-full shadow-glow" onClick={generate} disabled={loading} size="lg">
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}

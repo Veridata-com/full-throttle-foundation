@@ -16,7 +16,9 @@ interface Slide {
   // legacy fields (read for back-compat, no longer written)
   headline?: string;
   subtext?: string | null;
-  image_id: string;
+  image_id: string | null;
+  image_url?: string | null;
+  is_stock?: boolean;
   layout?: any;
   fabric_state?: any;
 }
@@ -156,15 +158,19 @@ const SlideshowEditor = () => {
       setSlideshow(ss);
       setTitle(ss.title || "Untitled");
       const ids: string[] = ss.image_ids || [];
+      const map: Record<string, string> = {};
       if (ids.length) {
         const { data: imgs } = await supabase.from("images").select("id, storage_path").in("id", ids);
-        const map: Record<string, string> = {};
         await Promise.all((imgs || []).map(async (i: any) => {
           const { data } = await supabase.storage.from("product-images").createSignedUrl(i.storage_path, 3600);
           if (data?.signedUrl) map[i.id] = data.signedUrl;
         }));
-        setImageMap(map);
       }
+      // Stock-image slides carry their own public URL — index by slide id
+      ((ss.slides as any[]) || []).forEach((s: any) => {
+        if (s.image_url) map[`stock:${s.id}`] = s.image_url;
+      });
+      setImageMap(map);
       setLoading(false);
     })();
   }, [user, id, navigate]);
@@ -211,7 +217,7 @@ const SlideshowEditor = () => {
     let disposed = false;
 
     // Load background image (cover)
-    const url = imageMapRef.current[active.image_id];
+    const url = active.image_url || (active.image_id ? imageMapRef.current[active.image_id] : imageMapRef.current[`stock:${active.id}`]);
     if (url) {
       fabric.Image.fromURL(
         url,
@@ -435,7 +441,7 @@ const SlideshowEditor = () => {
         off.clear();
         off.backgroundColor = "#1a1a1a";
 
-        const url = imageMap[slide.image_id];
+        const url = slide.image_url || (slide.image_id ? imageMap[slide.image_id] : imageMap[`stock:${slide.id}`]);
         if (url) {
           await new Promise<void>((resolve) => {
             fabric.Image.fromURL(url, (img) => {
