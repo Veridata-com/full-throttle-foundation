@@ -104,6 +104,19 @@ const Account = () => {
           </form>
         </Card>
 
+        <Card className="p-6 shadow-card mb-4 space-y-3">
+          <div>
+            <h2 className="text-[15px] font-semibold">Default image source</h2>
+            <p className="text-[13px] text-muted-foreground">Choose whether AI slideshows use stock images by default.</p>
+          </div>
+          <ImageSourceToggle value={imageSource} onChange={setImageSource} />
+          <div>
+            <Button size="sm" onClick={savePreference} disabled={prefSaving || imageSource === ((profile?.default_image_source as ImageSource) || "both")}>
+              {prefSaving && <Loader2 className="h-4 w-4 animate-spin" />} Save preference
+            </Button>
+          </div>
+        </Card>
+
         <Card className="p-6 shadow-card mb-4">
           <div className="flex items-center justify-between">
             <div>
