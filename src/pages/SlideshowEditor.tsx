@@ -4,9 +4,10 @@ import { fabric } from "fabric";
 import JSZip from "jszip";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { Loader2, Download, Save, ArrowLeft, Image as ImageIcon, Plus, RotateCcw } from "lucide-react";
+import { Loader2, Download, Save, ArrowLeft, Image as ImageIcon, Plus, RotateCcw, Type, Palette, Sliders, X } from "lucide-react";
 import { toast } from "sonner";
 import { SEO } from "@/components/SEO";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface Slide {
   id: string;
