@@ -372,7 +372,9 @@ const SlideshowEditor = () => {
     setSlideText(v);
     const c = fabricRef.current; if (!c) return;
     const t = findTextObject(c); if (!t) return;
-    t.set("text", v); c.renderAll();
+    t.set("text", v);
+    if (renderThrottleRef.current) clearTimeout(renderThrottleRef.current);
+    renderThrottleRef.current = setTimeout(() => { c.requestRenderAll(); }, 50);
   };
   const onSizeChange = (v: number) => {
     setFontSize(v);
