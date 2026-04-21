@@ -933,6 +933,8 @@ const SlideshowEditor = () => {
             </div>
           </>
         )}
+      </div>
+    </>
   );
 };
 
