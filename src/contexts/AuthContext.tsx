@@ -10,6 +10,7 @@ interface Profile {
   brand_voice: string | null;
   target_audience: string | null;
   default_cta: string | null;
+  default_image_source: "both" | "own_only";
 }
 
 interface AuthContextValue {
