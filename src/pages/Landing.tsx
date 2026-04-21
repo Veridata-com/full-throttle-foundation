@@ -6,6 +6,9 @@ import { SEO } from "@/components/SEO";
 import { useAuth } from "@/contexts/AuthContext";
 import { CountdownBanner } from "@/components/CountdownBanner";
 import { Logo } from "@/components/Logo";
+import featureLibrary from "@/assets/feature-library.png";
+import featureEditor from "@/assets/feature-editor.png";
+import featureExport from "@/assets/feature-export.png";
 
 const Landing = () => {
   const { user, signOut } = useAuth();
@@ -60,16 +63,19 @@ const Landing = () => {
         <section className="container py-20 border-t">
           <div className="grid md:grid-cols-3 gap-6">
             {[
-              { icon: ImageIcon, title: "Smart image library", desc: "Upload once. AI auto-tags and sorts every image so you can find it fast." },
-              { icon: Wand2, title: "AI writes the script", desc: "Hooks, value props, and CTAs. Tuned for TikTok-native, human voice." },
-              { icon: Download, title: "Export & post", desc: "1080x1920 PNGs, zipped and ready for TikTok, Reels, or Shorts." },
+              { icon: ImageIcon, title: "Smart image library", desc: "Upload once. AI auto-tags and sorts every image so you can find it fast.", img: featureLibrary, alt: "AdRise image library with auto-tagged folders" },
+              { icon: Wand2, title: "AI writes the script", desc: "Hooks, value props, and CTAs. Tuned for TikTok-native, human voice.", img: featureEditor, alt: "AdRise slideshow editor with AI-generated TikTok hook" },
+              { icon: Download, title: "Export & post", desc: "1080x1920 PNGs, zipped and ready for TikTok, Reels, or Shorts.", img: featureExport, alt: "Exported AdRise slideshow ZIP file ready to post" },
             ].map((f) => (
-              <Card key={f.title} className="p-8 shadow-card border-2 hover:border-primary/30 transition-colors">
+              <Card key={f.title} className="p-6 shadow-card border-2 hover:border-primary/30 transition-colors flex flex-col">
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-primary shadow-glow mb-4">
                   <f.icon className="h-5 w-5 text-primary-foreground" />
                 </div>
                 <h3 className="font-display text-xl font-bold mb-2">{f.title}</h3>
-                <p className="text-muted-foreground">{f.desc}</p>
+                <p className="text-muted-foreground mb-5">{f.desc}</p>
+                <div className="mt-auto rounded-lg overflow-hidden border bg-muted/30">
+                  <img src={f.img} alt={f.alt} loading="lazy" className="w-full h-48 object-cover object-top" />
+                </div>
               </Card>
             ))}
           </div>
