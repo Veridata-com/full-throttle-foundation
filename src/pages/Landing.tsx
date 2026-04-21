@@ -49,7 +49,7 @@ const Landing = () => {
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center animate-fade-in">
             <Button size="lg" className="text-base h-12 px-8 shadow-glow" asChild>
-              <Link to="/auth?mode=signup">Start creating free <ArrowRight className="ml-1 h-4 w-4" /></Link>
+              <Link to="/auth?mode=signup">Start creating <ArrowRight className="ml-1 h-4 w-4" /></Link>
             </Button>
             <Button size="lg" variant="outline" className="text-base h-12 px-8" asChild>
               <a href="#pricing">See pricing</a>

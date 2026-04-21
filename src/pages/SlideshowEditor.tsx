@@ -247,7 +247,7 @@ const SlideshowEditor = () => {
             fabricRef.current!.add(o);
           });
           const t = findTextObject(fabricRef.current);
-          if (t) { setSlideText(t.text || ""); setFontSize(Math.round((t.fontSize as number) || 80)); }
+          if (t) { setSlideText(t.text || ""); setFontSize(Math.round((t.fontSize as number) || 46)); }
           fabricRef.current.renderAll();
         }, "fabric");
       } else {
@@ -399,18 +399,18 @@ const SlideshowEditor = () => {
 
   const addTextBlock = () => {
     const c = fabricRef.current; if (!c) return;
-    const t = buildText("new text block", { top: CANVAS_H / 2, fontSize: 72 });
+    const t = buildText("new text block", { top: CANVAS_H / 2, fontSize: 46 });
     c.add(t); c.setActiveObject(t); c.renderAll();
-    setHasSelection(true); setSlideText("new text block"); setFontSize(72); setFill("#FFFFFF"); setStroke("#000000");
+    setHasSelection(true); setSlideText("new text block"); setFontSize(46); setFill("#FFFFFF"); setStroke("#000000");
   };
 
   const resetStyle = () => {
     const c = fabricRef.current; if (!c) return;
     const t = (c.getActiveObject() as fabric.IText | undefined) || findTextObject(c);
     if (!t) return;
-    t.set({ fontSize: 80, fill: "#FFFFFF", stroke: "#000000", strokeWidth: 10, scaleX: 1, scaleY: 1, fontFamily: MEME_FONT, fontWeight: "900" } as any);
+    t.set({ fontSize: 46, fill: "#FFFFFF", stroke: "#000000", strokeWidth: 10, scaleX: 1, scaleY: 1, fontFamily: MEME_FONT, fontWeight: "900" } as any);
     c.renderAll();
-    setFontSize(80); setFill("#FFFFFF"); setStroke("#000000");
+    setFontSize(46); setFill("#FFFFFF"); setStroke("#000000");
   };
 
   const downloadPNG = async () => {
