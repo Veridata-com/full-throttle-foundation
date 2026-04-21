@@ -254,11 +254,13 @@ const SlideshowEditor = () => {
           fabricRef.current.renderAll();
         }, "fabric");
       } else {
-        const txt = slideToText(active);
-        const t = buildText(txt);
+        const raw = slideToText(active);
+        const wrapped = wrapTextToMaxChars(raw);
+        const fs = calculateOptimalFontSize(wrapped);
+        const t = buildText(wrapped, { fontSize: fs, wrap: false });
         canvas.add(t);
-        setSlideText(txt);
-        setFontSize(80);
+        setSlideText(wrapped);
+        setFontSize(fs);
         canvas.renderAll();
       }
     };
@@ -268,6 +270,19 @@ const SlideshowEditor = () => {
     canvas.on("selection:created", (e: any) => syncInspectorFrom(e.selected?.[0]));
     canvas.on("selection:updated", (e: any) => syncInspectorFrom(e.selected?.[0]));
     canvas.on("selection:cleared", () => setHasSelection(false));
+
+    // Disable shadow during inline editing — biggest perf killer per keystroke.
+    canvas.on("text:editing:entered", (e: any) => {
+      const t = e.target; if (!t) return;
+      (t as any)._savedShadow = t.shadow;
+      t.set("shadow", null);
+      canvas.requestRenderAll();
+    });
+    canvas.on("text:editing:exited", (e: any) => {
+      const t = e.target; if (!t) return;
+      t.set("shadow", (t as any)._savedShadow || makeShadow());
+      canvas.requestRenderAll();
+    });
 
     return () => {
       disposed = true;
