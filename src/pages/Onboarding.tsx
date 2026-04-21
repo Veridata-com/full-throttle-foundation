@@ -23,7 +23,7 @@ const Onboarding = () => {
       if (data?.url) window.location.href = data.url;
       else throw new Error(data?.error || "Could not create checkout");
     } catch (err: any) {
-      toast.error(err.message || "Could not start checkout. You can still use the dev bypass below.");
+      toast.error(err.message || "Could not start checkout. Please try again.");
       setLoading(null);
     }
   };
