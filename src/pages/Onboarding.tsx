@@ -1,13 +1,36 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Check, Loader2, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { SEO } from "@/components/SEO";
 
 const Onboarding = () => {
+  const { refreshProfile } = useAuth();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState<string | null>(null);
+  const [syncing, setSyncing] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data } = await supabase.functions.invoke("check-subscription", { body: {} });
+        await refreshProfile();
+        if (!cancelled && data?.plan && data.plan !== "none") {
+          toast.success(`${data.plan === "pro" ? "Pro" : "Starter"} plan activated!`);
+          navigate("/dashboard", { replace: true });
+          return;
+        }
+      } catch {}
+      if (!cancelled) setSyncing(false);
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const startCheckout = async (plan: "starter" | "pro") => {
     setLoading(plan);
@@ -29,6 +52,15 @@ const Onboarding = () => {
     { id: "starter" as const, name: "Starter", price: "7.60", original: "19.00", renewal: "19", features: ["1 workspace", "50 slideshows / month", "500 image uploads", "All AI features"] },
     { id: "pro" as const, name: "Pro", price: "19.60", original: "49.00", renewal: "49", popular: true, features: ["5 workspaces", "Unlimited slideshows", "Unlimited uploads", "Priority AI", "Priority support"] },
   ];
+
+  if (syncing) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-dark text-white gap-3">
+        <Loader2 className="h-8 w-8 animate-spin" />
+        <p className="text-sm text-white/70">Checking your subscription…</p>
+      </div>
+    );
+  }
 
   return (
     <>
