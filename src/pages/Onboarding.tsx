@@ -1,16 +1,12 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Check, Loader2, Sparkles } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { SEO } from "@/components/SEO";
 
 const Onboarding = () => {
-  const { user, refreshProfile } = useAuth();
-  const navigate = useNavigate();
   const [loading, setLoading] = useState<string | null>(null);
 
   const startCheckout = async (plan: "starter" | "pro") => {
