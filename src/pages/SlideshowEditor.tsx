@@ -537,72 +537,84 @@ const SlideshowEditor = () => {
     <>
       <SEO title={slideshow.title || "Editor"} />
       <div className="flex flex-col" style={{ background: C.bg, color: C.text, height: "100vh", overflow: "hidden" }}>
-        {/* Top toolbar */}
-        <header
-          className="flex items-center justify-between flex-shrink-0"
-          style={{ height: 56, padding: "0 16px", background: C.panel, borderBottom: `1px solid ${C.border}` }}
-        >
-          <div className="flex items-center gap-3 min-w-0">
-            <button
-              onClick={() => navigate("/slideshows")}
-              style={{ color: C.muted, background: "transparent", border: "none", cursor: "pointer", display: "flex", alignItems: "center", padding: 8, borderRadius: 6 }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = C.text)}
-              onMouseLeave={(e) => (e.currentTarget.style.color = C.muted)}
-              aria-label="Back"
+        {isMobile ? (
+          /* ============== MOBILE LAYOUT ============== */
+          <>
+            {/* Compact top bar */}
+            <header
+              className="flex items-center justify-between flex-shrink-0"
+              style={{ height: 52, padding: "0 12px", background: C.panel, borderBottom: `1px solid ${C.border}` }}
             >
-              <ArrowLeft className="h-5 w-5" />
-            </button>
-            {titleEditing ? (
-              <input
-                autoFocus
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                onBlur={async () => {
-                  setTitleEditing(false);
-                  setSlideshow((s: any) => ({ ...s, title }));
-                  await supabase.from("slideshows").update({ title }).eq("id", id!);
-                }}
-                onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
-                style={{ background: C.bg, color: C.text, border: `1px solid ${C.border}`, borderRadius: 6, padding: "4px 10px", fontSize: 15, fontWeight: 600, outline: "none", minWidth: 240 }}
-              />
-            ) : (
               <button
-                onClick={() => setTitleEditing(true)}
-                style={{ color: C.text, fontSize: 15, fontWeight: 600, background: "transparent", border: "none", cursor: "pointer", padding: "4px 10px", borderRadius: 6 }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = C.itemActive)}
-                onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                onClick={() => navigate("/slideshows")}
+                style={{ color: C.text, background: "transparent", border: "none", padding: 8, borderRadius: 6, display: "flex", alignItems: "center" }}
+                aria-label="Back"
               >
-                {title || "Untitled"}
+                <ArrowLeft className="h-5 w-5" />
               </button>
-            )}
-          </div>
-          <div className="flex items-center gap-2">
-            {savingLabel && <span style={{ fontSize: 12, color: C.mutedDim, marginRight: 8 }}>{savingLabel}</span>}
-            <button style={secondaryBtn} onClick={() => persistCurrent()} disabled={saving}
-              onMouseEnter={(e) => { e.currentTarget.style.borderColor = C.borderHover; e.currentTarget.style.color = C.text; }}
-              onMouseLeave={(e) => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.color = C.muted; }}>
-              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Save
-            </button>
-            <button style={secondaryBtn} onClick={downloadPNG}
-              onMouseEnter={(e) => { e.currentTarget.style.borderColor = C.borderHover; e.currentTarget.style.color = C.text; }}
-              onMouseLeave={(e) => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.color = C.muted; }}>
-              <ImageIcon className="h-4 w-4" /> Download PNG
-            </button>
-            <button style={primaryBtn} onClick={exportZip} disabled={exporting}
-              onMouseEnter={(e) => (e.currentTarget.style.background = C.accentHover)}
-              onMouseLeave={(e) => (e.currentTarget.style.background = C.accent)}>
-              {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />} Export ZIP
-            </button>
-          </div>
-        </header>
 
-        <div className="flex-1 flex min-h-0">
-          {/* Left: simple slide list */}
-          <aside className="flex-shrink-0 overflow-y-auto" style={{ width: 220, background: C.panel, borderRight: `1px solid ${C.border}` }}>
-            <div style={{ padding: "16px 16px 8px", fontSize: 11, letterSpacing: "0.08em", color: C.mutedDim, textTransform: "uppercase", fontWeight: 600 }}>
-              Slides
-            </div>
-            <div>
+              {titleEditing ? (
+                <input
+                  autoFocus
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  onBlur={async () => {
+                    setTitleEditing(false);
+                    setSlideshow((s: any) => ({ ...s, title }));
+                    await supabase.from("slideshows").update({ title }).eq("id", id!);
+                  }}
+                  onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
+                  style={{ flex: 1, minWidth: 0, margin: "0 8px", background: C.bg, color: C.text, border: `1px solid ${C.border}`, borderRadius: 6, padding: "6px 10px", fontSize: 14, fontWeight: 600, outline: "none" }}
+                />
+              ) : (
+                <button
+                  onClick={() => setTitleEditing(true)}
+                  style={{ flex: 1, minWidth: 0, margin: "0 8px", color: C.text, fontSize: 14, fontWeight: 600, background: "transparent", border: "none", padding: "6px 10px", borderRadius: 6, textAlign: "center", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+                >
+                  {title || "Untitled"}
+                </button>
+              )}
+
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => persistCurrent()}
+                  disabled={saving}
+                  style={{ color: C.muted, background: "transparent", border: "none", padding: 8, borderRadius: 6, display: "flex", alignItems: "center" }}
+                  aria-label="Save"
+                >
+                  {saving ? <Loader2 className="h-5 w-5 animate-spin" /> : <Save className="h-5 w-5" />}
+                </button>
+                <button
+                  onClick={exportZip}
+                  disabled={exporting}
+                  style={{ color: "#fff", background: C.accent, border: "none", padding: "8px 10px", borderRadius: 8, display: "flex", alignItems: "center", gap: 4, fontSize: 13, fontWeight: 600 }}
+                  aria-label="Export"
+                >
+                  {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+                </button>
+              </div>
+            </header>
+
+            {savingLabel && (
+              <div style={{ fontSize: 11, color: C.mutedDim, textAlign: "center", padding: "4px 0", flexShrink: 0 }}>{savingLabel}</div>
+            )}
+
+            {/* Canvas area */}
+            <main className="flex-1 min-h-0 flex flex-col" style={{ background: C.bg }}>
+              <div ref={stageRef} className="flex-1 flex items-center justify-center overflow-hidden" style={{ padding: 8 }}>
+                <div style={{ position: "relative" }}>
+                  <div ref={wrapperRef} style={{ width: CANVAS_W, height: CANVAS_H, position: "relative" }}>
+                    <canvas ref={canvasRef} id="fabric-canvas" />
+                  </div>
+                </div>
+              </div>
+            </main>
+
+            {/* Bottom slide strip */}
+            <div
+              className="flex-shrink-0 overflow-x-auto"
+              style={{ background: C.panel, borderTop: `1px solid ${C.border}`, padding: "8px 8px", display: "flex", gap: 6, scrollbarWidth: "thin" }}
+            >
               {slides.map((s, i) => {
                 const isActive = i === activeIdx;
                 const hasText = slideHasText(s);
@@ -611,119 +623,316 @@ const SlideshowEditor = () => {
                     key={s.id}
                     onClick={() => switchTo(i)}
                     style={{
-                      display: "flex", alignItems: "center", gap: 10,
-                      width: "calc(100% - 16px)", margin: "2px 8px",
-                      padding: "10px 12px", borderRadius: 8,
+                      flexShrink: 0,
+                      display: "flex", alignItems: "center", gap: 6,
+                      padding: "8px 12px", borderRadius: 8,
                       background: isActive ? C.itemActive : "transparent",
-                      border: "none", cursor: "pointer", textAlign: "left",
-                      transition: "background 0.15s",
+                      border: `1px solid ${isActive ? C.borderHover : C.border}`,
+                      cursor: "pointer",
+                      minWidth: 80,
                     }}
-                    onMouseEnter={(e) => { if (!isActive) e.currentTarget.style.background = C.panelHover; }}
-                    onMouseLeave={(e) => { if (!isActive) e.currentTarget.style.background = "transparent"; }}
                   >
                     <span style={{
-                      width: 24, height: 24, borderRadius: 6,
+                      width: 22, height: 22, borderRadius: 5,
                       background: isActive ? C.accent : "#1A1A1A",
                       color: isActive ? "#fff" : C.muted,
-                      fontSize: 12, fontWeight: 600,
+                      fontSize: 11, fontWeight: 700,
                       display: "inline-flex", alignItems: "center", justifyContent: "center",
                       flexShrink: 0,
-                    }}>
-                      {i + 1}
-                    </span>
-                    <span style={{ color: C.text, fontSize: 14, flex: 1, textTransform: "capitalize" }}>{s.type}</span>
-                    <span style={{ width: 8, height: 8, borderRadius: "50%", background: hasText ? C.ok : C.mutedDim, flexShrink: 0 }} />
+                    }}>{i + 1}</span>
+                    <span style={{ color: C.text, fontSize: 12, textTransform: "capitalize" }}>{s.type}</span>
+                    <span style={{ width: 6, height: 6, borderRadius: "50%", background: hasText ? C.ok : C.mutedDim, flexShrink: 0 }} />
                   </button>
                 );
               })}
             </div>
-          </aside>
 
-          {/* Center: canvas */}
-          <main className="flex-1 min-w-0 flex flex-col" style={{ background: C.bg }}>
-            <div ref={stageRef} className="flex-1 flex items-center justify-center overflow-hidden" style={{ padding: 12 }}>
-              <div style={{ position: "relative" }}>
-                <div ref={wrapperRef} style={{ width: CANVAS_W, height: CANVAS_H, position: "relative" }}>
-                  <canvas ref={canvasRef} id="fabric-canvas" />
+            {/* Mobile action bar */}
+            <div
+              className="flex-shrink-0"
+              style={{ background: C.panel, borderTop: `1px solid ${C.border}`, padding: "8px 12px", display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 6 }}
+            >
+              <MobileTabBtn icon={<Type className="h-5 w-5" />} label="Text" onClick={() => setMobileSheet("text")} />
+              <MobileTabBtn icon={<Sliders className="h-5 w-5" />} label="Size" onClick={() => setMobileSheet("size")} />
+              <MobileTabBtn icon={<Palette className="h-5 w-5" />} label="Color" onClick={() => setMobileSheet("color")} />
+              <MobileTabBtn icon={<Plus className="h-5 w-5" />} label="Add" onClick={addTextBlock} />
+              <MobileTabBtn icon={<ImageIcon className="h-5 w-5" />} label="PNG" onClick={downloadPNG} />
+            </div>
+
+            {/* Mobile bottom-sheet */}
+            {mobileSheet && (
+              <>
+                <div
+                  onClick={() => setMobileSheet(null)}
+                  style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 40 }}
+                />
+                <div
+                  style={{
+                    position: "fixed", left: 0, right: 0, bottom: 0,
+                    background: C.panel, borderTop: `1px solid ${C.border}`,
+                    borderTopLeftRadius: 16, borderTopRightRadius: 16,
+                    padding: "16px 16px 24px",
+                    zIndex: 41,
+                    maxHeight: "70vh", overflowY: "auto",
+                  }}
+                >
+                  <div className="flex items-center justify-between" style={{ marginBottom: 12 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: C.text, textTransform: "capitalize" }}>
+                      {mobileSheet === "text" && "Slide text"}
+                      {mobileSheet === "size" && `Font size: ${fontSize}px`}
+                      {mobileSheet === "color" && "Colors"}
+                    </div>
+                    <button
+                      onClick={() => setMobileSheet(null)}
+                      style={{ color: C.muted, background: "transparent", border: "none", padding: 4, borderRadius: 6, display: "flex" }}
+                      aria-label="Close"
+                    >
+                      <X className="h-5 w-5" />
+                    </button>
+                  </div>
+
+                  {mobileSheet === "text" && (
+                    <>
+                      <textarea
+                        value={slideText}
+                        onChange={(e) => onTextChange(e.target.value)}
+                        placeholder="your slide text here…"
+                        style={{
+                          width: "100%", minHeight: 140,
+                          background: "#1A1A1A", border: `1px solid ${C.border}`, borderRadius: 8,
+                          color: "#fff", fontSize: 15, lineHeight: 1.5, padding: 12,
+                          resize: "vertical", fontFamily: "inherit", outline: "none",
+                        }}
+                      />
+                      <div style={{ color: C.mutedDim, fontSize: 12, marginTop: 6 }}>
+                        line breaks between sentences = TikTok rhythm
+                      </div>
+                    </>
+                  )}
+
+                  {mobileSheet === "size" && (
+                    <input
+                      type="range" min={40} max={120} step={2} value={fontSize}
+                      onChange={(e) => onSizeChange(parseInt(e.target.value))}
+                      style={{ width: "100%", accentColor: C.accent, marginTop: 8 }}
+                    />
+                  )}
+
+                  {mobileSheet === "color" && (
+                    <>
+                      <div style={{ fontSize: 11, letterSpacing: "0.08em", color: C.mutedDim, textTransform: "uppercase", fontWeight: 600, marginBottom: 8 }}>Text fill</div>
+                      <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", marginBottom: 16 }}>
+                        {FILL_SWATCHES.map((c) => (
+                          <Swatch key={c} color={c} active={fill === c.toUpperCase()} onClick={() => onFillChange(c)} />
+                        ))}
+                        <input type="color" value={fill} onChange={(e) => onFillChange(e.target.value)}
+                          style={{ width: 32, height: 32, borderRadius: "50%", border: `1px solid ${C.border}`, cursor: "pointer", background: "transparent", padding: 0 }}
+                        />
+                      </div>
+                      <div style={{ fontSize: 11, letterSpacing: "0.08em", color: C.mutedDim, textTransform: "uppercase", fontWeight: 600, marginBottom: 8 }}>Outline</div>
+                      <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", marginBottom: 16 }}>
+                        {STROKE_SWATCHES.map((c) => (
+                          <Swatch key={c} color={c} active={stroke === c.toUpperCase()} onClick={() => onStrokeChange(c)} />
+                        ))}
+                        <input type="color" value={stroke} onChange={(e) => onStrokeChange(e.target.value)}
+                          style={{ width: 32, height: 32, borderRadius: "50%", border: `1px solid ${C.border}`, cursor: "pointer", background: "transparent", padding: 0 }}
+                        />
+                      </div>
+                      <button style={{ ...secondaryBtn, width: "100%", justifyContent: "center" }} onClick={resetStyle}>
+                        <RotateCcw className="h-4 w-4" /> Reset to defaults
+                      </button>
+                    </>
+                  )}
                 </div>
-              </div>
-            </div>
-            <div style={{ fontSize: 12, color: C.mutedDim, textAlign: "center", padding: 12, flexShrink: 0 }}>
-              Click text to select · drag to reposition · double-click to type directly on canvas
-            </div>
-          </main>
-
-          {/* Right: inspector */}
-          <aside className="flex-shrink-0 overflow-y-auto flex flex-col" style={{ width: 300, background: C.panel, borderLeft: `1px solid ${C.border}`, padding: 20 }}>
-            <div>
-              <div style={{ fontSize: 11, letterSpacing: "0.08em", color: C.mutedDim, textTransform: "uppercase", fontWeight: 600, marginBottom: 8 }}>Slide text</div>
-              <textarea
-                value={slideText}
-                onChange={(e) => onTextChange(e.target.value)}
-                placeholder="your slide text appears here. edit it or type directly on the canvas."
-                style={{
-                  width: "100%", minHeight: 160,
-                  background: "#1A1A1A", border: `1px solid ${C.border}`, borderRadius: 8,
-                  color: "#FFFFFF", fontSize: 15, lineHeight: 1.6, padding: 12,
-                  resize: "vertical", fontFamily: "inherit", outline: "none",
-                }}
-                onFocus={(e) => (e.target.style.borderColor = C.accent)}
-                onBlur={(e) => (e.target.style.borderColor = C.border)}
-              />
-              <div style={{ color: C.mutedDim, fontSize: 12, marginTop: 6 }}>
-                use line breaks between sentences for the TikTok rhythm
-              </div>
-            </div>
-
-            <div style={{ borderTop: `1px solid ${C.border}`, marginTop: 20, paddingTop: 20 }}>
-              <div style={{ color: C.muted, fontSize: 13, marginBottom: 4 }}>font size: {fontSize}px</div>
-              <input
-                type="range" min={40} max={120} step={2} value={fontSize}
-                onChange={(e) => onSizeChange(parseInt(e.target.value))}
-                style={{ width: "100%", accentColor: C.accent, marginTop: 8 }}
-              />
-            </div>
-
-            <div style={{ borderTop: `1px solid ${C.border}`, marginTop: 20, paddingTop: 20 }}>
-              <div style={{ fontSize: 11, letterSpacing: "0.08em", color: C.mutedDim, textTransform: "uppercase", fontWeight: 600, marginBottom: 8 }}>Text color</div>
-              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                {FILL_SWATCHES.map((c) => (
-                  <Swatch key={c} color={c} active={fill === c.toUpperCase()} onClick={() => onFillChange(c)} />
-                ))}
-                <input
-                  type="color" value={fill} onChange={(e) => onFillChange(e.target.value)}
-                  style={{ width: 28, height: 28, borderRadius: "50%", border: `1px solid ${C.border}`, cursor: "pointer", background: "transparent", padding: 0 }}
-                />
-              </div>
-            </div>
-
-            <div style={{ borderTop: `1px solid ${C.border}`, marginTop: 20, paddingTop: 20 }}>
-              <div style={{ fontSize: 11, letterSpacing: "0.08em", color: C.mutedDim, textTransform: "uppercase", fontWeight: 600, marginBottom: 8 }}>Outline color</div>
-              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                {STROKE_SWATCHES.map((c) => (
-                  <Swatch key={c} color={c} active={stroke === c.toUpperCase()} onClick={() => onStrokeChange(c)} />
-                ))}
-                <input
-                  type="color" value={stroke} onChange={(e) => onStrokeChange(e.target.value)}
-                  style={{ width: 28, height: 28, borderRadius: "50%", border: `1px solid ${C.border}`, cursor: "pointer", background: "transparent", padding: 0 }}
-                />
-              </div>
-            </div>
-
-            <div style={{ marginTop: "auto", paddingTop: 24 }}>
-              <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 16, display: "flex", flexDirection: "column", gap: 8 }}>
-                <button style={{ ...secondaryBtn, width: "100%", justifyContent: "center" }} onClick={addTextBlock}>
-                  <Plus className="h-4 w-4" /> Add text block
+              </>
+            )}
+          </>
+        ) : (
+          /* ============== DESKTOP LAYOUT ============== */
+          <>
+            <header
+              className="flex items-center justify-between flex-shrink-0"
+              style={{ height: 56, padding: "0 16px", background: C.panel, borderBottom: `1px solid ${C.border}` }}
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <button
+                  onClick={() => navigate("/slideshows")}
+                  style={{ color: C.muted, background: "transparent", border: "none", cursor: "pointer", display: "flex", alignItems: "center", padding: 8, borderRadius: 6 }}
+                  onMouseEnter={(e) => (e.currentTarget.style.color = C.text)}
+                  onMouseLeave={(e) => (e.currentTarget.style.color = C.muted)}
+                  aria-label="Back"
+                >
+                  <ArrowLeft className="h-5 w-5" />
                 </button>
-                <button style={{ ...secondaryBtn, width: "100%", justifyContent: "center" }} onClick={resetStyle}>
-                  <RotateCcw className="h-4 w-4" /> Reset to defaults
+                {titleEditing ? (
+                  <input
+                    autoFocus
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    onBlur={async () => {
+                      setTitleEditing(false);
+                      setSlideshow((s: any) => ({ ...s, title }));
+                      await supabase.from("slideshows").update({ title }).eq("id", id!);
+                    }}
+                    onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
+                    style={{ background: C.bg, color: C.text, border: `1px solid ${C.border}`, borderRadius: 6, padding: "4px 10px", fontSize: 15, fontWeight: 600, outline: "none", minWidth: 240 }}
+                  />
+                ) : (
+                  <button
+                    onClick={() => setTitleEditing(true)}
+                    style={{ color: C.text, fontSize: 15, fontWeight: 600, background: "transparent", border: "none", cursor: "pointer", padding: "4px 10px", borderRadius: 6 }}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = C.itemActive)}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                  >
+                    {title || "Untitled"}
+                  </button>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                {savingLabel && <span style={{ fontSize: 12, color: C.mutedDim, marginRight: 8 }}>{savingLabel}</span>}
+                <button style={secondaryBtn} onClick={() => persistCurrent()} disabled={saving}
+                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = C.borderHover; e.currentTarget.style.color = C.text; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.color = C.muted; }}>
+                  {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Save
+                </button>
+                <button style={secondaryBtn} onClick={downloadPNG}
+                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = C.borderHover; e.currentTarget.style.color = C.text; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.color = C.muted; }}>
+                  <ImageIcon className="h-4 w-4" /> Download PNG
+                </button>
+                <button style={primaryBtn} onClick={exportZip} disabled={exporting}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = C.accentHover)}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = C.accent)}>
+                  {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />} Export ZIP
                 </button>
               </div>
+            </header>
+
+            <div className="flex-1 flex min-h-0">
+              <aside className="flex-shrink-0 overflow-y-auto" style={{ width: 220, background: C.panel, borderRight: `1px solid ${C.border}` }}>
+                <div style={{ padding: "16px 16px 8px", fontSize: 11, letterSpacing: "0.08em", color: C.mutedDim, textTransform: "uppercase", fontWeight: 600 }}>
+                  Slides
+                </div>
+                <div>
+                  {slides.map((s, i) => {
+                    const isActive = i === activeIdx;
+                    const hasText = slideHasText(s);
+                    return (
+                      <button
+                        key={s.id}
+                        onClick={() => switchTo(i)}
+                        style={{
+                          display: "flex", alignItems: "center", gap: 10,
+                          width: "calc(100% - 16px)", margin: "2px 8px",
+                          padding: "10px 12px", borderRadius: 8,
+                          background: isActive ? C.itemActive : "transparent",
+                          border: "none", cursor: "pointer", textAlign: "left",
+                          transition: "background 0.15s",
+                        }}
+                        onMouseEnter={(e) => { if (!isActive) e.currentTarget.style.background = C.panelHover; }}
+                        onMouseLeave={(e) => { if (!isActive) e.currentTarget.style.background = "transparent"; }}
+                      >
+                        <span style={{
+                          width: 24, height: 24, borderRadius: 6,
+                          background: isActive ? C.accent : "#1A1A1A",
+                          color: isActive ? "#fff" : C.muted,
+                          fontSize: 12, fontWeight: 600,
+                          display: "inline-flex", alignItems: "center", justifyContent: "center",
+                          flexShrink: 0,
+                        }}>
+                          {i + 1}
+                        </span>
+                        <span style={{ color: C.text, fontSize: 14, flex: 1, textTransform: "capitalize" }}>{s.type}</span>
+                        <span style={{ width: 8, height: 8, borderRadius: "50%", background: hasText ? C.ok : C.mutedDim, flexShrink: 0 }} />
+                      </button>
+                    );
+                  })}
+                </div>
+              </aside>
+
+              <main className="flex-1 min-w-0 flex flex-col" style={{ background: C.bg }}>
+                <div ref={stageRef} className="flex-1 flex items-center justify-center overflow-hidden" style={{ padding: 12 }}>
+                  <div style={{ position: "relative" }}>
+                    <div ref={wrapperRef} style={{ width: CANVAS_W, height: CANVAS_H, position: "relative" }}>
+                      <canvas ref={canvasRef} id="fabric-canvas" />
+                    </div>
+                  </div>
+                </div>
+                <div style={{ fontSize: 12, color: C.mutedDim, textAlign: "center", padding: 12, flexShrink: 0 }}>
+                  Click text to select · drag to reposition · double-click to type directly on canvas
+                </div>
+              </main>
+
+              <aside className="flex-shrink-0 overflow-y-auto flex flex-col" style={{ width: 300, background: C.panel, borderLeft: `1px solid ${C.border}`, padding: 20 }}>
+                <div>
+                  <div style={{ fontSize: 11, letterSpacing: "0.08em", color: C.mutedDim, textTransform: "uppercase", fontWeight: 600, marginBottom: 8 }}>Slide text</div>
+                  <textarea
+                    value={slideText}
+                    onChange={(e) => onTextChange(e.target.value)}
+                    placeholder="your slide text appears here. edit it or type directly on the canvas."
+                    style={{
+                      width: "100%", minHeight: 160,
+                      background: "#1A1A1A", border: `1px solid ${C.border}`, borderRadius: 8,
+                      color: "#FFFFFF", fontSize: 15, lineHeight: 1.6, padding: 12,
+                      resize: "vertical", fontFamily: "inherit", outline: "none",
+                    }}
+                    onFocus={(e) => (e.target.style.borderColor = C.accent)}
+                    onBlur={(e) => (e.target.style.borderColor = C.border)}
+                  />
+                  <div style={{ color: C.mutedDim, fontSize: 12, marginTop: 6 }}>
+                    use line breaks between sentences for the TikTok rhythm
+                  </div>
+                </div>
+
+                <div style={{ borderTop: `1px solid ${C.border}`, marginTop: 20, paddingTop: 20 }}>
+                  <div style={{ color: C.muted, fontSize: 13, marginBottom: 4 }}>font size: {fontSize}px</div>
+                  <input
+                    type="range" min={40} max={120} step={2} value={fontSize}
+                    onChange={(e) => onSizeChange(parseInt(e.target.value))}
+                    style={{ width: "100%", accentColor: C.accent, marginTop: 8 }}
+                  />
+                </div>
+
+                <div style={{ borderTop: `1px solid ${C.border}`, marginTop: 20, paddingTop: 20 }}>
+                  <div style={{ fontSize: 11, letterSpacing: "0.08em", color: C.mutedDim, textTransform: "uppercase", fontWeight: 600, marginBottom: 8 }}>Text color</div>
+                  <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                    {FILL_SWATCHES.map((c) => (
+                      <Swatch key={c} color={c} active={fill === c.toUpperCase()} onClick={() => onFillChange(c)} />
+                    ))}
+                    <input
+                      type="color" value={fill} onChange={(e) => onFillChange(e.target.value)}
+                      style={{ width: 28, height: 28, borderRadius: "50%", border: `1px solid ${C.border}`, cursor: "pointer", background: "transparent", padding: 0 }}
+                    />
+                  </div>
+                </div>
+
+                <div style={{ borderTop: `1px solid ${C.border}`, marginTop: 20, paddingTop: 20 }}>
+                  <div style={{ fontSize: 11, letterSpacing: "0.08em", color: C.mutedDim, textTransform: "uppercase", fontWeight: 600, marginBottom: 8 }}>Outline color</div>
+                  <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                    {STROKE_SWATCHES.map((c) => (
+                      <Swatch key={c} color={c} active={stroke === c.toUpperCase()} onClick={() => onStrokeChange(c)} />
+                    ))}
+                    <input
+                      type="color" value={stroke} onChange={(e) => onStrokeChange(e.target.value)}
+                      style={{ width: 28, height: 28, borderRadius: "50%", border: `1px solid ${C.border}`, cursor: "pointer", background: "transparent", padding: 0 }}
+                    />
+                  </div>
+                </div>
+
+                <div style={{ marginTop: "auto", paddingTop: 24 }}>
+                  <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 16, display: "flex", flexDirection: "column", gap: 8 }}>
+                    <button style={{ ...secondaryBtn, width: "100%", justifyContent: "center" }} onClick={addTextBlock}>
+                      <Plus className="h-4 w-4" /> Add text block
+                    </button>
+                    <button style={{ ...secondaryBtn, width: "100%", justifyContent: "center" }} onClick={resetStyle}>
+                      <RotateCcw className="h-4 w-4" /> Reset to defaults
+                    </button>
+                  </div>
+                </div>
+              </aside>
             </div>
-          </aside>
-        </div>
-      </div>
-    </>
+          </>
+        )}
   );
 };
 
