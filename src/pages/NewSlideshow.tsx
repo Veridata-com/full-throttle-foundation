@@ -131,6 +131,24 @@ const NewSlideshow = () => {
             </Select>
           </div>
 
+          <div className="space-y-2">
+            <Label>Image source</Label>
+            <ImageSourceToggle value={imageSource} onChange={(v) => { setImageSource(v); setNoImagesErr(false); }} />
+            <p className="text-xs text-muted-foreground">
+              Stock + Mine uses AdRise's curated library alongside your uploads for more variety.
+            </p>
+          </div>
+
+          {noImagesErr && (
+            <div className="rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive flex items-start gap-2">
+              <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+              <span>
+                You have no uploaded images yet. Switch to "Stock + Mine" or{" "}
+                <Link to="/library" className="underline font-medium">upload images in your library</Link>.
+              </span>
+            </div>
+          )}
+
           <Button className="w-full shadow-glow" onClick={generate} disabled={loading} size="lg">
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
             Generate slideshow
