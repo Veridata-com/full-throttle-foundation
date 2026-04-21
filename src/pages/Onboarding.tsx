@@ -28,15 +28,6 @@ const Onboarding = () => {
     }
   };
 
-  const devBypass = async () => {
-    if (!user) return;
-    setLoading("dev");
-    const { error } = await supabase.from("profiles").update({ plan: "starter" }).eq("id", user.id);
-    if (error) { toast.error(error.message); setLoading(null); return; }
-    await refreshProfile();
-    toast.success("Dev bypass activated — Starter plan");
-    navigate("/workspaces/new");
-  };
 
   const plans = [
     { id: "starter" as const, name: "Starter", price: "7.60", original: "19.00", renewal: "19", features: ["1 workspace", "50 slideshows / month", "500 image uploads", "All AI features"] },
