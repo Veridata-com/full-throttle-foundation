@@ -1,13 +1,36 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Check, Loader2, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { SEO } from "@/components/SEO";
 
 const Onboarding = () => {
+  const { refreshProfile } = useAuth();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState<string | null>(null);
+  const [syncing, setSyncing] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data } = await supabase.functions.invoke("check-subscription", { body: {} });
+        await refreshProfile();
+        if (!cancelled && data?.plan && data.plan !== "none") {
+          toast.success(`${data.plan === "pro" ? "Pro" : "Starter"} plan activated!`);
+          navigate("/dashboard", { replace: true });
+          return;
+        }
+      } catch {}
+      if (!cancelled) setSyncing(false);
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const startCheckout = async (plan: "starter" | "pro") => {
     setLoading(plan);
