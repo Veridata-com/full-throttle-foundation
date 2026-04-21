@@ -209,8 +209,8 @@ What to write:
     const rawSlides = Array.isArray(parsed.slides) ? parsed.slides.slice(0, needNonProduct) : [];
 
     const defaultLayout = {
-      headline: { x: 540, y: 960, fontSize: 64, color: '#FFFFFF', stroke: '', strokeWidth: 0, fontWeight: 400, textAlign: 'center', maxWidth: 880 },
-      subtext:  { x: 540, y: 1200, fontSize: 40, color: '#FFFFFF', stroke: '', strokeWidth: 0, fontWeight: 400, textAlign: 'center', maxWidth: 880 },
+      headline: { x: 540, y: 820, fontSize: 88, color: '#FFFFFF', stroke: '#000000', strokeWidth: 10, fontWeight: 900, textAlign: 'center', maxWidth: 960 },
+      subtext:  { x: 540, y: 1080, fontSize: 56, color: '#FFE500', stroke: '#000000', strokeWidth: 7, fontWeight: 900, textAlign: 'center', maxWidth: 960 },
     };
 
     const pickedImageIds: string[] = [];
@@ -222,9 +222,10 @@ What to write:
         id: crypto.randomUUID(),
         type: s.type || (idx === 0 ? 'hook' : 'value'),
         headline: clean(s.headline).slice(0, 200),
-        subtext: null,
+        subtext: clean(s.subtext).slice(0, 200),
         image_id: pick?.id || null,
         layout: defaultLayout,
+        fabric_state: null,
       };
     });
 
@@ -234,9 +235,10 @@ What to write:
       id: crypto.randomUUID(),
       type: 'cta',
       headline: clean(parsed.cta_headline || workspace.default_cta || 'Try it now').slice(0, 200),
-      subtext: null,
+      subtext: clean(parsed.cta_subtext || '').slice(0, 200),
       image_id: productShot.id,
       layout: defaultLayout,
+      fabric_state: null,
     });
 
     const finalImageIds = [...pickedImageIds, productShot.id];
