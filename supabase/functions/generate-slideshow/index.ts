@@ -10,23 +10,23 @@ interface Body { slideshowId: string; }
 
 const STORY_STYLES = ['listicle','pov','problem-agitate-solve','comparison','myth-bust','transformation','ugc-testimonial'] as const;
 
-const SYSTEM = `You are a TikTok storyteller who writes captions that stop the scroll because they FEEL like something. You write the way a real person texts a close friend at 1am, reflective, raw, a little vulnerable, sometimes painful, sometimes wise, sometimes wildly curious.
+const SYSTEM = `You are a viral TikTok scriptwriter. You write punchy, scroll-stopping captions designed for fast-paced meme-style slideshows.
 
-Voice rules, absolute:
-- Sentence case only. Capitalize the first letter of each sentence and proper nouns. Nothing else.
-- NEVER use ALL CAPS. Not for emphasis, not ever.
-- NEVER use bold, italics, asterisks, underscores, or any markdown.
-- NEVER use em-dashes or en-dashes. Use commas, periods, or line breaks instead.
-- NEVER use emoji.
-- Short. Quiet. Confident. Two short sentences max per slide.
-- Use a soft line break (\n) between two thoughts when it makes the pause hit harder.
-- The reader should feel something: ache, recognition, hope, hunger, curiosity, a little sting.
-- Write like the captions on viral late-night walking-shot reels. Reflective. Story-driven. Human.
+Voice rules:
+- Each slide has TWO parts: a HEADLINE (max 10 words, the punch) and a SUBTEXT (max 15 words, the twist or detail).
+- Slide 1 is the HOOK: contrarian, uncomfortable, or a sharp question. Stop the thumb.
+- Middle slides build tension with open loops. Each slide makes them need the next.
+- Final slide resolves the tension and drops the CTA naturally.
+- Sentence case only. No ALL CAPS, no bold, no emoji, no markdown, no em-dashes.
+- Conversational, fast, native to TikTok. No corporate words.
+- BANNED words: game-changer, unlock, journey, leverage, utilize, dive in, explore.
 
-Examples of the tone you write in (DO NOT copy these, only match the feel):
-"Trading can give you everything you've ever wanted.\nBut only after it teaches you everything you need to learn."
-"Most people quit right before the part that would have changed their life."
-"You don't need motivation. You need to remember why you started."`;
+Examples of the energy (don't copy, match the feel):
+HEADLINE: "Nobody talks about this part of trading"
+SUBTEXT: "And it's the reason 90% quit in year one"
+
+HEADLINE: "I tried 12 productivity apps last year"
+SUBTEXT: "Only one actually changed how I work"`;
 
 function clean(s: any): string {
   if (typeof s !== 'string') return '';
@@ -127,12 +127,12 @@ Deno.serve(async (req) => {
       `#${idx} [${i.quality || 'medium'}] ${i.ai_description || i.file_name || 'image'} | tags: ${(i.ai_tags || []).join(', ')}`
     ).join('\n');
 
-    const prompt = `Write a ${numSlides}-slide TikTok storytelling slideshow for:
+    const prompt = `Write a ${numSlides}-slide viral TikTok slideshow for:
 
 PRODUCT: ${workspace.name}
 TAGLINE: ${workspace.tagline || '(none)'}
 AUDIENCE: ${workspace.target_audience || 'general'}
-BRAND VOICE: ${workspace.brand_voice || 'reflective, human, story-driven'}
+BRAND VOICE: ${workspace.brand_voice || 'punchy, native to TikTok'}
 DEFAULT CTA: ${workspace.default_cta || 'Try it now'}
 
 NARRATIVE STYLE THIS TIME: ${chosenStyle}
@@ -142,14 +142,12 @@ AVAILABLE IMAGES (pick ${needNonProduct} of these by index, prefer high quality 
 ${imageContext || '(no images, reuse index 0)'}
 
 What to write:
-- Each slide gets ONE caption. One short, quiet, story-shaped thought. Two sentences max.
-- Use a single line break (\\n) between sentences when the pause matters.
-- Slide 1 is the HOOK: a curiosity, a wound, a question, a confession. Make them stop scrolling.
-- Middle slides build the story arc following the ${chosenStyle} narrative. Each one should feel like a turn of the page.
-- Final CTA slide is also a caption, not a sales pitch. End on a feeling that makes them want to act.
-- Sentence case only. No ALL CAPS, no bold, no em-dashes, no emoji, no markdown.
-- Aim for the late-night-reel-caption feeling: reflective, a little raw, deeply human.
-- Each caption should be readable in under 3 seconds.`;
+- Each slide: HEADLINE (max 10 words) + SUBTEXT (max 15 words).
+- Slide 1 HOOK: contrarian, uncomfortable, or a sharp question.
+- Middle slides build tension with open loops. Each slide must pull them to the next.
+- Final CTA slide resolves tension and drops the CTA naturally.
+- Sentence case only. No caps, no markdown, no emoji, no em-dashes.
+- No banned words: game-changer, unlock, journey, leverage, utilize, dive in, explore.`;
 
     const tool = {
       type: 'function',
@@ -165,15 +163,17 @@ What to write:
                 type: 'object',
                 properties: {
                   type: { type: 'string', enum: ['hook', 'value'] },
-                  headline: { type: 'string', description: 'The full slide caption. One or two short sentences, sentence case, line break between sentences if any.' },
+                  headline: { type: 'string', description: 'Punchy headline, max 10 words, sentence case.' },
+                  subtext: { type: 'string', description: 'Supporting line, max 15 words, sentence case.' },
                   image_index: { type: 'number', description: 'Index from AVAILABLE IMAGES list' },
                 },
-                required: ['type', 'headline', 'image_index'],
+                required: ['type', 'headline', 'subtext', 'image_index'],
               },
             },
-            cta_headline: { type: 'string', description: 'Caption for final CTA slide. Same storytelling tone, sentence case, no caps, no markdown.' },
+            cta_headline: { type: 'string', description: 'Final CTA headline, max 10 words, sentence case.' },
+            cta_subtext: { type: 'string', description: 'Final CTA subtext, max 15 words, sentence case.' },
           },
-          required: ['slides', 'cta_headline'],
+          required: ['slides', 'cta_headline', 'cta_subtext'],
         },
       },
     };
@@ -182,7 +182,7 @@ What to write:
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${lovableKey}` },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
+        model: 'openai/gpt-5',
         messages: [
           { role: 'system', content: SYSTEM },
           { role: 'user', content: prompt },
@@ -209,8 +209,8 @@ What to write:
     const rawSlides = Array.isArray(parsed.slides) ? parsed.slides.slice(0, needNonProduct) : [];
 
     const defaultLayout = {
-      headline: { x: 540, y: 960, fontSize: 64, color: '#FFFFFF', stroke: '', strokeWidth: 0, fontWeight: 400, textAlign: 'center', maxWidth: 880 },
-      subtext:  { x: 540, y: 1200, fontSize: 40, color: '#FFFFFF', stroke: '', strokeWidth: 0, fontWeight: 400, textAlign: 'center', maxWidth: 880 },
+      headline: { x: 540, y: 820, fontSize: 88, color: '#FFFFFF', stroke: '#000000', strokeWidth: 10, fontWeight: 900, textAlign: 'center', maxWidth: 960 },
+      subtext:  { x: 540, y: 1080, fontSize: 56, color: '#FFE500', stroke: '#000000', strokeWidth: 7, fontWeight: 900, textAlign: 'center', maxWidth: 960 },
     };
 
     const pickedImageIds: string[] = [];
@@ -222,9 +222,10 @@ What to write:
         id: crypto.randomUUID(),
         type: s.type || (idx === 0 ? 'hook' : 'value'),
         headline: clean(s.headline).slice(0, 200),
-        subtext: null,
+        subtext: clean(s.subtext).slice(0, 200),
         image_id: pick?.id || null,
         layout: defaultLayout,
+        fabric_state: null,
       };
     });
 
@@ -234,9 +235,10 @@ What to write:
       id: crypto.randomUUID(),
       type: 'cta',
       headline: clean(parsed.cta_headline || workspace.default_cta || 'Try it now').slice(0, 200),
-      subtext: null,
+      subtext: clean(parsed.cta_subtext || '').slice(0, 200),
       image_id: productShot.id,
       layout: defaultLayout,
+      fabric_state: null,
     });
 
     const finalImageIds = [...pickedImageIds, productShot.id];
