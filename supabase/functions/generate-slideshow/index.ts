@@ -72,8 +72,10 @@ Deno.serve(async (req) => {
     if (ssErr || !slideshow || slideshow.user_id !== userId) return j({ error: 'forbidden' }, 403);
     if (!slideshow.workspace_id) return j({ error: 'workspace_required' }, 400);
 
-    const { data: profile } = await admin.from('profiles').select('plan').eq('id', userId).single();
+    const { data: profile } = await admin.from('profiles').select('plan, default_image_source').eq('id', userId).single();
     if (!profile || profile.plan === 'none') return j({ error: 'plan_required' }, 402);
+
+    const imageSource: 'both' | 'own_only' = body.image_source || (profile as any).default_image_source || 'both';
 
     if (profile.plan === 'starter') {
       const periodStart = new Date(); periodStart.setDate(1);
