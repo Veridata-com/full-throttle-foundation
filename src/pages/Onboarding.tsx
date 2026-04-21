@@ -68,14 +68,7 @@ const Onboarding = () => {
               </Card>
             ))}
           </div>
-          </div>
         </div>
-      </div>
-    </>
-  );
-};
-
-export default Onboarding;
       </div>
     </>
   );
