@@ -217,7 +217,7 @@ const SlideshowEditor = () => {
     let disposed = false;
 
     // Load background image (cover)
-    const url = imageMapRef.current[active.image_id];
+    const url = active.image_url || (active.image_id ? imageMapRef.current[active.image_id] : imageMapRef.current[`stock:${active.id}`]);
     if (url) {
       fabric.Image.fromURL(
         url,
@@ -441,7 +441,7 @@ const SlideshowEditor = () => {
         off.clear();
         off.backgroundColor = "#1a1a1a";
 
-        const url = imageMap[slide.image_id];
+        const url = slide.image_url || (slide.image_id ? imageMap[slide.image_id] : imageMap[`stock:${slide.id}`]);
         if (url) {
           await new Promise<void>((resolve) => {
             fabric.Image.fromURL(url, (img) => {
