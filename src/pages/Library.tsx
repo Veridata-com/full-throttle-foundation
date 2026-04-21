@@ -58,6 +58,24 @@ const Library = () => {
   const [uploadMode, setUploadMode] = useState<"regular" | "product">(
     params.get("upload") === "product" ? "product" : "regular"
   );
+  const [tab, setTab] = useState<"mine" | "stock">("mine");
+  const [stockImages, setStockImages] = useState<StockImage[]>([]);
+  const [stockCategory, setStockCategory] = useState<string>("all");
+  const [stockLoading, setStockLoading] = useState(false);
+
+  useEffect(() => {
+    if (tab !== "stock") return;
+    setStockLoading(true);
+    supabase
+      .from("stock_images" as any)
+      .select("id, filename, public_url, ai_description, ai_tags, category")
+      .order("created_at", { ascending: false })
+      .then(({ data, error }) => {
+        if (error) console.error(error);
+        setStockImages((data as any) || []);
+        setStockLoading(false);
+      });
+  }, [tab]);
 
   useEffect(() => {
     if (params.get("upload") === "product") {
