@@ -178,6 +178,8 @@ const SlideshowEditor = () => {
     })();
   }, [user, id, navigate]);
 
+  const renderThrottleRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const slides: Slide[] = slideshow?.slides || [];
   const active = slides[activeIdx];
 
