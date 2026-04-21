@@ -408,9 +408,9 @@ const SlideshowEditor = () => {
     const c = fabricRef.current; if (!c) return;
     const t = (c.getActiveObject() as fabric.IText | undefined) || findTextObject(c);
     if (!t) return;
-    t.set({ fontSize: 80, fill: "#FFFFFF", stroke: "#000000", strokeWidth: 10, scaleX: 1, scaleY: 1, fontFamily: MEME_FONT, fontWeight: "900" } as any);
+    t.set({ fontSize: 46, fill: "#FFFFFF", stroke: "#000000", strokeWidth: 10, scaleX: 1, scaleY: 1, fontFamily: MEME_FONT, fontWeight: "900" } as any);
     c.renderAll();
-    setFontSize(80); setFill("#FFFFFF"); setStroke("#000000");
+    setFontSize(46); setFill("#FFFFFF"); setStroke("#000000");
   };
 
   const downloadPNG = async () => {
