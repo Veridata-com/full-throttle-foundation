@@ -61,7 +61,6 @@ Deno.serve(async (req) => {
       customer: customerId,
       customer_email: customerId ? undefined : user.email,
       mode: 'subscription',
-      allow_promotion_codes: false,
       discounts: [{ coupon: COUPON_ID }],
       line_items: [{
         price_data: {
