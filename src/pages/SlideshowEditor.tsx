@@ -399,9 +399,9 @@ const SlideshowEditor = () => {
 
   const addTextBlock = () => {
     const c = fabricRef.current; if (!c) return;
-    const t = buildText("new text block", { top: CANVAS_H / 2, fontSize: 72 });
+    const t = buildText("new text block", { top: CANVAS_H / 2, fontSize: 46 });
     c.add(t); c.setActiveObject(t); c.renderAll();
-    setHasSelection(true); setSlideText("new text block"); setFontSize(72); setFill("#FFFFFF"); setStroke("#000000");
+    setHasSelection(true); setSlideText("new text block"); setFontSize(46); setFill("#FFFFFF"); setStroke("#000000");
   };
 
   const resetStyle = () => {
