@@ -86,7 +86,7 @@ const Landing = () => {
 
                   {/* floating screenshot mockup */}
                   <div className="relative mt-auto">
-                    <div className="absolute inset-x-6 -bottom-2 h-10 bg-primary/30 blur-2xl rounded-full" aria-hidden />
+                    <div className="absolute inset-x-4 -bottom-2 h-12 bg-primary/30 blur-2xl rounded-full" aria-hidden />
                     <div
                       className="relative rounded-xl overflow-hidden border border-border/80 bg-background shadow-2xl transition-transform duration-500 group-hover:-translate-y-2 group-hover:rotate-0"
                       style={{ transform: `rotate(${i % 2 === 0 ? -1.5 : 1.5}deg)` }}
@@ -97,7 +97,9 @@ const Landing = () => {
                         <span className="h-2.5 w-2.5 rounded-full bg-warning/70" />
                         <span className="h-2.5 w-2.5 rounded-full bg-success/70" />
                       </div>
-                      <img src={f.img} alt={f.alt} loading="lazy" className="w-full h-44 object-cover object-top" />
+                      <div className="bg-background">
+                        <img src={f.img} alt={f.alt} loading="lazy" className="w-full h-auto block" />
+                      </div>
                     </div>
                   </div>
                 </div>
