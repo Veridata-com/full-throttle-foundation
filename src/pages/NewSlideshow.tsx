@@ -78,13 +78,14 @@ const NewSlideshow = () => {
       }).select().single();
       if (error) throw error;
 
-      const { error: fnErr, data: fnData } = await supabase.functions.invoke("generate-slideshow", { body: { slideshowId: ss.id } });
+      const { error: fnErr, data: fnData } = await supabase.functions.invoke("generate-slideshow", { body: { slideshowId: ss.id, image_source: imageSource } });
       if (fnErr) throw fnErr;
       const err = (fnData as any)?.error;
       if (err) {
         if (err === "plan_required") { toast.error("Active plan required."); navigate("/billing"); return; }
         if (err === "quota_exceeded") { toast.error("Starter monthly limit reached. Upgrade to Pro."); navigate("/billing"); return; }
         if (err === "no_product_shot") { toast.error("Upload a product image in workspace settings."); return; }
+        if (err === "no_images") { setNoImagesErr(true); return; }
         if (err === "rate_limit") { toast.error("Rate limited, try again in a moment."); return; }
         if (err === "payment_required") { toast.error("AI credits needed. Add credits in Lovable workspace."); return; }
         if (err === "cost_cap_reached") { toast.error("Monthly AI cost cap reached for your plan. Resets next month."); return; }
