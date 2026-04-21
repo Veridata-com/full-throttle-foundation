@@ -236,23 +236,28 @@ What to write:
     const slides = rawSlides.map((s: any, idx: number) => {
       const imgIdx = typeof s.image_index === 'number' ? s.image_index : idx;
       const pick = nonProduct[Math.min(Math.max(imgIdx, 0), nonProduct.length - 1)] || nonProduct[0];
-      if (pick) pickedImageIds.push(pick.id);
+      // Only track user-image IDs in the slideshow's image_ids array (used for editor lookup)
+      if (pick && !pick.is_stock) pickedImageIds.push(pick.id);
       return {
         id: crypto.randomUUID(),
         type: s.type || (idx === 0 ? 'hook' : 'value'),
         text: clean(s.text).slice(0, 400),
-        image_id: pick?.id || null,
+        image_id: pick && !pick.is_stock ? pick.id : null,
+        image_url: pick?.is_stock ? pick.public_url : null,
+        is_stock: !!pick?.is_stock,
         fabric_state: null,
       };
     });
 
-    // Append final CTA slide using a product shot
+    // Append final CTA slide using a product shot (always a user image)
     const productShot = productShots[Math.floor(Math.random() * productShots.length)];
     slides.push({
       id: crypto.randomUUID(),
       type: 'cta',
       text: clean(parsed.cta_text || workspace.default_cta || 'try it now').slice(0, 400),
       image_id: productShot.id,
+      image_url: null,
+      is_stock: false,
       fabric_state: null,
     });
 
