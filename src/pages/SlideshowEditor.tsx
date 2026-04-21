@@ -4,13 +4,11 @@ import { fabric } from "fabric";
 import JSZip from "jszip";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Download, Save, ArrowLeft, Type } from "lucide-react";
+import { Loader2, Download, Save, ArrowLeft, Image as ImageIcon, Plus, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { SEO } from "@/components/SEO";
 
@@ -26,38 +24,49 @@ interface Slide {
   subtext: string | null;
   image_id: string;
   layout: SlideLayout;
+  fabric_state?: any;
 }
 
 const CANVAS_W = 1080;
 const CANVAS_H = 1920;
-const DISPLAY_W = 360;
-// Clean caption font stack — system UI sans, regular weight, like reference reels
-const CAPTION_FONT = '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Segoe UI", system-ui, sans-serif';
+const MEME_FONT = '"Arial Black", "Helvetica Neue", Helvetica, Arial, sans-serif';
 
-function addCaption(canvas: fabric.Canvas | fabric.StaticCanvas, slide: Slide, opts?: { interactive?: boolean }) {
-  const h = slide.layout.headline;
-  const text = new fabric.Textbox(slide.headline || "", {
-    left: h.x,
-    top: h.y,
-    width: h.maxWidth,
-    fontSize: h.fontSize,
-    fill: h.color || "#FFFFFF",
-    fontFamily: CAPTION_FONT,
-    fontWeight: 400,
-    textAlign: "center",
+const FILL_SWATCHES = ["#FFFFFF", "#000000", "#FFE500", "#FF3B5C"];
+const STROKE_SWATCHES = ["#000000", "#FFFFFF", "#FFE500", "#FF3B5C"];
+
+// Editor palette (hardcoded dark to match spec)
+const C = {
+  bg: "#0A0A0A",
+  panel: "#111111",
+  border: "#2A2A2A",
+  accent: "#FF3B5C",
+  muted: "#A0A0A0",
+  text: "#FFFFFF",
+};
+
+function buildText(value: string, l: SlideLayout["headline"], role: "headline" | "subtext", interactive: boolean) {
+  const t = new fabric.IText(value || "", {
+    left: l.x,
+    top: l.y,
     originX: "center",
     originY: "center",
-    lineHeight: 1.15,
-    // Soft drop shadow for legibility on busy photos — no stroke, no outline
-    shadow: new fabric.Shadow({ color: "rgba(0,0,0,0.55)", blur: 14, offsetX: 0, offsetY: 2 }),
-    selectable: !!opts?.interactive,
-    evented: !!opts?.interactive,
-    editable: !!opts?.interactive,
+    fontSize: l.fontSize,
+    fontFamily: MEME_FONT,
+    fontWeight: 900,
+    fill: l.color,
+    stroke: l.stroke,
+    strokeWidth: l.strokeWidth,
+    paintFirst: "stroke",
+    textAlign: "center",
+    lineHeight: 1.05,
+    shadow: new fabric.Shadow({ color: "rgba(0,0,0,0.6)", blur: 8, offsetX: 0, offsetY: 3 }),
+    selectable: interactive,
+    evented: interactive,
+    editable: interactive,
     lockUniScaling: true,
   });
-  (text as any).set("data", { role: "headline" });
-  canvas.add(text);
-  return text;
+  (t as any).set("data", { role });
+  return t;
 }
 
 const SlideshowEditor = () => {
@@ -66,14 +75,22 @@ const SlideshowEditor = () => {
   const { user } = useAuth();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricRef = useRef<fabric.Canvas | null>(null);
+  const stageRef = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(0.4);
   const [slideshow, setSlideshow] = useState<any>(null);
   const [imageMap, setImageMap] = useState<Record<string, string>>({});
   const [activeIdx, setActiveIdx] = useState(0);
   const [saving, setSaving] = useState(false);
+  const [savingLabel, setSavingLabel] = useState<string>("");
   const [exporting, setExporting] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [headlineText, setHeadlineText] = useState("");
-  const [headlineSize, setHeadlineSize] = useState(64);
+
+  // Inspector state mirrors the active fabric object
+  const [activeRole, setActiveRole] = useState<"headline" | "subtext" | "custom" | null>("headline");
+  const [text, setText] = useState("");
+  const [size, setSize] = useState(88);
+  const [fill, setFill] = useState("#FFFFFF");
+  const [stroke, setStroke] = useState("#000000");
 
   // Load slideshow + signed image URLs
   useEffect(() => {
@@ -82,7 +99,6 @@ const SlideshowEditor = () => {
       const { data: ss, error } = await supabase.from("slideshows").select("*").eq("id", id).single();
       if (error || !ss) { toast.error("Not found"); navigate("/slideshows"); return; }
       setSlideshow(ss);
-
       const ids: string[] = ss.image_ids || [];
       if (ids.length) {
         const { data: imgs } = await supabase.from("images").select("id, storage_path").in("id", ids);
@@ -97,20 +113,45 @@ const SlideshowEditor = () => {
     })();
   }, [user, id, navigate]);
 
-  // Init fabric canvas
+  // Init fabric canvas once
   useEffect(() => {
     if (!canvasRef.current || fabricRef.current) return;
-    const c = new fabric.Canvas(canvasRef.current, {
-      width: CANVAS_W, height: CANVAS_H, backgroundColor: "#000",
-    });
+    const c = new fabric.Canvas(canvasRef.current, { width: CANVAS_W, height: CANVAS_H, backgroundColor: "#000", preserveObjectStacking: true });
     fabricRef.current = c;
+
+    const syncFromActive = () => {
+      const obj = c.getActiveObject() as fabric.IText | undefined;
+      if (!obj) { setActiveRole(null); return; }
+      const role = ((obj as any).data?.role as any) || "custom";
+      setActiveRole(role);
+      setText((obj as any).text || "");
+      setSize(Math.round(((obj as any).fontSize || 0) * (obj.scaleX || 1)));
+      setFill(((obj as any).fill as string) || "#FFFFFF");
+      setStroke(((obj as any).stroke as string) || "#000000");
+    };
+    c.on("selection:created", syncFromActive);
+    c.on("selection:updated", syncFromActive);
+    c.on("selection:cleared", () => setActiveRole(null));
+
     return () => { c.dispose(); fabricRef.current = null; };
   }, []);
+
+  // Responsive scale
+  useEffect(() => {
+    const calc = () => {
+      const el = stageRef.current; if (!el) return;
+      const w = el.clientWidth, h = el.clientHeight;
+      setScale(Math.min(w / CANVAS_W, h / CANVAS_H));
+    };
+    calc();
+    const ro = new ResizeObserver(calc);
+    if (stageRef.current) ro.observe(stageRef.current);
+    return () => ro.disconnect();
+  }, [loading]);
 
   const slides: Slide[] = slideshow?.slides || [];
   const active = slides[activeIdx];
 
-  // Render the active slide on canvas
   const renderSlide = useCallback(async (slide: Slide) => {
     const canvas = fabricRef.current;
     if (!canvas || !slide) return;
@@ -122,117 +163,147 @@ const SlideshowEditor = () => {
       await new Promise<void>((resolve) => {
         fabric.Image.fromURL(url, (img) => {
           if (!img) return resolve();
-          const scale = Math.max(CANVAS_W / (img.width || 1), CANVAS_H / (img.height || 1));
-          img.scale(scale);
-          img.set({
-            left: CANVAS_W / 2, top: CANVAS_H / 2, originX: "center", originY: "center",
-            selectable: false, evented: false,
-          });
-          canvas.add(img);
+          const s = Math.max(CANVAS_W / (img.width || 1), CANVAS_H / (img.height || 1));
+          img.scale(s);
+          img.set({ left: CANVAS_W / 2, top: CANVAS_H / 2, originX: "center", originY: "center", selectable: false, evented: false });
+          canvas.add(img); canvas.sendToBack(img);
           resolve();
         }, { crossOrigin: "anonymous" });
       });
     }
 
-    addCaption(canvas, slide, { interactive: true });
+    if (slide.fabric_state?.objects?.length) {
+      // Restore saved text objects only (image already added as background)
+      const textObjs = slide.fabric_state.objects.filter((o: any) => o.type === "i-text" || o.type === "IText");
+      await new Promise<void>((resolve) => {
+        fabric.util.enlivenObjects(textObjs, (objs: fabric.Object[]) => {
+          objs.forEach((o) => {
+            (o as any).set({ selectable: true, evented: true, editable: true });
+            canvas.add(o);
+          });
+          resolve();
+        }, "fabric");
+      });
+    } else {
+      canvas.add(buildText(slide.headline || "", slide.layout.headline, "headline", true));
+      if (slide.subtext) canvas.add(buildText(slide.subtext, slide.layout.subtext, "subtext", true));
+    }
+    canvas.discardActiveObject();
     canvas.renderAll();
-    setHeadlineText(slide.headline || "");
-    setHeadlineSize(slide.layout.headline.fontSize);
+    setActiveRole(null);
   }, [imageMap]);
 
-  useEffect(() => {
-    if (active) renderSlide(active);
-  }, [active, renderSlide]);
+  useEffect(() => { if (active) renderSlide(active); }, [active?.id, renderSlide]);
 
-  // Capture current canvas state into a Slide
-  const captureLayout = (): Slide | null => {
-    if (!active || !fabricRef.current) return null;
-    const objs = fabricRef.current.getObjects();
-    const headline = objs.find((o: any) => o.data?.role === "headline") as fabric.Textbox | undefined;
-    const updated: Slide = { ...active, subtext: null };
-    if (headline) {
-      updated.headline = headline.text || "";
-      updated.layout = {
-        ...updated.layout,
-        headline: {
-          ...updated.layout.headline,
-          x: Math.round(headline.left || 0),
-          y: Math.round(headline.top || 0),
-          fontSize: Math.round((headline.fontSize || 0) * (headline.scaleX || 1)),
-          maxWidth: Math.round((headline.width || 0) * (headline.scaleX || 1)),
-        },
-      };
-    }
-    return updated;
-  };
+  const captureFabricState = () => fabricRef.current ? fabricRef.current.toJSON(["data"]) : null;
 
-  const persistSlides = async (next: Slide[]) => {
-    if (!id) return;
-    setSaving(true);
+  const persistCurrent = useCallback(async (label = "Saving…") => {
+    if (!fabricRef.current || !active || !id) return;
+    setSaving(true); setSavingLabel(label);
+    const state = captureFabricState();
+    const headlineObj = fabricRef.current.getObjects().find((o: any) => o.data?.role === "headline") as fabric.IText | undefined;
+    const subtextObj = fabricRef.current.getObjects().find((o: any) => o.data?.role === "subtext") as fabric.IText | undefined;
+    const updated: Slide = {
+      ...active,
+      headline: headlineObj?.text || active.headline,
+      subtext: subtextObj?.text ?? active.subtext,
+      fabric_state: state,
+    };
+    const next = [...slides]; next[activeIdx] = updated;
+    setSlideshow((s: any) => ({ ...s, slides: next }));
     const { error } = await supabase.from("slideshows").update({ slides: next as any }).eq("id", id);
     setSaving(false);
     if (error) toast.error(error.message);
+    else { setSavingLabel("Saved"); setTimeout(() => setSavingLabel(""), 1500); }
+  }, [active, activeIdx, slides, id]);
+
+  // Auto-save every 30s
+  useEffect(() => {
+    if (!active) return;
+    const t = setInterval(() => persistCurrent("Auto-saving…"), 30000);
+    return () => clearInterval(t);
+  }, [active, persistCurrent]);
+
+  const switchTo = async (i: number) => {
+    if (i === activeIdx) return;
+    await persistCurrent();
+    setActiveIdx(i);
   };
 
-  const saveCurrent = async () => {
-    const updated = captureLayout();
-    if (!updated) return;
-    const next = [...slides]; next[activeIdx] = updated;
-    setSlideshow({ ...slideshow, slides: next });
-    await persistSlides(next);
-    toast.success("Saved");
+  // Inspector handlers — mutate active object
+  const withActive = (fn: (o: fabric.IText) => void) => {
+    const c = fabricRef.current; if (!c) return;
+    const o = c.getActiveObject() as fabric.IText | undefined; if (!o) return;
+    fn(o); c.renderAll();
+  };
+  const onText = (v: string) => { setText(v); withActive((o) => o.set({ text: v })); };
+  const onSize = (v: number) => { setSize(v); withActive((o) => o.set({ fontSize: v, scaleX: 1, scaleY: 1 })); };
+  const onFill = (c: string) => { setFill(c); withActive((o) => o.set({ fill: c })); };
+  const onStroke = (c: string) => { setStroke(c); withActive((o) => o.set({ stroke: c })); };
+
+  const addTextBlock = () => {
+    const c = fabricRef.current; if (!c) return;
+    const t = buildText("New text", { x: CANVAS_W / 2, y: CANVAS_H / 2, fontSize: 80, color: "#FFFFFF", stroke: "#000000", strokeWidth: 8, fontWeight: 900, textAlign: "center", maxWidth: 900 }, "headline" as any, true);
+    (t as any).set("data", { role: "custom" });
+    c.add(t); c.setActiveObject(t); c.renderAll();
   };
 
-  const updateHeadline = (value: string) => {
-    if (!fabricRef.current) return;
-    const obj = fabricRef.current.getObjects().find((o: any) => o.data?.role === "headline") as fabric.Textbox | undefined;
-    if (obj) { obj.set("text", value); fabricRef.current.renderAll(); }
-    setHeadlineText(value);
-  };
+  const resetStyle = () => withActive((o) => {
+    const role = (o as any).data?.role;
+    const l = role === "subtext" ? active?.layout.subtext : active?.layout.headline;
+    if (!l) return;
+    o.set({ fill: l.color, stroke: l.stroke, strokeWidth: l.strokeWidth, fontSize: l.fontSize, scaleX: 1, scaleY: 1, fontWeight: 900, fontFamily: MEME_FONT });
+    setFill(l.color); setStroke(l.stroke); setSize(l.fontSize);
+  });
 
-  const updateHeadlineSize = (size: number) => {
-    setHeadlineSize(size);
-    if (!fabricRef.current) return;
-    const obj = fabricRef.current.getObjects().find((o: any) => o.data?.role === "headline") as fabric.Textbox | undefined;
-    if (obj) { obj.set({ fontSize: size, scaleX: 1, scaleY: 1 }); fabricRef.current.renderAll(); }
+  const downloadPNG = () => {
+    const c = fabricRef.current; if (!c) return;
+    c.discardActiveObject(); c.renderAll();
+    const url = c.toDataURL({ format: "png", multiplier: 1 });
+    const a = document.createElement("a");
+    a.href = url; a.download = `slide-${activeIdx + 1}.png`; a.click();
+    toast.success("Slide downloaded!");
   };
 
   const exportZip = async () => {
     if (!slideshow) return;
     setExporting(true);
-    const zip = new JSZip();
     try {
-      const currentUpdated = captureLayout();
-      const workingSlides = currentUpdated ? slides.map((s, i) => i === activeIdx ? currentUpdated : s) : slides;
+      await persistCurrent();
+      const zip = new JSZip();
+      const off = new fabric.StaticCanvas(null as any, { width: CANVAS_W, height: CANVAS_H });
+      const working: Slide[] = (slideshow.slides || []).map((s: Slide, i: number) => i === activeIdx ? { ...s, fabric_state: captureFabricState() } : s);
 
-      const offCanvas = new fabric.StaticCanvas(null as any, { width: CANVAS_W, height: CANVAS_H });
-
-      for (let i = 0; i < workingSlides.length; i++) {
-        const slide = workingSlides[i];
-        offCanvas.clear();
-        offCanvas.backgroundColor = "#000";
-
+      for (let i = 0; i < working.length; i++) {
+        const slide = working[i];
+        off.clear();
+        off.backgroundColor = "#000";
         const url = imageMap[slide.image_id];
         if (url) {
           await new Promise<void>((resolve) => {
             fabric.Image.fromURL(url, (img) => {
               if (!img) return resolve();
-              const scale = Math.max(CANVAS_W / (img.width || 1), CANVAS_H / (img.height || 1));
-              img.scale(scale);
+              const s = Math.max(CANVAS_W / (img.width || 1), CANVAS_H / (img.height || 1));
+              img.scale(s);
               img.set({ left: CANVAS_W / 2, top: CANVAS_H / 2, originX: "center", originY: "center" });
-              offCanvas.add(img);
+              off.add(img);
               resolve();
             }, { crossOrigin: "anonymous" });
           });
         }
-
-        addCaption(offCanvas, slide);
-        offCanvas.renderAll();
-        const dataUrl = offCanvas.toDataURL({ format: "png", quality: 1 });
-        const base64 = dataUrl.split(",")[1];
-        zip.file(`slide-${String(i + 1).padStart(2, "0")}.png`, base64, { base64: true });
+        if (slide.fabric_state?.objects?.length) {
+          const textObjs = slide.fabric_state.objects.filter((o: any) => o.type === "i-text" || o.type === "IText");
+          await new Promise<void>((resolve) => {
+            fabric.util.enlivenObjects(textObjs, (objs: fabric.Object[]) => { objs.forEach((o) => off.add(o)); resolve(); }, "fabric");
+          });
+        } else {
+          off.add(buildText(slide.headline || "", slide.layout.headline, "headline", false));
+          if (slide.subtext) off.add(buildText(slide.subtext, slide.layout.subtext, "subtext", false));
+        }
+        off.renderAll();
+        const dataUrl = off.toDataURL({ format: "png", quality: 1 });
+        zip.file(`slide-${String(i + 1).padStart(2, "0")}.png`, dataUrl.split(",")[1], { base64: true });
       }
-
       const blob = await zip.generateAsync({ type: "blob" });
       const a = document.createElement("a");
       a.href = URL.createObjectURL(blob);
@@ -240,68 +311,125 @@ const SlideshowEditor = () => {
       a.click();
       URL.revokeObjectURL(a.href);
       toast.success("Exported!");
-    } catch (e: any) {
-      toast.error(e.message || "Export failed");
-    } finally { setExporting(false); }
+    } catch (e: any) { toast.error(e.message || "Export failed"); } finally { setExporting(false); }
   };
 
   if (loading || !slideshow) {
-    return <div className="flex min-h-screen items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+    return <div className="flex min-h-screen items-center justify-center" style={{ background: C.bg }}><Loader2 className="h-8 w-8 animate-spin" style={{ color: C.accent }} /></div>;
   }
+
+  const Swatch = ({ color, active, onClick }: { color: string; active: boolean; onClick: () => void }) => (
+    <button onClick={onClick} className="h-7 w-7 rounded-full transition-transform hover:scale-110" style={{ background: color, boxShadow: active ? `0 0 0 2px ${C.bg}, 0 0 0 4px ${C.text}` : `inset 0 0 0 1px ${C.border}` }} aria-label={color} />
+  );
 
   return (
     <>
       <SEO title={slideshow.title || "Editor"} />
-      <div className="container py-6">
-        <header className="flex items-center justify-between mb-6 gap-4 flex-wrap">
-          <div className="flex items-center gap-3">
-            <Button size="sm" variant="ghost" onClick={() => navigate("/slideshows")}><ArrowLeft className="h-4 w-4" /></Button>
-            <Input value={slideshow.title} onChange={e => setSlideshow({ ...slideshow, title: e.target.value })} onBlur={async () => { await supabase.from("slideshows").update({ title: slideshow.title }).eq("id", id); }} className="font-display font-bold text-lg max-w-xs border-0 bg-transparent focus-visible:ring-1" />
+      <div className="min-h-screen flex flex-col" style={{ background: C.bg, color: C.text }}>
+        {/* Toolbar */}
+        <header className="flex items-center justify-between px-4 gap-3 flex-shrink-0" style={{ height: 56, borderBottom: `1px solid ${C.border}`, background: C.panel }}>
+          <div className="flex items-center gap-2 min-w-0">
+            <Button size="sm" variant="ghost" onClick={() => navigate("/slideshows")} style={{ color: C.text }} className="hover:bg-white/5"><ArrowLeft className="h-4 w-4" /></Button>
+            <Input
+              value={slideshow.title}
+              onChange={e => setSlideshow({ ...slideshow, title: e.target.value })}
+              onBlur={async () => { await supabase.from("slideshows").update({ title: slideshow.title }).eq("id", id); }}
+              className="font-bold text-base max-w-xs border-0 bg-transparent focus-visible:ring-0"
+              style={{ color: C.text }}
+            />
           </div>
-          <div className="flex gap-2">
-            <Button size="sm" variant="outline" onClick={saveCurrent} disabled={saving}>
+          <div className="flex items-center gap-3">
+            {savingLabel && <span className="text-xs transition-opacity" style={{ color: C.muted }}>{savingLabel}</span>}
+            <Button size="sm" variant="ghost" onClick={() => persistCurrent()} disabled={saving} style={{ color: C.text }} className="hover:bg-white/5">
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Save
             </Button>
-            <Button size="sm" className="shadow-glow" onClick={exportZip} disabled={exporting}>
+            <Button size="sm" variant="ghost" onClick={downloadPNG} style={{ color: C.text }} className="hover:bg-white/5">
+              <ImageIcon className="h-4 w-4" /> PNG
+            </Button>
+            <Button size="sm" onClick={exportZip} disabled={exporting} style={{ background: C.accent, color: "#fff" }} className="hover:opacity-90">
               {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />} Export ZIP
             </Button>
           </div>
         </header>
 
-        <div className="grid lg:grid-cols-[160px_1fr_300px] gap-6">
-          {/* Slide thumbnails */}
-          <div className="flex lg:flex-col gap-2 overflow-x-auto lg:overflow-visible">
+        <div className="flex-1 flex min-h-0">
+          {/* Slides rail */}
+          <aside className="flex-shrink-0 overflow-y-auto p-3 space-y-2" style={{ width: 200, background: C.panel, borderRight: `1px solid ${C.border}` }}>
             {slides.map((s, i) => (
-              <button key={s.id} onClick={async () => { await saveCurrent(); setActiveIdx(i); }}
-                className={`flex-shrink-0 aspect-[9/16] w-20 lg:w-full rounded-lg border-2 overflow-hidden bg-black relative text-left transition-all ${i === activeIdx ? "border-primary shadow-glow" : "border-border hover:border-primary/40"}`}>
-                {imageMap[s.image_id] && <img src={imageMap[s.image_id]} alt="" className="object-cover w-full h-full opacity-70" />}
-                <div className="absolute inset-x-0 top-0 p-1 text-[10px] font-bold text-white bg-black/60 truncate">{i + 1}. {s.type}</div>
+              <button key={s.id} onClick={() => switchTo(i)}
+                className="w-full aspect-[9/16] rounded-lg overflow-hidden relative text-left transition-all"
+                style={{ border: `2px solid ${i === activeIdx ? C.accent : C.border}`, background: "#000" }}>
+                {imageMap[s.image_id] && <img src={imageMap[s.image_id]} alt="" className="object-cover w-full h-full opacity-60" />}
+                <div className="absolute inset-x-0 top-0 px-2 py-1 text-[10px] font-bold truncate" style={{ background: "rgba(0,0,0,0.7)", color: C.text }}>{i + 1}. {s.type}</div>
               </button>
             ))}
-          </div>
+          </aside>
 
-          {/* Canvas */}
-          <Card className="p-4 shadow-card flex items-center justify-center bg-muted/30">
-            <div style={{ width: DISPLAY_W, height: DISPLAY_W * (CANVAS_H / CANVAS_W) }} className="relative overflow-hidden">
-              <div style={{ transform: `scale(${DISPLAY_W / CANVAS_W})`, transformOrigin: "top left", width: CANVAS_W, height: CANVAS_H }}>
-                <canvas ref={canvasRef} />
+          {/* Canvas stage */}
+          <main ref={stageRef} className="flex-1 min-w-0 flex items-center justify-center p-6 overflow-hidden" style={{ background: C.bg }}>
+            <div style={{ width: CANVAS_W * scale, height: CANVAS_H * scale, position: "relative" }}>
+              <div style={{ transform: `scale(${scale})`, transformOrigin: "top left", width: CANVAS_W, height: CANVAS_H }}>
+                <canvas ref={canvasRef} id="slideshow-canvas" />
               </div>
             </div>
-          </Card>
+          </main>
 
           {/* Inspector */}
-          <Card className="p-5 shadow-card space-y-4 h-fit">
-            <h3 className="font-display font-bold flex items-center gap-2"><Type className="h-4 w-4" /> Slide {activeIdx + 1}</h3>
-            <div className="space-y-2">
-              <Label>Caption</Label>
-              <Textarea value={headlineText} onChange={e => updateHeadline(e.target.value)} rows={4} placeholder="Use a line break between sentences for a soft pause." />
+          <aside className="flex-shrink-0 overflow-y-auto p-5 space-y-6" style={{ width: 280, background: C.panel, borderLeft: `1px solid ${C.border}` }}>
+            <div>
+              <div className="text-[11px] font-bold tracking-wider mb-2" style={{ color: C.muted }}>TEXT CONTENT</div>
+              <Textarea
+                value={text}
+                onChange={e => onText(e.target.value)}
+                rows={3}
+                disabled={!activeRole}
+                placeholder={activeRole ? "Type caption…" : "Select text on canvas"}
+                className="resize-none"
+                style={{ background: C.bg, border: `1px solid ${C.border}`, color: C.text }}
+              />
             </div>
-            <div className="space-y-2">
-              <Label>Caption size: {headlineSize}px</Label>
-              <Slider value={[headlineSize]} min={32} max={120} step={2} onValueChange={v => updateHeadlineSize(v[0])} />
+
+            <div>
+              <div className="text-[11px] font-bold tracking-wider mb-2 flex justify-between" style={{ color: C.muted }}>
+                <span>TEXT SIZE</span><span style={{ color: C.text }}>{size}px</span>
+              </div>
+              <Slider value={[size]} min={20} max={200} step={2} onValueChange={v => onSize(v[0])} disabled={!activeRole} />
             </div>
-            <p className="text-xs text-muted-foreground">Drag the caption on the canvas to reposition. Click Save when done.</p>
-          </Card>
+
+            <div className="space-y-3">
+              <div className="text-[11px] font-bold tracking-wider" style={{ color: C.muted }}>STYLE</div>
+              <div>
+                <div className="text-xs mb-2" style={{ color: C.muted }}>Fill</div>
+                <div className="flex items-center gap-2">
+                  {FILL_SWATCHES.map(c => <Swatch key={c} color={c} active={fill.toUpperCase() === c} onClick={() => onFill(c)} />)}
+                  <input type="color" value={fill} onChange={e => onFill(e.target.value)} disabled={!activeRole}
+                    className="h-7 w-7 rounded-full cursor-pointer bg-transparent border-0 p-0" />
+                </div>
+              </div>
+              <div>
+                <div className="text-xs mb-2" style={{ color: C.muted }}>Outline</div>
+                <div className="flex items-center gap-2">
+                  {STROKE_SWATCHES.map(c => <Swatch key={c} color={c} active={stroke.toUpperCase() === c} onClick={() => onStroke(c)} />)}
+                  <input type="color" value={stroke} onChange={e => onStroke(e.target.value)} disabled={!activeRole}
+                    className="h-7 w-7 rounded-full cursor-pointer bg-transparent border-0 p-0" />
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <div className="text-[11px] font-bold tracking-wider" style={{ color: C.muted }}>ACTIONS</div>
+              <Button size="sm" variant="outline" onClick={resetStyle} disabled={!activeRole} className="w-full justify-start" style={{ background: "transparent", border: `1px solid ${C.border}`, color: C.text }}>
+                <RotateCcw className="h-4 w-4" /> Reset style
+              </Button>
+              <Button size="sm" variant="outline" onClick={addTextBlock} className="w-full justify-start" style={{ background: "transparent", border: `1px solid ${C.border}`, color: C.text }}>
+                <Plus className="h-4 w-4" /> Add text block
+              </Button>
+            </div>
+
+            <p className="text-[11px] leading-relaxed" style={{ color: C.muted }}>
+              Drag to move. Double-click text to edit inline. Auto-saves every 30s.
+            </p>
+          </aside>
         </div>
       </div>
     </>
