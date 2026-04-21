@@ -247,7 +247,7 @@ const SlideshowEditor = () => {
             fabricRef.current!.add(o);
           });
           const t = findTextObject(fabricRef.current);
-          if (t) { setSlideText(t.text || ""); setFontSize(Math.round((t.fontSize as number) || 80)); }
+          if (t) { setSlideText(t.text || ""); setFontSize(Math.round((t.fontSize as number) || 46)); }
           fabricRef.current.renderAll();
         }, "fabric");
       } else {
