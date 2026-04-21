@@ -1,16 +1,12 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Check, Loader2, Sparkles } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { SEO } from "@/components/SEO";
 
 const Onboarding = () => {
-  const { user, refreshProfile } = useAuth();
-  const navigate = useNavigate();
   const [loading, setLoading] = useState<string | null>(null);
 
   const startCheckout = async (plan: "starter" | "pro") => {
@@ -23,20 +19,11 @@ const Onboarding = () => {
       if (data?.url) window.location.href = data.url;
       else throw new Error(data?.error || "Could not create checkout");
     } catch (err: any) {
-      toast.error(err.message || "Could not start checkout. You can still use the dev bypass below.");
+      toast.error(err.message || "Could not start checkout. Please try again.");
       setLoading(null);
     }
   };
 
-  const devBypass = async () => {
-    if (!user) return;
-    setLoading("dev");
-    const { error } = await supabase.from("profiles").update({ plan: "starter" }).eq("id", user.id);
-    if (error) { toast.error(error.message); setLoading(null); return; }
-    await refreshProfile();
-    toast.success("Dev bypass activated — Starter plan");
-    navigate("/workspaces/new");
-  };
 
   const plans = [
     { id: "starter" as const, name: "Starter", price: "7.60", original: "19.00", renewal: "19", features: ["1 workspace", "50 slideshows / month", "500 image uploads", "All AI features"] },
@@ -77,18 +64,6 @@ const Onboarding = () => {
               </Card>
             ))}
           </div>
-          <Card className="p-4 bg-muted/50 border-dashed">
-            <div className="flex items-center justify-between gap-4 flex-wrap">
-              <div>
-                <p className="text-sm font-semibold">Dev mode</p>
-                <p className="text-xs text-muted-foreground">Skip Stripe and unlock the app for testing.</p>
-              </div>
-              <Button variant="outline" size="sm" onClick={devBypass} disabled={loading !== null}>
-                {loading === "dev" && <Loader2 className="h-4 w-4 animate-spin" />}
-                Dev bypass → Starter
-              </Button>
-            </div>
-          </Card>
         </div>
       </div>
     </>
