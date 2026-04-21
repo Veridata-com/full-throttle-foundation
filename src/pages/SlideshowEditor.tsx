@@ -496,6 +496,20 @@ const SlideshowEditor = () => {
     />
   );
 
+  const MobileTabBtn = ({ icon, label, onClick }: { icon: React.ReactNode; label: string; onClick: () => void }) => (
+    <button
+      onClick={onClick}
+      style={{
+        display: "flex", flexDirection: "column", alignItems: "center", gap: 2,
+        background: "transparent", border: "none", color: C.muted,
+        padding: "6px 0", borderRadius: 8, cursor: "pointer",
+      }}
+    >
+      {icon}
+      <span style={{ fontSize: 11, fontWeight: 500 }}>{label}</span>
+    </button>
+  );
+
   const secondaryBtn: React.CSSProperties = {
     background: "transparent",
     border: `1px solid ${C.border}`,
