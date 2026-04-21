@@ -18,15 +18,26 @@ const Billing = () => {
   const [syncing, setSyncing] = useState(true);
 
   useEffect(() => {
+    const isSuccess = !!params.get("success");
+    if (isSuccess) { toast.success("Payment received — syncing your subscription…"); params.delete("success"); setParams(params, { replace: true }); }
+    if (params.get("canceled")) { toast.info("Checkout canceled"); params.delete("canceled"); setParams(params, { replace: true }); }
+
+    let cancelled = false;
     (async () => {
-      try {
-        await supabase.functions.invoke("check-subscription", { body: {} });
-        await refreshProfile();
-      } catch {}
-      finally { setSyncing(false); }
+      const maxAttempts = isSuccess ? 10 : 1;
+      for (let i = 0; i < maxAttempts; i++) {
+        if (cancelled) return;
+        try {
+          const { data } = await supabase.functions.invoke("check-subscription", { body: {} });
+          await refreshProfile();
+          if (!isSuccess || (data?.plan && data.plan !== "none")) break;
+        } catch {}
+        if (i < maxAttempts - 1) await new Promise(r => setTimeout(r, 2000));
+      }
+      if (!cancelled) setSyncing(false);
     })();
-    if (params.get("success")) { toast.success("Subscription activated!"); params.delete("success"); setParams(params); }
-    if (params.get("canceled")) { toast.info("Checkout canceled"); params.delete("canceled"); setParams(params); }
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const checkout = async (plan: "starter" | "pro") => {
