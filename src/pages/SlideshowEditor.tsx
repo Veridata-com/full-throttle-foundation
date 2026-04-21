@@ -139,6 +139,9 @@ const SlideshowEditor = () => {
   const [fill, setFill] = useState("#FFFFFF");
   const [stroke, setStroke] = useState("#000000");
 
+  const isMobile = useIsMobile();
+  const [mobileSheet, setMobileSheet] = useState<null | "text" | "size" | "color">(null);
+
   // Keep refs in sync for use in cleanup / async paths
   useEffect(() => { activeIdxRef.current = activeIdx; }, [activeIdx]);
   useEffect(() => { imageMapRef.current = imageMap; }, [imageMap]);
