@@ -307,6 +307,10 @@ const SlideshowEditor = () => {
         outer.style.width = `${CANVAS_W * s}px`;
         outer.style.height = `${CANVAS_H * s}px`;
       }
+      // Tell Fabric the wrapper has moved/scaled so click coordinates map correctly.
+      if (fabricRef.current) {
+        try { fabricRef.current.calcOffset(); } catch { /* noop */ }
+      }
     };
     scale();
     window.addEventListener("resize", scale);
