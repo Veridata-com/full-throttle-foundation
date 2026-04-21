@@ -13,6 +13,18 @@ import { toast } from "sonner";
 import { SEO } from "@/components/SEO";
 import { ImagePreviewDrawer } from "@/components/ImagePreviewDrawer";
 import { Link } from "react-router-dom";
+import { cn } from "@/lib/utils";
+
+interface StockImage {
+  id: string;
+  filename: string;
+  public_url: string;
+  ai_description: string;
+  ai_tags: string[] | null;
+  category: string;
+}
+
+const STOCK_CATEGORIES = ["all", "workspace", "lifestyle", "money", "tech", "minimal", "people"] as const;
 
 interface ImageRow {
   id: string;
