@@ -14,13 +14,19 @@ import { SEO } from "@/components/SEO";
 import { ImageSourceToggle, type ImageSource } from "@/components/ImageSourceToggle";
 
 const NewSlideshow = () => {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const { current } = useWorkspace();
   const navigate = useNavigate();
   const [numSlides, setNumSlides] = useState(6);
   const [hookStyle, setHookStyle] = useState("curiosity");
   const [loading, setLoading] = useState(false);
   const [productCount, setProductCount] = useState<number | null>(null);
+  const [imageSource, setImageSource] = useState<ImageSource>("both");
+  const [noImagesErr, setNoImagesErr] = useState(false);
+
+  useEffect(() => {
+    setImageSource((profile?.default_image_source as ImageSource) || "both");
+  }, [profile]);
 
   useEffect(() => {
     if (!current) return;
