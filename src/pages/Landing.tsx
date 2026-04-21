@@ -61,22 +61,47 @@ const Landing = () => {
         </section>
 
         <section className="container py-20 border-t">
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="text-center mb-14">
+            <h2 className="font-display text-4xl md:text-5xl font-bold mb-4">Built to ship, not fiddle</h2>
+            <p className="text-muted-foreground text-lg">From upload to posted, in minutes.</p>
+          </div>
+          <div className="grid md:grid-cols-3 gap-8">
             {[
               { icon: ImageIcon, title: "Smart image library", desc: "Upload once. AI auto-tags and sorts every image so you can find it fast.", img: featureLibrary, alt: "AdRise image library with auto-tagged folders" },
               { icon: Wand2, title: "AI writes the script", desc: "Hooks, value props, and CTAs. Tuned for TikTok-native, human voice.", img: featureEditor, alt: "AdRise slideshow editor with AI-generated TikTok hook" },
               { icon: Download, title: "Export & post", desc: "1080x1920 PNGs, zipped and ready for TikTok, Reels, or Shorts.", img: featureExport, alt: "Exported AdRise slideshow ZIP file ready to post" },
-            ].map((f) => (
-              <Card key={f.title} className="p-6 shadow-card border-2 hover:border-primary/30 transition-colors flex flex-col">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-primary shadow-glow mb-4">
-                  <f.icon className="h-5 w-5 text-primary-foreground" />
+            ].map((f, i) => (
+              <div key={f.title} className="group relative">
+                {/* glow */}
+                <div className="absolute -inset-1 rounded-3xl bg-gradient-primary opacity-0 group-hover:opacity-30 blur-2xl transition-opacity duration-500" aria-hidden />
+                <div className="relative h-full rounded-3xl border border-border/60 bg-card/60 backdrop-blur-xl p-7 shadow-card overflow-hidden flex flex-col transition-all duration-500 hover:-translate-y-1 hover:border-primary/40">
+                  {/* subtle corner gradient */}
+                  <div className="pointer-events-none absolute -top-24 -right-24 h-56 w-56 rounded-full bg-gradient-primary opacity-20 blur-3xl" aria-hidden />
+
+                  <div className="relative flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-primary shadow-glow mb-5">
+                    <f.icon className="h-5 w-5 text-primary-foreground" />
+                  </div>
+                  <h3 className="relative font-display text-xl font-bold mb-2">{f.title}</h3>
+                  <p className="relative text-muted-foreground mb-6">{f.desc}</p>
+
+                  {/* floating screenshot mockup */}
+                  <div className="relative mt-auto">
+                    <div className="absolute inset-x-6 -bottom-2 h-10 bg-primary/30 blur-2xl rounded-full" aria-hidden />
+                    <div
+                      className="relative rounded-xl overflow-hidden border border-border/80 bg-background shadow-2xl transition-transform duration-500 group-hover:-translate-y-2 group-hover:rotate-0"
+                      style={{ transform: `rotate(${i % 2 === 0 ? -1.5 : 1.5}deg)` }}
+                    >
+                      {/* faux window chrome */}
+                      <div className="flex items-center gap-1.5 px-3 py-2 bg-muted/60 border-b border-border/60">
+                        <span className="h-2.5 w-2.5 rounded-full bg-destructive/70" />
+                        <span className="h-2.5 w-2.5 rounded-full bg-warning/70" />
+                        <span className="h-2.5 w-2.5 rounded-full bg-success/70" />
+                      </div>
+                      <img src={f.img} alt={f.alt} loading="lazy" className="w-full h-44 object-cover object-top" />
+                    </div>
+                  </div>
                 </div>
-                <h3 className="font-display text-xl font-bold mb-2">{f.title}</h3>
-                <p className="text-muted-foreground mb-5">{f.desc}</p>
-                <div className="mt-auto rounded-lg overflow-hidden border bg-muted/30">
-                  <img src={f.img} alt={f.alt} loading="lazy" className="w-full h-48 object-cover object-top" />
-                </div>
-              </Card>
+              </div>
             ))}
           </div>
         </section>
