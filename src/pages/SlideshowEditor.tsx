@@ -282,25 +282,27 @@ const SlideshowEditor = () => {
     };
   }, [activeIdx, loading, active?.id, imageMap]);
 
-  // Responsive scale via CSS transform on a 1080x1920 wrapper
+  // Responsive scale via Fabric's CSS-only setDimensions so pointer coords stay correct.
   useEffect(() => {
     const scale = () => {
       const stage = stageRef.current; const wrap = wrapperRef.current;
       if (!stage || !wrap) return;
-      const availH = stage.clientHeight - 24; // some padding
-      const availW = stage.clientWidth - 24;
+      const availH = Math.max(0, stage.clientHeight - 16);
+      const availW = Math.max(0, stage.clientWidth - 16);
+      if (!availH || !availW) return;
       const s = Math.min(availH / CANVAS_H, availW / CANVAS_W);
-      wrap.style.transform = `scale(${s})`;
-      wrap.style.transformOrigin = "top left";
-      // Outer container sized to the scaled box so flex centering works
-      const outer = wrap.parentElement as HTMLDivElement | null;
-      if (outer) {
-        outer.style.width = `${CANVAS_W * s}px`;
-        outer.style.height = `${CANVAS_H * s}px`;
-      }
-      // Tell Fabric the wrapper has moved/scaled so click coordinates map correctly.
+      const cssW = CANVAS_W * s;
+      const cssH = CANVAS_H * s;
+      // Wrapper holds the CSS-sized canvas so flex centering works.
+      wrap.style.width = `${cssW}px`;
+      wrap.style.height = `${cssH}px`;
+      wrap.style.transform = "none";
+      // Tell Fabric the new CSS size — it remaps pointer events to internal 1080x1920 space.
       if (fabricRef.current) {
-        try { fabricRef.current.calcOffset(); } catch { /* noop */ }
+        try {
+          fabricRef.current.setDimensions({ width: `${cssW}px`, height: `${cssH}px` }, { cssOnly: true });
+          fabricRef.current.calcOffset();
+        } catch { /* noop */ }
       }
     };
     scale();
@@ -308,7 +310,7 @@ const SlideshowEditor = () => {
     const ro = new ResizeObserver(scale);
     if (stageRef.current) ro.observe(stageRef.current);
     return () => { window.removeEventListener("resize", scale); ro.disconnect(); };
-  }, [loading]);
+  }, [loading, activeIdx]);
 
   // Build the next slides array reflecting current canvas state
   const captureCurrentSlides = (): Slide[] => {
@@ -550,7 +552,7 @@ const SlideshowEditor = () => {
   return (
     <>
       <SEO title={slideshow.title || "Editor"} />
-      <div className="flex flex-col" style={{ background: C.bg, color: C.text, height: "100vh", overflow: "hidden" }}>
+      <div className="flex flex-col" style={{ background: C.bg, color: C.text, height: "calc(100dvh - 3.5rem)", overflow: "hidden" }}>
         {isMobile ? (
           /* ============== MOBILE LAYOUT ============== */
           <>
@@ -615,11 +617,9 @@ const SlideshowEditor = () => {
 
             {/* Canvas area */}
             <main className="flex-1 min-h-0 flex flex-col" style={{ background: C.bg }}>
-              <div ref={stageRef} className="flex-1 flex items-center justify-center overflow-hidden" style={{ padding: 8 }}>
-                <div style={{ position: "relative" }}>
-                  <div ref={wrapperRef} style={{ width: CANVAS_W, height: CANVAS_H, position: "relative" }}>
-                    <canvas ref={canvasRef} id="fabric-canvas" />
-                  </div>
+              <div ref={stageRef} className="flex-1 min-h-0 flex items-center justify-center overflow-hidden" style={{ padding: 8 }}>
+                <div ref={wrapperRef} style={{ position: "relative" }}>
+                  <canvas ref={canvasRef} id="fabric-canvas" />
                 </div>
               </div>
             </main>
@@ -865,11 +865,9 @@ const SlideshowEditor = () => {
               </aside>
 
               <main className="flex-1 min-w-0 flex flex-col" style={{ background: C.bg }}>
-                <div ref={stageRef} className="flex-1 flex items-center justify-center overflow-hidden" style={{ padding: 12 }}>
-                  <div style={{ position: "relative" }}>
-                    <div ref={wrapperRef} style={{ width: CANVAS_W, height: CANVAS_H, position: "relative" }}>
-                      <canvas ref={canvasRef} id="fabric-canvas" />
-                    </div>
+                <div ref={stageRef} className="flex-1 min-h-0 flex items-center justify-center overflow-hidden" style={{ padding: 12 }}>
+                  <div ref={wrapperRef} style={{ position: "relative" }}>
+                    <canvas ref={canvasRef} id="fabric-canvas" />
                   </div>
                 </div>
                 <div style={{ fontSize: 12, color: C.mutedDim, textAlign: "center", padding: 12, flexShrink: 0 }}>
