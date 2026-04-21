@@ -16,7 +16,9 @@ interface Slide {
   // legacy fields (read for back-compat, no longer written)
   headline?: string;
   subtext?: string | null;
-  image_id: string;
+  image_id: string | null;
+  image_url?: string | null;
+  is_stock?: boolean;
   layout?: any;
   fabric_state?: any;
 }
