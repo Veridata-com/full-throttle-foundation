@@ -49,23 +49,70 @@ function slideToText(s: Slide): string {
   return parts.join("\n") || "tap to edit your text here.";
 }
 
-function buildText(value: string, opts?: { top?: number; fontSize?: number }) {
-  return new fabric.IText(value || "", {
+// Disable Fabric per-object caching globally — biggest fix for glitching on CSS-scaled canvas.
+(fabric.Object.prototype as any).objectCaching = false;
+(fabric.IText.prototype as any).objectCaching = false;
+
+const MAX_CHARS_PER_LINE = 35;
+
+function wrapTextToMaxChars(text: string, maxChars = MAX_CHARS_PER_LINE): string {
+  const inputLines = (text || "").split("\n");
+  const out: string[] = [];
+  for (const line of inputLines) {
+    if (line.length <= maxChars) { out.push(line); continue; }
+    const words = line.split(" ");
+    let cur = "";
+    for (const w of words) {
+      const test = cur ? `${cur} ${w}` : w;
+      if (test.length <= maxChars) cur = test;
+      else { if (cur) out.push(cur); cur = w; }
+    }
+    if (cur) out.push(cur);
+  }
+  return out.join("\n");
+}
+
+function calculateOptimalFontSize(text: string): number {
+  const lines = (text || "").split("\n");
+  const longest = lines.reduce((a, b) => (a.length > b.length ? a : b), "");
+  const maxChars = longest.length;
+  const lineCount = lines.length;
+  let fs = 72;
+  if (maxChars <= 20) fs = 88;
+  else if (maxChars <= 28) fs = 78;
+  else if (maxChars <= 35) fs = 68;
+  else if (maxChars <= 45) fs = 56;
+  else if (maxChars <= 55) fs = 48;
+  else if (maxChars <= 70) fs = 42;
+  else fs = 36;
+  if (lineCount >= 5) fs = Math.min(fs, 52);
+  if (lineCount >= 7) fs = Math.min(fs, 42);
+  return fs;
+}
+
+function makeShadow() {
+  return new fabric.Shadow({ color: "rgba(0,0,0,0.9)", blur: 16, offsetX: 3, offsetY: 3 });
+}
+
+function buildText(value: string, opts?: { top?: number; fontSize?: number; wrap?: boolean }) {
+  const wrapped = opts?.wrap === false ? (value || "") : wrapTextToMaxChars(value || "");
+  const fontSize = opts?.fontSize ?? calculateOptimalFontSize(wrapped);
+  return new fabric.IText(wrapped, {
     left: CANVAS_W / 2,
     top: opts?.top ?? 1100,
     originX: "center",
     originY: "center",
     fontFamily: MEME_FONT,
     fontWeight: "900",
-    fontSize: opts?.fontSize ?? 80,
+    fontSize,
     fill: "#FFFFFF",
     stroke: "#000000",
     strokeWidth: 10,
     paintFirst: "stroke",
     textAlign: "center",
     width: 900,
-    lineHeight: 1.25,
-    shadow: new fabric.Shadow({ color: "rgba(0,0,0,0.9)", blur: 16, offsetX: 3, offsetY: 3 }),
+    lineHeight: 1.35,
+    shadow: makeShadow(),
     editable: true,
     selectable: true,
     hasControls: true,
@@ -130,6 +177,8 @@ const SlideshowEditor = () => {
       setLoading(false);
     })();
   }, [user, id, navigate]);
+
+  const renderThrottleRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const slides: Slide[] = slideshow?.slides || [];
   const active = slides[activeIdx];
@@ -205,11 +254,13 @@ const SlideshowEditor = () => {
           fabricRef.current.renderAll();
         }, "fabric");
       } else {
-        const txt = slideToText(active);
-        const t = buildText(txt);
+        const raw = slideToText(active);
+        const wrapped = wrapTextToMaxChars(raw);
+        const fs = calculateOptimalFontSize(wrapped);
+        const t = buildText(wrapped, { fontSize: fs, wrap: false });
         canvas.add(t);
-        setSlideText(txt);
-        setFontSize(80);
+        setSlideText(wrapped);
+        setFontSize(fs);
         canvas.renderAll();
       }
     };
@@ -219,6 +270,19 @@ const SlideshowEditor = () => {
     canvas.on("selection:created", (e: any) => syncInspectorFrom(e.selected?.[0]));
     canvas.on("selection:updated", (e: any) => syncInspectorFrom(e.selected?.[0]));
     canvas.on("selection:cleared", () => setHasSelection(false));
+
+    // Disable shadow during inline editing — biggest perf killer per keystroke.
+    canvas.on("text:editing:entered", (e: any) => {
+      const t = e.target; if (!t) return;
+      (t as any)._savedShadow = t.shadow;
+      t.set("shadow", null);
+      canvas.requestRenderAll();
+    });
+    canvas.on("text:editing:exited", (e: any) => {
+      const t = e.target; if (!t) return;
+      t.set("shadow", (t as any)._savedShadow || makeShadow());
+      canvas.requestRenderAll();
+    });
 
     return () => {
       disposed = true;
@@ -242,6 +306,10 @@ const SlideshowEditor = () => {
       if (outer) {
         outer.style.width = `${CANVAS_W * s}px`;
         outer.style.height = `${CANVAS_H * s}px`;
+      }
+      // Tell Fabric the wrapper has moved/scaled so click coordinates map correctly.
+      if (fabricRef.current) {
+        try { fabricRef.current.calcOffset(); } catch { /* noop */ }
       }
     };
     scale();
@@ -304,7 +372,9 @@ const SlideshowEditor = () => {
     setSlideText(v);
     const c = fabricRef.current; if (!c) return;
     const t = findTextObject(c); if (!t) return;
-    t.set("text", v); c.renderAll();
+    t.set("text", v);
+    if (renderThrottleRef.current) clearTimeout(renderThrottleRef.current);
+    renderThrottleRef.current = setTimeout(() => { c.requestRenderAll(); }, 50);
   };
   const onSizeChange = (v: number) => {
     setFontSize(v);
