@@ -8,6 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { Check, Loader2, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { SEO } from "@/components/SEO";
+import { Card as _Card } from "@/components/ui/card";
+import { UsageWidgetExpanded } from "@/components/UsageWidget";
 
 const Billing = () => {
   const { profile, refreshProfile } = useAuth();
@@ -69,6 +71,10 @@ const Billing = () => {
           Current plan: <Badge className="ml-1 capitalize">{currentPlan}</Badge>
           {syncing && <Loader2 className="inline h-3 w-3 animate-spin ml-2" />}
         </p>
+
+        <Card className="p-6 mb-6 shadow-card">
+          <UsageWidgetExpanded />
+        </Card>
 
         <div className="mb-6 rounded-lg border-2 border-primary/40 bg-primary/5 p-4 text-center">
           <p className="text-sm font-semibold text-primary">🔥 Limited time: 60% off all plans</p>

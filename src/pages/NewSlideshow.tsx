@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Loader2, Sparkles, Upload, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { SEO } from "@/components/SEO";
+import { ImageSourceToggle, type ImageSource } from "@/components/ImageSourceToggle";
 
 const NewSlideshow = () => {
   const { user } = useAuth();
