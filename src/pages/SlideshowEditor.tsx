@@ -552,7 +552,7 @@ const SlideshowEditor = () => {
   return (
     <>
       <SEO title={slideshow.title || "Editor"} />
-      <div className="flex flex-col" style={{ background: C.bg, color: C.text, height: "100vh", overflow: "hidden" }}>
+      <div className="flex flex-col" style={{ background: C.bg, color: C.text, height: "calc(100dvh - 3.5rem)", overflow: "hidden" }}>
         {isMobile ? (
           /* ============== MOBILE LAYOUT ============== */
           <>
