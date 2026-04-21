@@ -72,22 +72,9 @@ function wrapTextToMaxChars(text: string, maxChars = MAX_CHARS_PER_LINE): string
   return out.join("\n");
 }
 
-function calculateOptimalFontSize(text: string): number {
-  const lines = (text || "").split("\n");
-  const longest = lines.reduce((a, b) => (a.length > b.length ? a : b), "");
-  const maxChars = longest.length;
-  const lineCount = lines.length;
-  let fs = 72;
-  if (maxChars <= 20) fs = 88;
-  else if (maxChars <= 28) fs = 78;
-  else if (maxChars <= 35) fs = 68;
-  else if (maxChars <= 45) fs = 56;
-  else if (maxChars <= 55) fs = 48;
-  else if (maxChars <= 70) fs = 42;
-  else fs = 36;
-  if (lineCount >= 5) fs = Math.min(fs, 52);
-  if (lineCount >= 7) fs = Math.min(fs, 42);
-  return fs;
+function calculateOptimalFontSize(_text: string): number {
+  // Fixed preset size for generated slideshow text.
+  return 46;
 }
 
 function makeShadow() {
