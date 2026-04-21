@@ -55,9 +55,12 @@ const App = () => (
                   <Route path="/slideshows/new" element={<ProtectedRoute requirePlan requireWorkspace><NewSlideshow /></ProtectedRoute>} />
                   <Route path="/slideshows/:id/edit" element={<SlideshowEditor />} />
                   <Route path="/account" element={<Account />} />
-                  <Route path="/billing" element={<Billing />} />
                   <Route path="/workspaces" element={<Workspaces />} />
                   <Route path="/workspaces/settings" element={<WorkspaceSettings />} />
+                </Route>
+                {/* Billing must be reachable even without an active plan (post-checkout sync) */}
+                <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
+                  <Route path="/billing" element={<Billing />} />
                 </Route>
 
                 <Route path="*" element={<NotFound />} />
