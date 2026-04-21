@@ -10,23 +10,22 @@ interface Body { slideshowId: string; }
 
 const STORY_STYLES = ['listicle','pov','problem-agitate-solve','comparison','myth-bust','transformation','ugc-testimonial'] as const;
 
-const SYSTEM = `You are a viral TikTok scriptwriter. You write punchy, scroll-stopping captions designed for fast-paced meme-style slideshows.
+const SYSTEM = `You are a viral TikTok scriptwriter. You write slide captions for SaaS and business content that stop the scroll and make people swipe compulsively.
 
-Voice rules:
-- Each slide has TWO parts: a HEADLINE (max 10 words, the punch) and a SUBTEXT (max 15 words, the twist or detail).
-- Slide 1 is the HOOK: contrarian, uncomfortable, or a sharp question. Stop the thumb.
-- Middle slides build tension with open loops. Each slide makes them need the next.
-- Final slide resolves the tension and drops the CTA naturally.
-- Sentence case only. No ALL CAPS, no bold, no emoji, no markdown, no em-dashes.
-- Conversational, fast, native to TikTok. No corporate words.
-- BANNED words: game-changer, unlock, journey, leverage, utilize, dive in, explore.
+Each slide gets ONE block of text. 1 to 3 short sentences. Write them like you're texting a smart friend — lowercase, conversational, no corporate speak. Use line breaks between sentences to create rhythm (use \\n).
 
-Examples of the energy (don't copy, match the feel):
-HEADLINE: "Nobody talks about this part of trading"
-SUBTEXT: "And it's the reason 90% quit in year one"
+Every slide except the last must end on an open loop — something unresolved, a tension not yet answered, a question hanging in the air. This is what makes people swipe.
 
-HEADLINE: "I tried 12 productivity apps last year"
-SUBTEXT: "Only one actually changed how I work"`;
+Hook slide: open with a contrarian claim, uncomfortable truth, or a pattern interrupt. Never start with "I" or a brand name.
+Middle slides: build tension slide by slide. Each one should feel like you're about to get the answer — but not yet.
+Last slide: resolve the tension cleanly, then drop the CTA naturally in the last sentence.
+
+Never use: "game-changer", "unlock", "journey", "leverage", "utilize", "dive in", "explore", exclamation marks, ALL CAPS.
+
+Examples of the energy:
+"nobody talks about what happens\\nafter you hit your first $10k month."
+
+"most founders are solving\\nthe wrong problem.\\nand they won't find out until it's too late."`;
 
 function clean(s: any): string {
   if (typeof s !== 'string') return '';
@@ -142,11 +141,11 @@ AVAILABLE IMAGES (pick ${needNonProduct} of these by index, prefer high quality 
 ${imageContext || '(no images, reuse index 0)'}
 
 What to write:
-- Each slide: HEADLINE (max 10 words) + SUBTEXT (max 15 words).
-- Slide 1 HOOK: contrarian, uncomfortable, or a sharp question.
+- Each slide: ONE block of text, 1-3 short sentences, lowercase, separated by \\n line breaks.
+- Slide 1 HOOK: contrarian, uncomfortable, or a sharp question. Don't start with "I" or the brand name.
 - Middle slides build tension with open loops. Each slide must pull them to the next.
-- Final CTA slide resolves tension and drops the CTA naturally.
-- Sentence case only. No caps, no markdown, no emoji, no em-dashes.
+- Final CTA slide resolves tension and drops the CTA naturally in the last sentence.
+- Lowercase only. No exclamation marks, no caps, no markdown, no emoji, no em-dashes.
 - No banned words: game-changer, unlock, journey, leverage, utilize, dive in, explore.`;
 
     const tool = {
@@ -163,17 +162,15 @@ What to write:
                 type: 'object',
                 properties: {
                   type: { type: 'string', enum: ['hook', 'value'] },
-                  headline: { type: 'string', description: 'Punchy headline, max 10 words, sentence case.' },
-                  subtext: { type: 'string', description: 'Supporting line, max 15 words, sentence case.' },
+                  text: { type: 'string', description: 'ONE block, 1-3 short lowercase sentences separated by \\n.' },
                   image_index: { type: 'number', description: 'Index from AVAILABLE IMAGES list' },
                 },
-                required: ['type', 'headline', 'subtext', 'image_index'],
+                required: ['type', 'text', 'image_index'],
               },
             },
-            cta_headline: { type: 'string', description: 'Final CTA headline, max 10 words, sentence case.' },
-            cta_subtext: { type: 'string', description: 'Final CTA subtext, max 15 words, sentence case.' },
+            cta_text: { type: 'string', description: 'Final CTA block, 1-3 short lowercase sentences separated by \\n. Last sentence is the CTA.' },
           },
-          required: ['slides', 'cta_headline', 'cta_subtext'],
+          required: ['slides', 'cta_text'],
         },
       },
     };
@@ -208,11 +205,6 @@ What to write:
 
     const rawSlides = Array.isArray(parsed.slides) ? parsed.slides.slice(0, needNonProduct) : [];
 
-    const defaultLayout = {
-      headline: { x: 540, y: 820, fontSize: 88, color: '#FFFFFF', stroke: '#000000', strokeWidth: 10, fontWeight: 900, textAlign: 'center', maxWidth: 960 },
-      subtext:  { x: 540, y: 1080, fontSize: 56, color: '#FFE500', stroke: '#000000', strokeWidth: 7, fontWeight: 900, textAlign: 'center', maxWidth: 960 },
-    };
-
     const pickedImageIds: string[] = [];
     const slides = rawSlides.map((s: any, idx: number) => {
       const imgIdx = typeof s.image_index === 'number' ? s.image_index : idx;
@@ -221,10 +213,8 @@ What to write:
       return {
         id: crypto.randomUUID(),
         type: s.type || (idx === 0 ? 'hook' : 'value'),
-        headline: clean(s.headline).slice(0, 200),
-        subtext: clean(s.subtext).slice(0, 200),
+        text: clean(s.text).slice(0, 400),
         image_id: pick?.id || null,
-        layout: defaultLayout,
         fabric_state: null,
       };
     });
@@ -234,10 +224,8 @@ What to write:
     slides.push({
       id: crypto.randomUUID(),
       type: 'cta',
-      headline: clean(parsed.cta_headline || workspace.default_cta || 'Try it now').slice(0, 200),
-      subtext: clean(parsed.cta_subtext || '').slice(0, 200),
+      text: clean(parsed.cta_text || workspace.default_cta || 'try it now').slice(0, 400),
       image_id: productShot.id,
-      layout: defaultLayout,
       fabric_state: null,
     });
 
