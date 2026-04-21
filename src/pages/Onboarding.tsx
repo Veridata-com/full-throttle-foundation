@@ -68,19 +68,14 @@ const Onboarding = () => {
               </Card>
             ))}
           </div>
-          <Card className="p-4 bg-muted/50 border-dashed">
-            <div className="flex items-center justify-between gap-4 flex-wrap">
-              <div>
-                <p className="text-sm font-semibold">Dev mode</p>
-                <p className="text-xs text-muted-foreground">Skip Stripe and unlock the app for testing.</p>
-              </div>
-              <Button variant="outline" size="sm" onClick={devBypass} disabled={loading !== null}>
-                {loading === "dev" && <Loader2 className="h-4 w-4 animate-spin" />}
-                Dev bypass → Starter
-              </Button>
-            </div>
-          </Card>
+          </div>
         </div>
+      </div>
+    </>
+  );
+};
+
+export default Onboarding;
       </div>
     </>
   );
