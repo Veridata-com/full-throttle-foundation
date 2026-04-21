@@ -53,6 +53,15 @@ const Onboarding = () => {
     { id: "pro" as const, name: "Pro", price: "19.60", original: "49.00", renewal: "49", popular: true, features: ["5 workspaces", "Unlimited slideshows", "Unlimited uploads", "Priority AI", "Priority support"] },
   ];
 
+  if (syncing) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-dark text-white gap-3">
+        <Loader2 className="h-8 w-8 animate-spin" />
+        <p className="text-sm text-white/70">Checking your subscription…</p>
+      </div>
+    );
+  }
+
   return (
     <>
       <SEO title="Choose your plan" description="Pick a plan to start AdRise." />
