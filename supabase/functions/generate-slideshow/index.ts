@@ -14,11 +14,22 @@ const SYSTEM = `You are a viral TikTok scriptwriter. You write slide captions fo
 
 Each slide gets ONE block of text. 1 to 3 short sentences. Write them like you're texting a smart friend — lowercase, conversational, no corporate speak. Use line breaks between sentences to create rhythm (use \\n).
 
-Every slide except the last must end on an open loop — something unresolved, a tension not yet answered, a question hanging in the air. This is what makes people swipe.
+THE THREE THINGS THAT MATTER MOST:
 
-Hook slide: open with a contrarian claim, uncomfortable truth, or a pattern interrupt. Never start with "I" or a brand name.
-Middle slides: build tension slide by slide. Each one should feel like you're about to get the answer — but not yet.
-Last slide: resolve the tension cleanly, then drop the CTA naturally in the last sentence.
+1) THE HOOK (slide 1) — this is 80% of the job. It must stop the thumb in under 1 second.
+   - Lead with a contrarian claim, uncomfortable truth, specific number, or a sharp question.
+   - Concrete > abstract. Specific > generic. Weird > safe.
+   - Never open with "I", "we", the brand name, or a greeting. Never describe the product.
+   - Create an information gap they NEED closed.
+
+2) VALUE SLIDES (middles) — each one is its own mini-hook.
+   - Every middle slide must end on an open loop: tension unresolved, a question hanging, "but here's the thing…" energy.
+   - Reveal one concrete insight per slide. No fluff, no recap, no transitions like "next up".
+   - Each slide should make the next swipe feel mandatory.
+
+3) THE CTA (last slide) — resolve the tension first, then land the CTA in the final sentence.
+   - Pay off whatever tension the hook set up. Make the reader feel the click is the obvious next move.
+   - The CTA itself is one short line at the end. Specific verb. No "click here" energy.
 
 Never use: "game-changer", "unlock", "journey", "leverage", "utilize", "dive in", "explore", exclamation marks, ALL CAPS.
 
@@ -143,14 +154,43 @@ Deno.serve(async (req) => {
     }
 
     const qualityRank = (q: string) => q === 'high' ? 3 : q === 'medium' ? 2 : q === 'low' ? 1 : 2;
-    nonProduct.sort((a: any, b: any) => qualityRank(b.quality) - qualityRank(a.quality));
+
+    // Variety: find images used in this workspace's last 5 slideshows and deprioritize them.
+    const { data: recentSs } = await admin.from('slideshows')
+      .select('slides, image_ids')
+      .eq('workspace_id', workspace.id)
+      .neq('id', slideshowId)
+      .order('created_at', { ascending: false })
+      .limit(5);
+    const recentKeys = new Set<string>();
+    (recentSs || []).forEach((r: any) => {
+      (r.image_ids || []).forEach((id: string) => recentKeys.add(id));
+      (Array.isArray(r.slides) ? r.slides : []).forEach((s: any) => {
+        if (s?.image_url) recentKeys.add(s.image_url);
+        if (s?.image_id) recentKeys.add(s.image_id);
+      });
+    });
+    const keyOf = (i: any) => i.is_stock ? i.public_url : i.id;
+
+    // Shuffle first for randomness, then sort by (not-recent first, then quality desc).
+    for (let i = nonProduct.length - 1; i > 0; i--) {
+      const r = Math.floor(Math.random() * (i + 1));
+      [nonProduct[i], nonProduct[r]] = [nonProduct[r], nonProduct[i]];
+    }
+    nonProduct.sort((a: any, b: any) => {
+      const ra = recentKeys.has(keyOf(a)) ? 1 : 0;
+      const rb = recentKeys.has(keyOf(b)) ? 1 : 0;
+      if (ra !== rb) return ra - rb;
+      return qualityRank(b.quality) - qualityRank(a.quality);
+    });
 
     const numSlides = Math.min(12, Math.max(3, slideshow.num_slides || 6));
     const needNonProduct = numSlides - 1;
 
-    // Build AI image context
-    const imageContext = nonProduct.slice(0, 40).map((i: any, idx: number) =>
-      `#${idx} [${i.quality || 'medium'}] ${i.ai_description || i.file_name || 'image'} | tags: ${(i.ai_tags || []).join(', ')}`
+    // Build AI image context with a larger pool for variety
+    const poolSize = Math.min(nonProduct.length, Math.max(40, needNonProduct * 6));
+    const imageContext = nonProduct.slice(0, poolSize).map((i: any, idx: number) =>
+      `#${idx} [${i.quality || 'medium'}]${recentKeys.has(keyOf(i)) ? ' [recently-used]' : ''} ${i.ai_description || i.file_name || 'image'} | tags: ${(i.ai_tags || []).join(', ')}`
     ).join('\n');
 
     const prompt = `Write a ${numSlides}-slide viral TikTok slideshow for:
@@ -164,16 +204,22 @@ DEFAULT CTA: ${workspace.default_cta || 'Try it now'}
 NARRATIVE STYLE THIS TIME: ${chosenStyle}
 HOOK STYLE: ${slideshow.hook_style || 'curiosity'}
 
-AVAILABLE IMAGES (pick ${needNonProduct} of these by index, prefer high quality and tag relevance):
+AVAILABLE IMAGES (pick ${needNonProduct} DISTINCT indexes — never repeat the same index, and STRONGLY prefer images NOT marked [recently-used] so this slideshow looks different from the last few):
 ${imageContext || '(no images, reuse index 0)'}
 
-What to write:
-- Each slide: ONE block of text, 1-3 short sentences, lowercase, separated by \\n line breaks.
-- Slide 1 HOOK: contrarian, uncomfortable, or a sharp question. Don't start with "I" or the brand name.
-- Middle slides build tension with open loops. Each slide must pull them to the next.
-- Final CTA slide resolves tension and drops the CTA naturally in the last sentence.
-- Lowercase only. No exclamation marks, no caps, no markdown, no emoji, no em-dashes.
-- No banned words: game-changer, unlock, journey, leverage, utilize, dive in, explore.`;
+Image rules:
+- Pick ${needNonProduct} different indexes. No duplicates.
+- Avoid [recently-used] images unless nothing else fits the slide's meaning.
+- Match each image to its slide's actual content (use tags + description).
+- Vary the visual feel across slides — don't pick 5 near-identical shots.
+
+Writing rules — these are non-negotiable:
+- HOOK (slide 1): the most important line in the whole script. Contrarian, uncomfortable, or a sharp specific question. Create an information gap. Don't open with "I", "we", or the brand name. Don't describe the product.
+- VALUE SLIDES (middles): each one ends on an open loop. One concrete insight per slide. Each slide makes the next swipe feel mandatory.
+- CTA SLIDE (last, returned as cta_text): resolve the tension from the hook, THEN drop the CTA in the final sentence. Specific verb. Feels like the obvious next move.
+- Format: each slide = ONE block, 1-3 short sentences, lowercase, separated by \\n line breaks.
+- No exclamation marks, no caps, no markdown, no emoji, no em-dashes.
+- Banned words: game-changer, unlock, journey, leverage, utilize, dive in, explore.`;
 
     const tool = {
       type: 'function',
@@ -233,10 +279,15 @@ What to write:
     const rawSlides = Array.isArray(parsed.slides) ? parsed.slides.slice(0, needNonProduct) : [];
 
     const pickedImageIds: string[] = [];
+    const usedIdx = new Set<number>();
+    const fallbackOrder = nonProduct.map((_: any, i: number) => i);
+    const nextUnused = () => fallbackOrder.find((i) => !usedIdx.has(i)) ?? 0;
     const slides = rawSlides.map((s: any, idx: number) => {
-      const imgIdx = typeof s.image_index === 'number' ? s.image_index : idx;
-      const pick = nonProduct[Math.min(Math.max(imgIdx, 0), nonProduct.length - 1)] || nonProduct[0];
-      // Only track user-image IDs in the slideshow's image_ids array (used for editor lookup)
+      let imgIdx = typeof s.image_index === 'number' ? s.image_index : idx;
+      imgIdx = Math.min(Math.max(imgIdx, 0), nonProduct.length - 1);
+      if (usedIdx.has(imgIdx)) imgIdx = nextUnused();
+      usedIdx.add(imgIdx);
+      const pick = nonProduct[imgIdx] || nonProduct[0];
       if (pick && !pick.is_stock) pickedImageIds.push(pick.id);
       return {
         id: crypto.randomUUID(),
