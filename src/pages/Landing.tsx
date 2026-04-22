@@ -43,29 +43,31 @@ const Landing = () => {
           </div>
         </header>
 
-        <section className="relative container py-20 md:py-32 text-center overflow-hidden">
+        <section className="relative py-20 md:py-32 text-center overflow-hidden">
           {/* Mobile-only background image */}
           <div
-            className="md:hidden absolute inset-0 -z-10 bg-no-repeat bg-cover bg-center opacity-40"
+            className="md:hidden absolute inset-0 z-0 bg-no-repeat bg-cover bg-center opacity-60"
             style={{ backgroundImage: `url(${heroMobileBg})` }}
             aria-hidden
           />
-          <div className="md:hidden absolute inset-x-0 bottom-0 -z-10 h-1/2 bg-gradient-to-b from-transparent to-background" aria-hidden />
+          <div className="md:hidden absolute inset-0 z-0 bg-gradient-to-b from-background/40 via-background/70 to-background" aria-hidden />
 
-          <div className="mb-8"><CountdownBanner /></div>
-          <h1 className="font-display text-4xl md:text-7xl font-bold tracking-tighter mb-6 animate-fade-in">
-            Make your SaaS profitable with <span className="text-gradient">converting organic TikTok slideshows.</span>
-          </h1>
-          <p className="mx-auto max-w-2xl text-lg md:text-xl text-muted-foreground mb-10 animate-fade-in">
-            Drop your slideshow images. Our AI writes hooks, picks angles, and lays out scroll-stopping slideshows that convert. No designer. No agency. No bullshit.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center animate-fade-in">
-            <Button size="lg" className="text-base h-12 px-8 shadow-glow" asChild>
-              <Link to="/auth?mode=signup">Start creating <ArrowRight className="ml-1 h-4 w-4" /></Link>
-            </Button>
-            <Button size="lg" variant="outline" className="text-base h-12 px-8" asChild>
-              <a href="#pricing">See pricing</a>
-            </Button>
+          <div className="relative z-10 container">
+            <div className="mb-8"><CountdownBanner /></div>
+            <h1 className="font-display text-4xl md:text-7xl font-bold tracking-tighter mb-6 animate-fade-in">
+              Make your SaaS profitable with <span className="text-gradient">converting organic TikTok slideshows.</span>
+            </h1>
+            <p className="mx-auto max-w-2xl text-lg md:text-xl text-muted-foreground mb-10 animate-fade-in">
+              Drop your slideshow images. Our AI writes hooks, picks angles, and lays out scroll-stopping slideshows that convert. No designer. No agency. No bullshit.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center animate-fade-in">
+              <Button size="lg" className="text-base h-12 px-8 shadow-glow" asChild>
+                <Link to="/auth?mode=signup">Start creating <ArrowRight className="ml-1 h-4 w-4" /></Link>
+              </Button>
+              <Button size="lg" variant="outline" className="text-base h-12 px-8" asChild>
+                <a href="#pricing">See pricing</a>
+              </Button>
+            </div>
           </div>
         </section>
 
