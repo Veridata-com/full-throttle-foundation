@@ -154,14 +154,43 @@ Deno.serve(async (req) => {
     }
 
     const qualityRank = (q: string) => q === 'high' ? 3 : q === 'medium' ? 2 : q === 'low' ? 1 : 2;
-    nonProduct.sort((a: any, b: any) => qualityRank(b.quality) - qualityRank(a.quality));
+
+    // Variety: find images used in this workspace's last 5 slideshows and deprioritize them.
+    const { data: recentSs } = await admin.from('slideshows')
+      .select('slides, image_ids')
+      .eq('workspace_id', workspace.id)
+      .neq('id', slideshowId)
+      .order('created_at', { ascending: false })
+      .limit(5);
+    const recentKeys = new Set<string>();
+    (recentSs || []).forEach((r: any) => {
+      (r.image_ids || []).forEach((id: string) => recentKeys.add(id));
+      (Array.isArray(r.slides) ? r.slides : []).forEach((s: any) => {
+        if (s?.image_url) recentKeys.add(s.image_url);
+        if (s?.image_id) recentKeys.add(s.image_id);
+      });
+    });
+    const keyOf = (i: any) => i.is_stock ? i.public_url : i.id;
+
+    // Shuffle first for randomness, then sort by (not-recent first, then quality desc).
+    for (let i = nonProduct.length - 1; i > 0; i--) {
+      const r = Math.floor(Math.random() * (i + 1));
+      [nonProduct[i], nonProduct[r]] = [nonProduct[r], nonProduct[i]];
+    }
+    nonProduct.sort((a: any, b: any) => {
+      const ra = recentKeys.has(keyOf(a)) ? 1 : 0;
+      const rb = recentKeys.has(keyOf(b)) ? 1 : 0;
+      if (ra !== rb) return ra - rb;
+      return qualityRank(b.quality) - qualityRank(a.quality);
+    });
 
     const numSlides = Math.min(12, Math.max(3, slideshow.num_slides || 6));
     const needNonProduct = numSlides - 1;
 
-    // Build AI image context
-    const imageContext = nonProduct.slice(0, 40).map((i: any, idx: number) =>
-      `#${idx} [${i.quality || 'medium'}] ${i.ai_description || i.file_name || 'image'} | tags: ${(i.ai_tags || []).join(', ')}`
+    // Build AI image context with a larger pool for variety
+    const poolSize = Math.min(nonProduct.length, Math.max(40, needNonProduct * 6));
+    const imageContext = nonProduct.slice(0, poolSize).map((i: any, idx: number) =>
+      `#${idx} [${i.quality || 'medium'}]${recentKeys.has(keyOf(i)) ? ' [recently-used]' : ''} ${i.ai_description || i.file_name || 'image'} | tags: ${(i.ai_tags || []).join(', ')}`
     ).join('\n');
 
     const prompt = `Write a ${numSlides}-slide viral TikTok slideshow for:
