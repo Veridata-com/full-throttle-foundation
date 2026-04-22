@@ -17,7 +17,7 @@ const Landing = () => {
   const handleSignOut = async () => { await signOut(); navigate("/"); };
   return (
     <>
-      <SEO title="AdRise — Make your SaaS profitable with organic TikTok slideshows" description="AI-powered slideshow generator. Drop your images, get scroll-stopping TikTok-ready ads that convert. No designer, no agency." canonical="/" />
+      <SEO title="AdRise — Create on-brand product ads in seconds" description="Upload your product, choose your style, and generate beautiful on-brand ads in seconds with AdRise." canonical="/" />
       <div className="min-h-screen bg-background">
         <header className="border-b">
           <div className="container flex h-16 items-center justify-between">
