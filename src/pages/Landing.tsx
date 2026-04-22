@@ -10,6 +10,7 @@ import featureLibrary from "@/assets/feature-library.png";
 import featureEditor from "@/assets/feature-editor.png";
 import featureExport from "@/assets/feature-export.png";
 import heroMobileBg from "@/assets/hero-mobile-bg.png";
+import heroDesktopBg from "@/assets/hero-desktop-bg.png";
 
 const Landing = () => {
   const { user, signOut } = useAuth();
@@ -51,6 +52,14 @@ const Landing = () => {
             aria-hidden
           />
           <div className="md:hidden absolute inset-0 z-0 bg-gradient-to-b from-background/40 via-background/70 to-background" aria-hidden />
+
+          {/* Desktop-only background image */}
+          <div
+            className="hidden md:block absolute inset-0 z-0 bg-no-repeat bg-cover bg-center opacity-70"
+            style={{ backgroundImage: `url(${heroDesktopBg})` }}
+            aria-hidden
+          />
+          <div className="hidden md:block absolute inset-0 z-0 bg-gradient-to-b from-background/30 via-background/60 to-background" aria-hidden />
 
           <div className="relative z-10 container">
             <div className="mb-8"><CountdownBanner /></div>
