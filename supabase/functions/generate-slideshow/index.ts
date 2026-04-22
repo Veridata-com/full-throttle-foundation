@@ -204,16 +204,22 @@ DEFAULT CTA: ${workspace.default_cta || 'Try it now'}
 NARRATIVE STYLE THIS TIME: ${chosenStyle}
 HOOK STYLE: ${slideshow.hook_style || 'curiosity'}
 
-AVAILABLE IMAGES (pick ${needNonProduct} of these by index, prefer high quality and tag relevance):
+AVAILABLE IMAGES (pick ${needNonProduct} DISTINCT indexes — never repeat the same index, and STRONGLY prefer images NOT marked [recently-used] so this slideshow looks different from the last few):
 ${imageContext || '(no images, reuse index 0)'}
 
-What to write:
-- Each slide: ONE block of text, 1-3 short sentences, lowercase, separated by \\n line breaks.
-- Slide 1 HOOK: contrarian, uncomfortable, or a sharp question. Don't start with "I" or the brand name.
-- Middle slides build tension with open loops. Each slide must pull them to the next.
-- Final CTA slide resolves tension and drops the CTA naturally in the last sentence.
-- Lowercase only. No exclamation marks, no caps, no markdown, no emoji, no em-dashes.
-- No banned words: game-changer, unlock, journey, leverage, utilize, dive in, explore.`;
+Image rules:
+- Pick ${needNonProduct} different indexes. No duplicates.
+- Avoid [recently-used] images unless nothing else fits the slide's meaning.
+- Match each image to its slide's actual content (use tags + description).
+- Vary the visual feel across slides — don't pick 5 near-identical shots.
+
+Writing rules — these are non-negotiable:
+- HOOK (slide 1): the most important line in the whole script. Contrarian, uncomfortable, or a sharp specific question. Create an information gap. Don't open with "I", "we", or the brand name. Don't describe the product.
+- VALUE SLIDES (middles): each one ends on an open loop. One concrete insight per slide. Each slide makes the next swipe feel mandatory.
+- CTA SLIDE (last, returned as cta_text): resolve the tension from the hook, THEN drop the CTA in the final sentence. Specific verb. Feels like the obvious next move.
+- Format: each slide = ONE block, 1-3 short sentences, lowercase, separated by \\n line breaks.
+- No exclamation marks, no caps, no markdown, no emoji, no em-dashes.
+- Banned words: game-changer, unlock, journey, leverage, utilize, dive in, explore.`;
 
     const tool = {
       type: 'function',
