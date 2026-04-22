@@ -9,6 +9,7 @@ import { Logo } from "@/components/Logo";
 import featureLibrary from "@/assets/feature-library.png";
 import featureEditor from "@/assets/feature-editor.png";
 import featureExport from "@/assets/feature-export.png";
+import heroMobileBg from "@/assets/hero-mobile-bg.png";
 
 const Landing = () => {
   const { user, signOut } = useAuth();
