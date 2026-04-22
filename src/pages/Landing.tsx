@@ -43,7 +43,15 @@ const Landing = () => {
           </div>
         </header>
 
-        <section className="container py-20 md:py-32 text-center">
+        <section className="relative container py-20 md:py-32 text-center overflow-hidden">
+          {/* Mobile-only background image */}
+          <div
+            className="md:hidden absolute inset-0 -z-10 bg-no-repeat bg-cover bg-center opacity-40"
+            style={{ backgroundImage: `url(${heroMobileBg})` }}
+            aria-hidden
+          />
+          <div className="md:hidden absolute inset-x-0 bottom-0 -z-10 h-1/2 bg-gradient-to-b from-transparent to-background" aria-hidden />
+
           <div className="mb-8"><CountdownBanner /></div>
           <h1 className="font-display text-4xl md:text-7xl font-bold tracking-tighter mb-6 animate-fade-in">
             Make your SaaS profitable with <span className="text-gradient">converting organic TikTok slideshows.</span>
