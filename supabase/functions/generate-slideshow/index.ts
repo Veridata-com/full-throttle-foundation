@@ -279,10 +279,15 @@ Writing rules — these are non-negotiable:
     const rawSlides = Array.isArray(parsed.slides) ? parsed.slides.slice(0, needNonProduct) : [];
 
     const pickedImageIds: string[] = [];
+    const usedIdx = new Set<number>();
+    const fallbackOrder = nonProduct.map((_: any, i: number) => i);
+    const nextUnused = () => fallbackOrder.find((i) => !usedIdx.has(i)) ?? 0;
     const slides = rawSlides.map((s: any, idx: number) => {
-      const imgIdx = typeof s.image_index === 'number' ? s.image_index : idx;
-      const pick = nonProduct[Math.min(Math.max(imgIdx, 0), nonProduct.length - 1)] || nonProduct[0];
-      // Only track user-image IDs in the slideshow's image_ids array (used for editor lookup)
+      let imgIdx = typeof s.image_index === 'number' ? s.image_index : idx;
+      imgIdx = Math.min(Math.max(imgIdx, 0), nonProduct.length - 1);
+      if (usedIdx.has(imgIdx)) imgIdx = nextUnused();
+      usedIdx.add(imgIdx);
+      const pick = nonProduct[imgIdx] || nonProduct[0];
       if (pick && !pick.is_stock) pickedImageIds.push(pick.id);
       return {
         id: crypto.randomUUID(),
