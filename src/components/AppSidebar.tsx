@@ -1,5 +1,5 @@
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
-import { Image, Film, CreditCard, User, LogOut, LayoutDashboard, Layers } from "lucide-react";
+import { Image, Film, CreditCard, User, LogOut, LayoutDashboard, Layers, Megaphone } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
   SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar, SidebarHeader, SidebarFooter,
@@ -8,12 +8,14 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
 import { UsageWidgetCompact } from "@/components/UsageWidget";
+import { FeedbackDialog } from "@/components/FeedbackDialog";
 
 const items = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
   { title: "Library", url: "/library", icon: Image },
   { title: "Slideshows", url: "/slideshows", icon: Film },
   { title: "Workspaces", url: "/workspaces", icon: Layers },
+  { title: "Release notes", url: "/release-notes", icon: Megaphone },
   { title: "Account", url: "/account", icon: User },
   { title: "Billing", url: "/billing", icon: CreditCard },
 ];
@@ -61,7 +63,14 @@ export function AppSidebar() {
 
       <SidebarFooter className="border-t border-sidebar-border p-0">
         {!collapsed && <UsageWidgetCompact />}
-        <div className="p-2">
+        <div className="p-2 space-y-1">
+          {!collapsed && (
+            <FeedbackDialog
+              variant="ghost"
+              size="sm"
+              className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent"
+            />
+          )}
           <Button variant="ghost" size="sm" className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent" onClick={handleSignOut}>
             <LogOut className="h-4 w-4" />
             {!collapsed && <span className="ml-2">Sign out</span>}

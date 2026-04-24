@@ -67,8 +67,8 @@ const Billing = () => {
   };
 
   const plans = [
-    { id: "starter" as const, name: "Starter", price: "7.60", original: "19.00", renewal: "19", features: ["1 workspace", "50 slideshows / month", "500 image uploads", "All AI features"] },
-    { id: "pro" as const, name: "Pro", price: "19.60", original: "49.00", renewal: "49", popular: true, features: ["5 workspaces", "Unlimited slideshows", "Unlimited uploads", "Priority AI", "Priority support"] },
+    { id: "starter" as const, name: "Starter", price: "0.99", original: "19.00", renewal: "19", betaTag: "EARLY BETA · $0.99 first month", features: ["1 workspace", "50 slideshows / month", "500 image uploads", "All AI features"] },
+    { id: "pro" as const, name: "Pro", price: "19.60", original: "49.00", renewal: "49", popular: true, betaTag: "60% OFF first month", features: ["5 workspaces", "Unlimited slideshows", "Unlimited uploads", "Priority AI", "Priority support"] },
   ];
 
   const currentPlan = profile?.plan || "none";
@@ -87,8 +87,8 @@ const Billing = () => {
           <UsageWidgetExpanded />
         </Card>
 
-        <div className="mb-6 rounded-lg border-2 border-primary/40 bg-primary/5 p-4 text-center">
-          <p className="text-sm font-semibold text-primary">🔥 Limited time: 60% off all plans</p>
+        <div className="mb-6 rounded-lg border-2 border-warning/40 bg-warning/5 p-4 text-center">
+          <p className="text-sm font-semibold text-warning">🔥 Limited-time early-beta offer: Starter $0.99 first month · Pro 60% off</p>
         </div>
 
         {currentPlan !== "none" && (
@@ -107,7 +107,7 @@ const Billing = () => {
         <div className="grid sm:grid-cols-2 gap-4">
           {plans.map((p) => (
             <Card key={p.id} className={`p-6 relative ${p.popular ? "border-primary border-2 shadow-glow" : "shadow-card"} ${currentPlan === p.id ? "ring-2 ring-primary" : ""}`}>
-              <span className="absolute -top-3 left-4 bg-success text-success-foreground text-[10px] font-bold px-2 py-0.5 rounded-full">60% OFF</span>
+              <span className="absolute -top-3 left-4 bg-warning text-warning-foreground text-[10px] font-bold px-2 py-0.5 rounded-full">{p.betaTag}</span>
               <div className="flex items-center justify-between mb-2">
                 <h3 className="font-display text-xl font-bold">{p.name}</h3>
                 {currentPlan === p.id && <Badge className="bg-success text-success-foreground">Active</Badge>}
@@ -115,9 +115,9 @@ const Billing = () => {
               <div className="mt-2 mb-1 flex items-baseline gap-2">
                 <span className="text-3xl font-bold font-display">${p.price}</span>
                 <span className="text-muted-foreground line-through text-sm">${p.original}</span>
-                <span className="text-muted-foreground text-sm">/mo</span>
+                <span className="text-muted-foreground text-sm">first month</span>
               </div>
-              <p className="text-xs text-muted-foreground mb-4">${p.price} first month, then ${p.renewal}/mo</p>
+              <p className="text-xs text-muted-foreground mb-4">Then ${p.renewal}/mo. Cancel anytime.</p>
               <ul className="space-y-2 mb-6 text-sm">
                 {p.features.map((f) => <li key={f} className="flex gap-2 items-center"><Check className="h-4 w-4 text-success" />{f}</li>)}
               </ul>
