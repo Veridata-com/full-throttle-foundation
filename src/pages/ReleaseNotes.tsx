@@ -165,14 +165,16 @@ function NoteCard({ note, updates, comments, onCommentPosted }: { note: ReleaseN
         </div>
       </div>
       {note.body && <p className="text-sm text-foreground/90 whitespace-pre-wrap mt-2">{note.body}</p>}
+      {note.media_url && <div className="mt-3"><Media url={note.media_url} type={note.media_type} /></div>}
 
       {updates.length > 0 && (
-        <div className="mt-4 border-l-2 border-primary/40 pl-4 space-y-2">
+        <div className="mt-4 border-l-2 border-primary/40 pl-4 space-y-3">
           <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Progress updates</p>
           {updates.map((u) => (
-            <div key={u.id} className="text-sm">
+            <div key={u.id} className="text-sm space-y-2">
               <p className="text-xs text-muted-foreground">{new Date(u.created_at).toLocaleDateString()}</p>
               <p className="whitespace-pre-wrap">{u.body}</p>
+              {u.media_url && <Media url={u.media_url} type={u.media_type} />}
             </div>
           ))}
         </div>
