@@ -75,8 +75,13 @@ const Landing = () => {
             <h1 className="font-display text-4xl md:text-7xl font-bold tracking-tighter mb-6 animate-fade-in">
               Make your SaaS profitable with <span className="text-gradient">converting organic TikTok slideshows.</span>
             </h1>
-            <p className="mx-auto max-w-2xl text-lg md:text-xl text-muted-foreground mb-10 animate-fade-in">
+            <p className="mx-auto max-w-2xl text-lg md:text-xl text-muted-foreground mb-4 animate-fade-in">
               Drop your slideshow images. Our AI writes hooks, picks angles, and lays out scroll-stopping slideshows that convert. No designer. No agency. No bullshit.
+            </p>
+            <p className="mx-auto max-w-2xl text-base md:text-lg mb-10 animate-fade-in">
+              <span className="inline-flex items-center gap-2 rounded-full bg-warning/15 text-warning border border-warning/30 px-4 py-1.5 font-semibold">
+                🔥 Now just <span className="text-xl font-bold">$0.99</span> for your first month — limited-time early-beta offer
+              </span>
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center animate-fade-in">
               <Button size="lg" className="text-base h-12 px-8 shadow-glow" asChild>

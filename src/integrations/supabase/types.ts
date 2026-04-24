@@ -274,6 +274,8 @@ export type Database = {
           body: string
           created_at: string
           id: string
+          media_type: string | null
+          media_url: string | null
           release_note_id: string
           updated_at: string
         }
@@ -281,6 +283,8 @@ export type Database = {
           body: string
           created_at?: string
           id?: string
+          media_type?: string | null
+          media_url?: string | null
           release_note_id: string
           updated_at?: string
         }
@@ -288,6 +292,8 @@ export type Database = {
           body?: string
           created_at?: string
           id?: string
+          media_type?: string | null
+          media_url?: string | null
           release_note_id?: string
           updated_at?: string
         }
@@ -306,6 +312,8 @@ export type Database = {
           body: string | null
           created_at: string
           id: string
+          media_type: string | null
+          media_url: string | null
           published_at: string
           sort_order: number
           status: string
@@ -317,6 +325,8 @@ export type Database = {
           body?: string | null
           created_at?: string
           id?: string
+          media_type?: string | null
+          media_url?: string | null
           published_at?: string
           sort_order?: number
           status?: string
@@ -328,6 +338,8 @@ export type Database = {
           body?: string | null
           created_at?: string
           id?: string
+          media_type?: string | null
+          media_url?: string | null
           published_at?: string
           sort_order?: number
           status?: string
