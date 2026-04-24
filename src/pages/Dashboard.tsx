@@ -4,11 +4,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Image as ImageIcon, Film, Plus, ArrowRight } from "lucide-react";
+import { Image as ImageIcon, Film, Plus, ArrowRight, Settings2, Megaphone } from "lucide-react";
 import { SEO } from "@/components/SEO";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 
 const Dashboard = () => {
   const { user, profile } = useAuth();
+  const { isAdmin } = useIsAdmin();
   const [stats, setStats] = useState({ images: 0, slideshows: 0, monthSlideshows: 0 });
 
   useEffect(() => {
@@ -31,9 +33,17 @@ const Dashboard = () => {
     <>
       <SEO title="Dashboard" description="Your AdRise workspace." />
       <div className="container py-8">
-        <header className="mb-8">
-          <h1 className="font-display text-3xl font-bold">Welcome back{profile?.display_name ? `, ${profile.display_name}` : ""} 👋</h1>
-          <p className="text-muted-foreground">Let's make something scroll-stopping.</p>
+        <header className="mb-8 flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h1 className="font-display text-3xl font-bold">Welcome back{profile?.display_name ? `, ${profile.display_name}` : ""} 👋</h1>
+            <p className="text-muted-foreground">Let's make something scroll-stopping.</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" asChild><Link to="/release-notes"><Megaphone className="h-4 w-4" />Release notes</Link></Button>
+            {isAdmin && (
+              <Button variant="default" asChild className="shadow-glow"><Link to="/admin/release-notes"><Settings2 className="h-4 w-4" />Manage release notes</Link></Button>
+            )}
+          </div>
         </header>
 
         <div className="grid sm:grid-cols-3 gap-4 mb-8">

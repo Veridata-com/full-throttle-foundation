@@ -7,24 +7,30 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Full monthly price; coupon `launch60` discounts first invoice by 60%
-const PRICES: Record<string, { amount: number; name: string }> = {
-  starter: { amount: 1900, name: 'AdRise Starter' },
-  pro:     { amount: 4900, name: 'AdRise Pro' },
+// Full monthly price. Starter uses a special $0.99 first-month coupon for early beta adopters.
+// Pro keeps the launch 60% off first month.
+const PRICES: Record<string, { amount: number; name: string; couponId: string }> = {
+  starter: { amount: 1900, name: 'AdRise Starter', couponId: 'beta099' },
+  pro:     { amount: 4900, name: 'AdRise Pro',     couponId: 'launch60' },
 };
 
-const COUPON_ID = 'launch60';
+const COUPONS: Record<string, { amount_off?: number; percent_off?: number; currency?: string; name: string }> = {
+  beta099:  { amount_off: 1801, currency: 'usd', name: 'Early beta — $0.99 first month' }, // 19.00 - 0.99 = 18.01
+  launch60: { percent_off: 60, name: 'Launch 60% off (first month)' },
+};
 
-async function ensureLaunchCoupon(stripe: Stripe) {
+async function ensureCoupon(stripe: Stripe, id: string) {
   try {
-    await stripe.coupons.retrieve(COUPON_ID);
+    await stripe.coupons.retrieve(id);
   } catch (e: any) {
     if (e?.statusCode === 404 || e?.code === 'resource_missing') {
+      const c = COUPONS[id];
       await stripe.coupons.create({
-        id: COUPON_ID,
-        percent_off: 60,
+        id,
         duration: 'once',
-        name: 'Launch 60% off (first month)',
+        name: c.name,
+        ...(c.amount_off ? { amount_off: c.amount_off, currency: c.currency } : {}),
+        ...(c.percent_off ? { percent_off: c.percent_off } : {}),
       });
     } else {
       throw e;
@@ -52,7 +58,8 @@ Deno.serve(async (req) => {
 
     const stripe = new Stripe(stripeKey, { apiVersion: '2024-06-20' });
 
-    await ensureLaunchCoupon(stripe);
+    const couponId = PRICES[plan].couponId;
+    await ensureCoupon(stripe, couponId);
 
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
     const customerId = customers.data[0]?.id;
@@ -61,7 +68,7 @@ Deno.serve(async (req) => {
       customer: customerId,
       customer_email: customerId ? undefined : user.email,
       mode: 'subscription',
-      discounts: [{ coupon: COUPON_ID }],
+      discounts: [{ coupon: couponId }],
       line_items: [{
         price_data: {
           currency: 'usd',

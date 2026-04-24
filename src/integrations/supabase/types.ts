@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      feedback: {
+        Row: {
+          body: string
+          created_at: string
+          email: string | null
+          id: string
+          subject: string | null
+          user_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          subject?: string | null
+          user_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          subject?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       folders: {
         Row: {
           auto: boolean
@@ -207,6 +234,106 @@ export type Database = {
           stripe_subscription_id?: string | null
           target_audience?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      release_note_comments: {
+        Row: {
+          author_name: string | null
+          body: string
+          created_at: string
+          id: string
+          release_note_id: string
+        }
+        Insert: {
+          author_name?: string | null
+          body: string
+          created_at?: string
+          id?: string
+          release_note_id: string
+        }
+        Update: {
+          author_name?: string | null
+          body?: string
+          created_at?: string
+          id?: string
+          release_note_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "release_note_comments_release_note_id_fkey"
+            columns: ["release_note_id"]
+            isOneToOne: false
+            referencedRelation: "release_notes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      release_note_updates: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          release_note_id: string
+          updated_at: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          release_note_id: string
+          updated_at?: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          release_note_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "release_note_updates_release_note_id_fkey"
+            columns: ["release_note_id"]
+            isOneToOne: false
+            referencedRelation: "release_notes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      release_notes: {
+        Row: {
+          body: string | null
+          created_at: string
+          id: string
+          published_at: string
+          sort_order: number
+          status: string
+          title: string
+          updated_at: string
+          version: string | null
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          published_at?: string
+          sort_order?: number
+          status?: string
+          title: string
+          updated_at?: string
+          version?: string | null
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          published_at?: string
+          sort_order?: number
+          status?: string
+          title?: string
+          updated_at?: string
+          version?: string | null
         }
         Relationships: []
       }

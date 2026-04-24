@@ -1,11 +1,13 @@
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Image as ImageIcon, Wand2, Download, Check, ArrowRight, LogOut } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Image as ImageIcon, Wand2, Download, Check, ArrowRight, LogOut, Megaphone, Sparkles } from "lucide-react";
 import { SEO } from "@/components/SEO";
 import { useAuth } from "@/contexts/AuthContext";
 import { CountdownBanner } from "@/components/CountdownBanner";
 import { Logo } from "@/components/Logo";
+import { FeedbackDialog } from "@/components/FeedbackDialog";
 import featureLibrary from "@/assets/feature-library.png";
 import featureEditor from "@/assets/feature-editor.png";
 import featureExport from "@/assets/feature-export.png";
@@ -27,6 +29,10 @@ const Landing = () => {
               <span className="font-display text-xl font-bold">AdRise</span>
             </Link>
             <nav className="flex items-center gap-2">
+              <Button variant="ghost" size="sm" asChild className="hidden sm:inline-flex">
+                <Link to="/release-notes"><Megaphone className="h-4 w-4" />Release notes</Link>
+              </Button>
+              <FeedbackDialog variant="ghost" size="sm" />
               {user ? (
                 <>
                   <Button asChild><Link to="/dashboard">Dashboard</Link></Button>
@@ -62,7 +68,10 @@ const Landing = () => {
           <div className="hidden md:block absolute inset-0 z-0 bg-gradient-to-b from-background/30 via-background/60 to-background" aria-hidden />
 
           <div className="relative z-10 container">
-            <div className="mb-8"><CountdownBanner /></div>
+            <div className="mb-6"><CountdownBanner /></div>
+            <Badge className="mb-5 bg-warning/15 text-warning border border-warning/30" variant="outline">
+              <Sparkles className="h-3 w-3 mr-1" />Early beta · Improving rapidly from your feedback
+            </Badge>
             <h1 className="font-display text-4xl md:text-7xl font-bold tracking-tighter mb-6 animate-fade-in">
               Make your SaaS profitable with <span className="text-gradient">converting organic TikTok slideshows.</span>
             </h1>
@@ -74,9 +83,34 @@ const Landing = () => {
                 <Link to="/auth?mode=signup">Start creating <ArrowRight className="ml-1 h-4 w-4" /></Link>
               </Button>
               <Button size="lg" variant="outline" className="text-base h-12 px-8" asChild>
-                <a href="#pricing">See pricing</a>
+                <a href="#demo">Watch the demo</a>
               </Button>
             </div>
+          </div>
+        </section>
+
+        {/* Demo + early beta context */}
+        <section id="demo" className="container py-16 border-t">
+          <div className="max-w-3xl mx-auto text-center mb-8">
+            <Badge variant="outline" className="mb-3">Live demo</Badge>
+            <h2 className="font-display text-3xl md:text-4xl font-bold mb-3">See AdRise in 2 minutes</h2>
+            <p className="text-muted-foreground">
+              We're in early beta — shipping daily based on real user feedback. Your input directly shapes what we build next.
+            </p>
+          </div>
+          <div className="relative max-w-4xl mx-auto rounded-2xl overflow-hidden border border-border/60 shadow-glow bg-card">
+            <div className="relative" style={{ paddingBottom: "56.25%", height: 0 }}>
+              <iframe
+                src="https://www.loom.com/embed/3ff4dc9d2cb040a9a184e4eef18f60f0"
+                title="AdRise demo"
+                allowFullScreen
+                className="absolute inset-0 w-full h-full"
+              />
+            </div>
+          </div>
+          <div className="mt-6 flex flex-wrap justify-center gap-3">
+            <Button variant="outline" asChild><Link to="/release-notes"><Megaphone className="h-4 w-4" />See what's shipped & what's coming</Link></Button>
+            <FeedbackDialog />
           </div>
         </section>
 
@@ -131,34 +165,36 @@ const Landing = () => {
         <section id="pricing" className="container py-20 border-t">
           <div className="text-center mb-12">
             <h2 className="font-display text-4xl md:text-5xl font-bold mb-4">Simple, honest pricing</h2>
-            <p className="text-muted-foreground text-lg">Limited time launch discount. Cancel anytime.</p>
+            <p className="text-muted-foreground text-lg">Limited-time early-beta offer. Cancel anytime.</p>
           </div>
           <div className="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto">
             <Card className="p-8 shadow-card relative">
-              <span className="absolute -top-3 left-6 bg-success text-success-foreground text-xs font-bold px-3 py-1 rounded-full">60% OFF</span>
+              <span className="absolute -top-3 left-6 bg-warning text-warning-foreground text-xs font-bold px-3 py-1 rounded-full">EARLY BETA · $0.99 first month</span>
               <h3 className="font-display text-2xl font-bold mb-1">Starter</h3>
               <p className="text-muted-foreground mb-6">For solo creators getting going</p>
-              <div className="mb-6 flex items-baseline gap-2">
-                <span className="text-5xl font-bold font-display">$7.60</span>
+              <div className="mb-2 flex items-baseline gap-2">
+                <span className="text-5xl font-bold font-display">$0.99</span>
                 <span className="text-muted-foreground line-through">$19</span>
-                <span className="text-muted-foreground">/mo</span>
+                <span className="text-muted-foreground">first month</span>
               </div>
+              <p className="text-xs text-muted-foreground mb-6">Then $19/mo. Limited-time offer for early beta adopters.</p>
               <ul className="space-y-3 mb-8 text-sm">
                 {["1 workspace", "50 slideshows / month", "500 image uploads", "All AI features", "ZIP export"].map(f => (
                   <li key={f} className="flex items-center gap-2"><Check className="h-4 w-4 text-success" />{f}</li>
                 ))}
               </ul>
-              <Button variant="outline" className="w-full" asChild><Link to="/auth?mode=signup">Get Starter</Link></Button>
+              <Button variant="outline" className="w-full" asChild><Link to="/auth?mode=signup">Get Starter for $0.99</Link></Button>
             </Card>
             <Card className="p-8 shadow-glow border-primary border-2 relative">
               <span className="absolute -top-3 right-6 bg-gradient-primary text-primary-foreground text-xs font-bold px-3 py-1 rounded-full">POPULAR · 60% OFF</span>
               <h3 className="font-display text-2xl font-bold mb-1">Pro</h3>
               <p className="text-muted-foreground mb-6">For teams shipping ads daily</p>
-              <div className="mb-6 flex items-baseline gap-2">
+              <div className="mb-2 flex items-baseline gap-2">
                 <span className="text-5xl font-bold font-display">$19.60</span>
                 <span className="text-muted-foreground line-through">$49</span>
                 <span className="text-muted-foreground">/mo</span>
               </div>
+              <p className="text-xs text-muted-foreground mb-6">First month, then $49/mo.</p>
               <ul className="space-y-3 mb-8 text-sm">
                 {["5 workspaces", "Unlimited slideshows", "Unlimited uploads", "Priority AI processing", "ZIP export", "Priority support"].map(f => (
                   <li key={f} className="flex items-center gap-2"><Check className="h-4 w-4 text-success" />{f}</li>
@@ -173,6 +209,7 @@ const Landing = () => {
           <div className="container flex flex-col md:flex-row justify-between gap-4 text-sm text-muted-foreground">
             <p>© {new Date().getFullYear()} AdRise. All rights reserved.</p>
             <div className="flex gap-6">
+              <Link to="/release-notes" className="hover:text-foreground">Release notes</Link>
               <Link to="/privacy" className="hover:text-foreground">Privacy</Link>
               <Link to="/terms" className="hover:text-foreground">Terms</Link>
             </div>

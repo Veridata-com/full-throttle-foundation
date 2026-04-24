@@ -26,6 +26,8 @@ import NewWorkspace from "./pages/NewWorkspace";
 import WorkspaceSettings from "./pages/WorkspaceSettings";
 import Workspaces from "./pages/Workspaces";
 import ResetPassword from "./pages/ResetPassword";
+import ReleaseNotes from "./pages/ReleaseNotes";
+import AdminReleaseNotes from "./pages/AdminReleaseNotes";
 
 const queryClient = new QueryClient();
 
@@ -44,6 +46,7 @@ const App = () => (
                 <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/privacy" element={<Privacy />} />
                 <Route path="/terms" element={<Terms />} />
+                <Route path="/release-notes" element={<ReleaseNotes />} />
                 <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
                 <Route path="/workspaces/new" element={<ProtectedRoute requirePlan><NewWorkspace /></ProtectedRoute>} />
 
@@ -57,6 +60,7 @@ const App = () => (
                   <Route path="/account" element={<Account />} />
                   <Route path="/workspaces" element={<Workspaces />} />
                   <Route path="/workspaces/settings" element={<WorkspaceSettings />} />
+                  <Route path="/admin/release-notes" element={<AdminReleaseNotes />} />
                 </Route>
                 {/* Billing must be reachable even without an active plan (post-checkout sync) */}
                 <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
