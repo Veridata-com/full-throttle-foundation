@@ -20,9 +20,16 @@ interface ReleaseNote {
   status: "shipped" | "upcoming";
   version: string | null;
   published_at: string;
+  media_url: string | null;
+  media_type: string | null;
 }
-interface Update { id: string; release_note_id: string; body: string; created_at: string; }
+interface Update { id: string; release_note_id: string; body: string; created_at: string; media_url: string | null; media_type: string | null; }
 interface Comment { id: string; release_note_id: string; author_name: string | null; body: string; created_at: string; }
+
+function Media({ url, type }: { url: string; type: string | null }) {
+  if (type === "video") return <video src={url} controls className="rounded-lg max-h-80 w-auto border" />;
+  return <img src={url} alt="" loading="lazy" className="rounded-lg max-h-80 w-auto border" />;
+}
 
 const commentSchema = z.object({
   author_name: z.string().trim().max(60).optional(),
