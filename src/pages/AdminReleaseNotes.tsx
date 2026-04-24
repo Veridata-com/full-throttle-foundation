@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Navigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Plus, Trash2, Save, MessageSquarePlus } from "lucide-react";
+import { Loader2, Plus, Trash2, Save, MessageSquarePlus, Upload, X, Image as ImageIcon, Video } from "lucide-react";
 import { toast } from "sonner";
 
 interface ReleaseNote {
@@ -21,8 +21,69 @@ interface ReleaseNote {
   version: string | null;
   sort_order: number;
   published_at: string;
+  media_url: string | null;
+  media_type: string | null;
 }
-interface Update { id: string; release_note_id: string; body: string; created_at: string; }
+interface Update { id: string; release_note_id: string; body: string; created_at: string; media_url: string | null; media_type: string | null; }
+
+const BUCKET = "release-media";
+
+async function uploadMedia(file: File): Promise<{ url: string; type: "image" | "video" } | null> {
+  const ext = file.name.split(".").pop() || "bin";
+  const path = `${crypto.randomUUID()}.${ext}`;
+  const { error } = await supabase.storage.from(BUCKET).upload(path, file, { contentType: file.type, upsert: false });
+  if (error) { toast.error(error.message); return null; }
+  const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
+  const type = file.type.startsWith("video/") ? "video" : "image";
+  return { url: data.publicUrl, type };
+}
+
+function MediaPreview({ url, type, onRemove }: { url: string; type: string | null; onRemove?: () => void }) {
+  return (
+    <div className="relative inline-block rounded-lg overflow-hidden border max-w-xs">
+      {type === "video" ? (
+        <video src={url} controls className="max-h-48 w-auto" />
+      ) : (
+        <img src={url} alt="attachment" className="max-h-48 w-auto" />
+      )}
+      {onRemove && (
+        <Button type="button" size="icon" variant="destructive" className="absolute top-1 right-1 h-6 w-6" onClick={onRemove}>
+          <X className="h-3 w-3" />
+        </Button>
+      )}
+    </div>
+  );
+}
+
+function MediaUploader({ url, type, onChange, busy }: {
+  url: string | null; type: string | null;
+  onChange: (v: { url: string | null; type: string | null }) => void;
+  busy: boolean; setBusy?: (b: boolean) => void;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const handleFile = async (f: File) => {
+    if (f.size > 50 * 1024 * 1024) { toast.error("Max 50MB"); return; }
+    setUploading(true);
+    const res = await uploadMedia(f);
+    setUploading(false);
+    if (res) onChange({ url: res.url, type: res.type });
+  };
+  return (
+    <div className="space-y-2">
+      {url && <MediaPreview url={url} type={type} onRemove={() => onChange({ url: null, type: null })} />}
+      <div className="flex items-center gap-2">
+        <input ref={inputRef} type="file" accept="image/*,video/*" hidden
+          onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); e.target.value = ""; }} />
+        <Button type="button" variant="outline" size="sm" disabled={uploading || busy} onClick={() => inputRef.current?.click()}>
+          {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+          {url ? "Replace media" : "Upload image or video"}
+        </Button>
+        <span className="text-xs text-muted-foreground">PNG/JPG/MP4/WebM · max 50MB</span>
+      </div>
+    </div>
+  );
+}
 
 export default function AdminReleaseNotes() {
   const { isAdmin, loading: adminLoading } = useIsAdmin();
@@ -61,7 +122,7 @@ export default function AdminReleaseNotes() {
         <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
           <div>
             <h1 className="font-display text-3xl font-bold">Release notes admin</h1>
-            <p className="text-muted-foreground">Create, edit and delete release notes, upcoming items and updates.</p>
+            <p className="text-muted-foreground">Create, edit and delete release notes, upcoming items and updates. Attach images or videos.</p>
           </div>
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => create("upcoming")}><Plus className="h-4 w-4" />Coming soon</Button>
@@ -88,8 +149,11 @@ function NoteEditor({ note, updates, reload }: { note: ReleaseNote; updates: Upd
   const [status, setStatus] = useState(note.status);
   const [version, setVersion] = useState(note.version || "");
   const [sortOrder, setSortOrder] = useState(String(note.sort_order));
+  const [mediaUrl, setMediaUrl] = useState<string | null>(note.media_url);
+  const [mediaType, setMediaType] = useState<string | null>(note.media_type);
   const [saving, setSaving] = useState(false);
   const [newUpdate, setNewUpdate] = useState("");
+  const [newUpdateMedia, setNewUpdateMedia] = useState<{ url: string | null; type: string | null }>({ url: null, type: null });
   const [postingUpdate, setPostingUpdate] = useState(false);
 
   const save = async () => {
@@ -100,6 +164,8 @@ function NoteEditor({ note, updates, reload }: { note: ReleaseNote; updates: Upd
       status,
       version: version || null,
       sort_order: parseInt(sortOrder) || 0,
+      media_url: mediaUrl,
+      media_type: mediaType,
     }).eq("id", note.id);
     setSaving(false);
     if (error) { toast.error(error.message); return; }
@@ -121,10 +187,13 @@ function NoteEditor({ note, updates, reload }: { note: ReleaseNote; updates: Upd
     const { error } = await supabase.from("release_note_updates").insert({
       release_note_id: note.id,
       body: newUpdate.trim(),
+      media_url: newUpdateMedia.url,
+      media_type: newUpdateMedia.type,
     });
     setPostingUpdate(false);
     if (error) { toast.error(error.message); return; }
     setNewUpdate("");
+    setNewUpdateMedia({ url: null, type: null });
     toast.success("Update added");
     reload();
   };
@@ -170,6 +239,10 @@ function NoteEditor({ note, updates, reload }: { note: ReleaseNote; updates: Upd
           <Label>Description</Label>
           <Textarea value={body} onChange={(e) => setBody(e.target.value)} rows={4} />
         </div>
+        <div className="sm:col-span-2 space-y-1.5">
+          <Label className="flex items-center gap-2"><ImageIcon className="h-4 w-4" /><Video className="h-4 w-4" />Attached image / video (optional)</Label>
+          <MediaUploader url={mediaUrl} type={mediaType} busy={saving} onChange={(v) => { setMediaUrl(v.url); setMediaType(v.type); }} />
+        </div>
       </div>
 
       <div className="flex gap-2 mb-5">
@@ -182,20 +255,30 @@ function NoteEditor({ note, updates, reload }: { note: ReleaseNote; updates: Upd
         <div className="space-y-2 mb-3">
           {updates.map((u) => (
             <div key={u.id} className="flex items-start gap-2 rounded border p-2 text-sm">
-              <div className="flex-1">
+              <div className="flex-1 space-y-2">
                 <p className="text-xs text-muted-foreground">{new Date(u.created_at).toLocaleDateString()}</p>
                 <p className="whitespace-pre-wrap">{u.body}</p>
+                {u.media_url && <MediaPreview url={u.media_url} type={u.media_type} />}
               </div>
               <Button variant="ghost" size="icon" onClick={() => removeUpdate(u.id)} className="text-destructive"><Trash2 className="h-4 w-4" /></Button>
             </div>
           ))}
           {updates.length === 0 && <p className="text-xs text-muted-foreground">No updates yet.</p>}
         </div>
-        <div className="flex gap-2">
+        <div className="space-y-2 rounded-lg bg-muted/30 p-3">
           <Textarea value={newUpdate} onChange={(e) => setNewUpdate(e.target.value)} placeholder="Add a progress update…" rows={2} />
-          <Button onClick={addUpdate} disabled={postingUpdate || !newUpdate.trim()}>
-            {postingUpdate ? <Loader2 className="h-4 w-4 animate-spin" /> : <MessageSquarePlus className="h-4 w-4" />}
-          </Button>
+          <MediaUploader
+            url={newUpdateMedia.url}
+            type={newUpdateMedia.type}
+            busy={postingUpdate}
+            onChange={(v) => setNewUpdateMedia(v)}
+          />
+          <div className="flex justify-end">
+            <Button size="sm" onClick={addUpdate} disabled={postingUpdate || !newUpdate.trim()}>
+              {postingUpdate ? <Loader2 className="h-4 w-4 animate-spin" /> : <MessageSquarePlus className="h-4 w-4" />}
+              Post update
+            </Button>
+          </div>
         </div>
       </div>
     </Card>
