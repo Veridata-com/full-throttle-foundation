@@ -28,6 +28,7 @@ import Workspaces from "./pages/Workspaces";
 import ResetPassword from "./pages/ResetPassword";
 import ReleaseNotes from "./pages/ReleaseNotes";
 import AdminReleaseNotes from "./pages/AdminReleaseNotes";
+import Analytics from "./pages/Analytics";
 
 const queryClient = new QueryClient();
 
@@ -57,6 +58,7 @@ const App = () => (
                   <Route path="/slideshows" element={<Slideshows />} />
                   <Route path="/slideshows/new" element={<ProtectedRoute requirePlan requireWorkspace><NewSlideshow /></ProtectedRoute>} />
                   <Route path="/slideshows/:id/edit" element={<SlideshowEditor />} />
+                  <Route path="/analytics" element={<Analytics />} />
                   <Route path="/account" element={<Account />} />
                   <Route path="/workspaces" element={<Workspaces />} />
                   <Route path="/workspaces/settings" element={<WorkspaceSettings />} />
