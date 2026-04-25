@@ -248,13 +248,42 @@ Writing rules — these are non-negotiable:
       },
     };
 
+
+    // Self-learning personalization: inject this user's current insights into the system prompt
+    let personalization = '';
+    try {
+      const { data: ins } = await admin
+        .from('user_insights')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('is_current', true)
+        .order('generated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (ins) {
+        personalization = `\n\nPERSONALIZATION CONTEXT (this user's actual TikTok performance — weight these heavily):
+- Posts analyzed: ${ins.posts_analyzed}
+- Best hook patterns: ${(ins.top_hook_patterns || []).join(' | ') || 'n/a'}
+- Hook patterns to AVOID: ${(ins.worst_hook_patterns || []).join(' | ') || 'n/a'}
+- Optimal slide count: ${ins.best_slide_count ?? 'n/a'}
+- Best performing style: ${ins.best_style || 'n/a'}
+- Topics that resonate: ${(ins.best_posting_topics || []).join(', ') || 'n/a'}
+- Image types that work: ${(ins.best_image_types || []).join(', ') || 'n/a'}
+${ins.next_hook_suggestion ? `- Suggested next hook direction: ${ins.next_hook_suggestion}` : ''}
+
+Use these learnings to bias your decisions. Do not mention this context in the output.`;
+      }
+    } catch (e) {
+      console.warn('personalization fetch failed', e);
+    }
+
     const aiRes = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${lovableKey}` },
       body: JSON.stringify({
         model: 'openai/gpt-5',
         messages: [
-          { role: 'system', content: SYSTEM },
+          { role: 'system', content: personalization + SYSTEM },
           { role: 'user', content: prompt },
         ],
         tools: [tool],
