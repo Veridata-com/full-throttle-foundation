@@ -95,6 +95,12 @@ const Slideshows = () => {
           </div>
         )}
       </div>
+      <MarkAsPostedDialog
+        open={!!postDialog}
+        onOpenChange={(o) => !o && setPostDialog(null)}
+        slideshow={postDialog}
+        onMarked={load}
+      />
     </>
   );
 };
