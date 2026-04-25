@@ -18,7 +18,7 @@ const fmt = (n: number) => {
 };
 
 const Analytics = () => {
-  const { user, profile, refresh } = useAuth();
+  const { user, profile, refreshProfile } = useAuth();
   const [handleInput, setHandleInput] = useState("");
   const [connecting, setConnecting] = useState(false);
   const [syncing, setSyncing] = useState(false);
@@ -57,14 +57,14 @@ const Analytics = () => {
     if (!clean) return;
     setConnecting(true);
     await supabase.from("profiles").update({ tiktok_handle: clean, apify_sync_enabled: true }).eq("id", user!.id);
-    await refresh();
+    await refreshProfile();
     toast.success(`Connected to @${clean}`);
     setConnecting(false);
   };
 
   const disconnect = async () => {
     await supabase.from("profiles").update({ tiktok_handle: null, apify_sync_enabled: false }).eq("id", user!.id);
-    await refresh();
+    await refreshProfile();
     toast.success("Disconnected");
   };
 
