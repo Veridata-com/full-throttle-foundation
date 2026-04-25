@@ -5,19 +5,26 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Film, Loader2, Trash2, Pencil } from "lucide-react";
+import { Plus, Film, Loader2, Trash2, Pencil, BarChart2, Send } from "lucide-react";
 import { toast } from "sonner";
 import { SEO } from "@/components/SEO";
+import { MarkAsPostedDialog } from "@/components/MarkAsPostedDialog";
 
 const Slideshows = () => {
   const { user } = useAuth();
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [trackedIds, setTrackedIds] = useState<Set<string>>(new Set());
+  const [postDialog, setPostDialog] = useState<any>(null);
 
   const load = async () => {
     if (!user) return;
-    const { data } = await supabase.from("slideshows").select("*").eq("user_id", user.id).order("created_at", { ascending: false });
+    const [{ data }, { data: posted }] = await Promise.all([
+      supabase.from("slideshows").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
+      supabase.from("posted_slideshows").select("slideshow_id").eq("user_id", user.id),
+    ]);
     setItems(data || []);
+    setTrackedIds(new Set((posted || []).map((p: any) => p.slideshow_id)));
     setLoading(false);
   };
 
@@ -68,10 +75,18 @@ const Slideshows = () => {
                   </div>
                   <StatusBadge status={s.status} />
                 </div>
-                <p className="text-xs text-muted-foreground">{(s.slides as any[])?.length || 0} slides · {(s.image_ids || []).length} images</p>
-                <div className="flex gap-2 mt-auto">
+                <div className="flex items-center gap-2">
+                  <p className="text-xs text-muted-foreground">{(s.slides as any[])?.length || 0} slides · {(s.image_ids || []).length} images</p>
+                  {trackedIds.has(s.id) && (
+                    <Badge variant="secondary" className="text-[10px] gap-1"><BarChart2 className="h-3 w-3" /> tracked</Badge>
+                  )}
+                </div>
+                <div className="flex gap-2 mt-auto flex-wrap">
                   <Button size="sm" variant="outline" className="flex-1" asChild>
                     <Link to={`/slideshows/${s.id}/edit`}><Pencil className="h-3 w-3" /> Open</Link>
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => setPostDialog(s)}>
+                    <Send className="h-3 w-3" /> {trackedIds.has(s.id) ? "Re-post" : "Mark posted"}
                   </Button>
                   <Button size="sm" variant="ghost" onClick={() => remove(s.id)}><Trash2 className="h-3 w-3" /></Button>
                 </div>
@@ -80,6 +95,12 @@ const Slideshows = () => {
           </div>
         )}
       </div>
+      <MarkAsPostedDialog
+        open={!!postDialog}
+        onOpenChange={(o) => !o && setPostDialog(null)}
+        slideshow={postDialog}
+        onMarked={load}
+      />
     </>
   );
 };

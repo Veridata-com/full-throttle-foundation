@@ -189,8 +189,124 @@ export type Database = {
           },
         ]
       }
+      post_metrics: {
+        Row: {
+          comments: number
+          engagement_rate: number
+          fetched_at: string
+          follows_gained: number
+          id: string
+          likes: number
+          performance_score: number
+          posted_slideshow_id: string
+          raw_apify_data: Json | null
+          shares: number
+          user_id: string
+          views: number
+        }
+        Insert: {
+          comments?: number
+          engagement_rate?: number
+          fetched_at?: string
+          follows_gained?: number
+          id?: string
+          likes?: number
+          performance_score?: number
+          posted_slideshow_id: string
+          raw_apify_data?: Json | null
+          shares?: number
+          user_id: string
+          views?: number
+        }
+        Update: {
+          comments?: number
+          engagement_rate?: number
+          fetched_at?: string
+          follows_gained?: number
+          id?: string
+          likes?: number
+          performance_score?: number
+          posted_slideshow_id?: string
+          raw_apify_data?: Json | null
+          shares?: number
+          user_id?: string
+          views?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_metrics_posted_slideshow_id_fkey"
+            columns: ["posted_slideshow_id"]
+            isOneToOne: false
+            referencedRelation: "posted_slideshows"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      posted_slideshows: {
+        Row: {
+          all_slide_texts: string[]
+          created_at: string
+          hook_text: string
+          id: string
+          image_ids: string[]
+          last_synced_at: string | null
+          posted_at: string
+          slide_count: number
+          slideshow_id: string
+          style: string
+          sync_status: string
+          tiktok_handle: string
+          tiktok_post_url: string | null
+          topic: string
+          user_id: string
+        }
+        Insert: {
+          all_slide_texts?: string[]
+          created_at?: string
+          hook_text: string
+          id?: string
+          image_ids?: string[]
+          last_synced_at?: string | null
+          posted_at?: string
+          slide_count: number
+          slideshow_id: string
+          style?: string
+          sync_status?: string
+          tiktok_handle: string
+          tiktok_post_url?: string | null
+          topic?: string
+          user_id: string
+        }
+        Update: {
+          all_slide_texts?: string[]
+          created_at?: string
+          hook_text?: string
+          id?: string
+          image_ids?: string[]
+          last_synced_at?: string | null
+          posted_at?: string
+          slide_count?: number
+          slideshow_id?: string
+          style?: string
+          sync_status?: string
+          tiktok_handle?: string
+          tiktok_post_url?: string | null
+          topic?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "posted_slideshows_slideshow_id_fkey"
+            columns: ["slideshow_id"]
+            isOneToOne: false
+            referencedRelation: "slideshows"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
+          apify_sync_enabled: boolean
           brand_voice: string | null
           created_at: string
           current_period_end: string | null
@@ -199,13 +315,16 @@ export type Database = {
           display_name: string | null
           email: string | null
           id: string
+          insights_last_seen_at: string | null
           plan: Database["public"]["Enums"]["plan_tier"]
           stripe_customer_id: string | null
           stripe_subscription_id: string | null
           target_audience: string | null
+          tiktok_handle: string | null
           updated_at: string
         }
         Insert: {
+          apify_sync_enabled?: boolean
           brand_voice?: string | null
           created_at?: string
           current_period_end?: string | null
@@ -214,13 +333,16 @@ export type Database = {
           display_name?: string | null
           email?: string | null
           id: string
+          insights_last_seen_at?: string | null
           plan?: Database["public"]["Enums"]["plan_tier"]
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
           target_audience?: string | null
+          tiktok_handle?: string | null
           updated_at?: string
         }
         Update: {
+          apify_sync_enabled?: boolean
           brand_voice?: string | null
           created_at?: string
           current_period_end?: string | null
@@ -229,10 +351,12 @@ export type Database = {
           display_name?: string | null
           email?: string | null
           id?: string
+          insights_last_seen_at?: string | null
           plan?: Database["public"]["Enums"]["plan_tier"]
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
           target_audience?: string | null
+          tiktok_handle?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -471,6 +595,57 @@ export type Database = {
           slideshows_generated?: number
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      user_insights: {
+        Row: {
+          best_image_types: string[]
+          best_posting_topics: string[]
+          best_slide_count: number | null
+          best_style: string | null
+          generated_at: string
+          id: string
+          insight_summary: string
+          is_current: boolean
+          next_hook_suggestion: string | null
+          posts_analyzed: number
+          raw_analysis: Json | null
+          top_hook_patterns: string[]
+          user_id: string
+          worst_hook_patterns: string[]
+        }
+        Insert: {
+          best_image_types?: string[]
+          best_posting_topics?: string[]
+          best_slide_count?: number | null
+          best_style?: string | null
+          generated_at?: string
+          id?: string
+          insight_summary: string
+          is_current?: boolean
+          next_hook_suggestion?: string | null
+          posts_analyzed: number
+          raw_analysis?: Json | null
+          top_hook_patterns?: string[]
+          user_id: string
+          worst_hook_patterns?: string[]
+        }
+        Update: {
+          best_image_types?: string[]
+          best_posting_topics?: string[]
+          best_slide_count?: number | null
+          best_style?: string | null
+          generated_at?: string
+          id?: string
+          insight_summary?: string
+          is_current?: boolean
+          next_hook_suggestion?: string | null
+          posts_analyzed?: number
+          raw_analysis?: Json | null
+          top_hook_patterns?: string[]
+          user_id?: string
+          worst_hook_patterns?: string[]
         }
         Relationships: []
       }
