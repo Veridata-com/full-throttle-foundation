@@ -78,11 +78,6 @@ const Landing = () => {
             <p className="mx-auto max-w-2xl text-lg md:text-xl text-muted-foreground mb-4 animate-fade-in">
               AdRise creates your slideshows, tests different formats, tracks performance and finds exactly what works best for your product. Don't guess what works, let AdRise analyze and optimize your organic marketing.
             </p>
-            <p className="mx-auto max-w-2xl text-base md:text-lg mb-10 animate-fade-in">
-              <span className="inline-flex items-center gap-2 rounded-full bg-warning/15 text-warning border border-warning/30 px-4 py-1.5 font-semibold">
-                🔥 Now just <span className="text-xl font-bold">$0.99</span> for your first month — limited-time early-beta offer
-              </span>
-            </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center animate-fade-in">
               <Button size="lg" className="text-base h-12 px-8 shadow-glow" asChild>
                 <Link to="/auth?mode=signup">Start creating <ArrowRight className="ml-1 h-4 w-4" /></Link>
