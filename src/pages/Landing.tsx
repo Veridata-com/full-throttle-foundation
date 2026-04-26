@@ -102,7 +102,7 @@ const Landing = () => {
             </Badge>
             <h2 className="font-display text-3xl md:text-4xl font-bold mb-3">Everything you need to go viral</h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
-              Our AI doesn't just create—it learns. Every post you track feeds back into smarter, higher-converting slideshows.
+              Every slideshow you post is a datapoint that helps the AdRise algorithm find YOUR highest converting format.
             </p>
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
