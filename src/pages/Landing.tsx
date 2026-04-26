@@ -168,10 +168,6 @@ const Landing = () => {
         </section>
 
         <section id="pricing" className="container py-20 border-t">
-          <div className="text-center mb-12">
-            <h2 className="font-display text-4xl md:text-5xl font-bold mb-4">Simple, honest pricing</h2>
-            <p className="text-muted-foreground text-lg">Limited-time early-beta offer. Cancel anytime.</p>
-          </div>
           <div className="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto">
             <Card className="p-8 shadow-card relative">
               <span className="absolute -top-3 left-6 bg-warning text-warning-foreground text-xs font-bold px-3 py-1 rounded-full">EARLY BETA · $0.99 first month</span>
