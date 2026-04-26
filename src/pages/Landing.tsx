@@ -125,15 +125,10 @@ const Landing = () => {
         </section>
 
         <section className="container py-20 border-t">
-          <div className="text-center mb-14">
-            <h2 className="font-display text-4xl md:text-5xl font-bold mb-4">Built to convert organically</h2>
-            <p className="text-muted-foreground text-lg">Your first viral post within two weeks.</p>
-          </div>
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-2 gap-8">
             {[
               { icon: ImageIcon, title: "Smart image library", desc: "Upload once. AI auto-tags and sorts every image so you can find it fast.", img: featureLibrary, alt: "AdRise image library with auto-tagged folders" },
               { icon: Wand2, title: "AI writes the script", desc: "Hooks, value props, and CTAs. Tuned for TikTok-native, human voice.", img: featureEditor, alt: "AdRise slideshow editor with AI-generated TikTok hook" },
-              { icon: Download, title: "Export & post", desc: "1080x1920 PNGs, zipped and ready for TikTok, Reels, or Shorts.", img: featureExport, alt: "Exported AdRise slideshow ZIP file ready to post" },
             ].map((f, i) => (
               <div key={f.title} className="group relative">
                 {/* glow */}
