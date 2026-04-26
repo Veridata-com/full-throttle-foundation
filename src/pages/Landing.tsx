@@ -73,10 +73,10 @@ const Landing = () => {
               <Sparkles className="h-3 w-3 mr-1" />Early beta · Improving rapidly from your feedback
             </Badge>
             <h1 className="font-display text-4xl md:text-7xl font-bold tracking-tighter mb-6 animate-fade-in">
-              Make your SaaS profitable with <span className="text-gradient">converting organic TikTok slideshows.</span>
+              First <span className="text-gradient">self-learning algorithm</span> that optimizes TikTok slideshow virality and conversion
             </h1>
             <p className="mx-auto max-w-2xl text-lg md:text-xl text-muted-foreground mb-4 animate-fade-in">
-              Drop your slideshow images. Our AI writes hooks, picks angles, and lays out scroll-stopping slideshows that convert. No designer. No agency. No bullshit.
+              AdRise creates your slideshows, tests different formats, tracks performance and finds exactly what works best for your product. Don't guess what works, let AdRise analyze and optimize your organic marketing.
             </p>
             <p className="mx-auto max-w-2xl text-base md:text-lg mb-10 animate-fade-in">
               <span className="inline-flex items-center gap-2 rounded-full bg-warning/15 text-warning border border-warning/30 px-4 py-1.5 font-semibold">
