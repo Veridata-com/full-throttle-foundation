@@ -129,7 +129,7 @@ const Landing = () => {
             <Badge variant="outline" className="mb-3">Live demo</Badge>
             <h2 className="font-display text-3xl md:text-4xl font-bold mb-3">See AdRise in 2 minutes</h2>
             <p className="text-muted-foreground">
-            We're in early beta; My name is Manasse and I have extensive experience at UGC and social media content creation. I also have a part-time occupation in marketing at a european software startup (Quodari). I use my skillset and combine it into creating the most converting TikTok slideshows for YOU!
+            We're in early beta; My name is Manasse, I am the founder of AdRise and I have extensive experience in UGC, social media analytics and machine learning. I also have a part-time occupation in marketing at a european software startup (Quodari). I use my skillset and combine it into creating the most converting TikTok slideshow system.
             </p>
           </div>
           <div className="relative max-w-4xl mx-auto rounded-2xl overflow-hidden border border-border/60 shadow-glow bg-card">
