@@ -96,30 +96,11 @@ const Landing = () => {
 
         {/* Features Overview */}
         <section className="container py-16 border-t">
-          <div className="text-center mb-10">
-            <Badge className="mb-3 bg-primary/15 text-primary border border-primary/30" variant="outline">
-              <Sparkles className="h-3 w-3 mr-1" />Self-Improving AI
-            </Badge>
+          <div className="text-center">
             <h2 className="font-display text-3xl md:text-4xl font-bold mb-3">Everything you need to go viral</h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
               Every slideshow you post is a datapoint that helps the AdRise algorithm find YOUR highest converting format.
             </p>
-          </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {[
-              { icon: Wand2, title: "AI-Generated Hooks", desc: "Scroll-stopping openers written for your product and audience" },
-              { icon: ImageIcon, title: "Smart Image Library", desc: "Auto-tagged, searchable. Find the perfect shot in seconds" },
-              { icon: Sparkles, title: "Self-Improving", desc: "Tracks your TikTok performance and automatically optimizes future slideshows" },
-              { icon: Download, title: "Auto-Generate & Export", desc: "One-click generation. ZIP export ready for TikTok, Reels, Shorts" },
-            ].map((f) => (
-              <div key={f.title} className="group p-6 rounded-2xl border border-border/60 bg-card/60 backdrop-blur-sm hover:border-primary/40 hover:bg-card transition-all">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-primary shadow-glow mb-4">
-                  <f.icon className="h-5 w-5 text-primary-foreground" />
-                </div>
-                <h3 className="font-display font-bold mb-2">{f.title}</h3>
-                <p className="text-sm text-muted-foreground">{f.desc}</p>
-              </div>
-            ))}
           </div>
         </section>
 
@@ -150,8 +131,8 @@ const Landing = () => {
 
         <section className="container py-20 border-t">
           <div className="text-center mb-14">
-            <h2 className="font-display text-4xl md:text-5xl font-bold mb-4">Built to ship, not fiddle</h2>
-            <p className="text-muted-foreground text-lg">From upload to posted, in minutes.</p>
+            <h2 className="font-display text-4xl md:text-5xl font-bold mb-4">Built to convert organically</h2>
+            <p className="text-muted-foreground text-lg">Your first viral post within two weeks.</p>
           </div>
           <div className="grid md:grid-cols-3 gap-8">
             {[
