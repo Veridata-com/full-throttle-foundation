@@ -8,6 +8,8 @@ import { Loader2, Download, Save, ArrowLeft, Image as ImageIcon, Plus, RotateCcw
 import { toast } from "sonner";
 import { SEO } from "@/components/SEO";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { CleanDesignedEditor } from "@/components/designed/CleanDesignedEditor";
+import type { BrandIdentity } from "@/lib/designed/brand";
 
 interface TextPlacement {
   x?: number; y?: number;
