@@ -9,6 +9,18 @@ import { toast } from "sonner";
 import { SEO } from "@/components/SEO";
 import { useIsMobile } from "@/hooks/use-mobile";
 
+interface TextPlacement {
+  x?: number; y?: number;
+  originX?: "left" | "center" | "right";
+  originY?: "top" | "center" | "bottom";
+  fontSize?: number;
+  fillColor?: string;
+  strokeColor?: string;
+  strokeWidth?: number;
+  maxWidth?: number;
+  textAlign?: "left" | "center" | "right";
+}
+
 interface Slide {
   id: string;
   type: "hook" | "value" | "cta";
@@ -19,6 +31,9 @@ interface Slide {
   image_id: string | null;
   image_url?: string | null;
   is_stock?: boolean;
+  is_generated?: boolean;
+  generated_image_id?: string | null;
+  text_placement?: TextPlacement | null;
   layout?: any;
   fabric_state?: any;
 }
@@ -84,23 +99,24 @@ function makeShadow() {
   return new fabric.Shadow({ color: "rgba(0,0,0,0.9)", blur: 16, offsetX: 3, offsetY: 3 });
 }
 
-function buildText(value: string, opts?: { top?: number; fontSize?: number; wrap?: boolean }) {
+function buildText(value: string, opts?: { top?: number; left?: number; fontSize?: number; wrap?: boolean; placement?: TextPlacement | null }) {
   const wrapped = opts?.wrap === false ? (value || "") : wrapTextToMaxChars(value || "");
-  const fontSize = opts?.fontSize ?? calculateOptimalFontSize(wrapped);
+  const p = opts?.placement || null;
+  const fontSize = p?.fontSize ?? opts?.fontSize ?? calculateOptimalFontSize(wrapped);
   return new fabric.IText(wrapped, {
-    left: CANVAS_W / 2,
-    top: opts?.top ?? 1100,
-    originX: "center",
-    originY: "center",
+    left: p?.x ?? opts?.left ?? CANVAS_W / 2,
+    top: p?.y ?? opts?.top ?? 1100,
+    originX: (p?.originX as any) ?? "center",
+    originY: (p?.originY as any) ?? "center",
     fontFamily: MEME_FONT,
     fontWeight: "900",
     fontSize,
-    fill: "#FFFFFF",
-    stroke: "#000000",
-    strokeWidth: 10,
+    fill: p?.fillColor ?? "#FFFFFF",
+    stroke: p?.strokeColor ?? "#000000",
+    strokeWidth: p?.strokeWidth ?? 10,
     paintFirst: "stroke",
-    textAlign: "center",
-    width: 900,
+    textAlign: (p?.textAlign as any) ?? "center",
+    width: p?.maxWidth ?? 900,
     lineHeight: 1.35,
     shadow: makeShadow(),
     editable: true,
