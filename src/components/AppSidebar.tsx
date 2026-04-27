@@ -1,5 +1,6 @@
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
-import { Image, Film, CreditCard, User, LogOut, LayoutDashboard, Layers, Megaphone, BarChart2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Image, Film, CreditCard, User, LogOut, LayoutDashboard, Layers, Megaphone, BarChart2, Palette } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
   SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar, SidebarHeader, SidebarFooter,
@@ -9,11 +10,13 @@ import { Button } from "@/components/ui/button";
 import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
 import { UsageWidgetCompact } from "@/components/UsageWidget";
 import { FeedbackDialog } from "@/components/FeedbackDialog";
+import { supabase } from "@/integrations/supabase/client";
 
 const items = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
   { title: "Library", url: "/library", icon: Image },
   { title: "Slideshows", url: "/slideshows", icon: Film },
+  { title: "Brand", url: "/brand", icon: Palette },
   { title: "Analytics", url: "/analytics", icon: BarChart2 },
   { title: "Workspaces", url: "/workspaces", icon: Layers },
   { title: "Release notes", url: "/release-notes", icon: Megaphone },
@@ -26,7 +29,14 @@ export function AppSidebar() {
   const collapsed = state === "collapsed";
   const location = useLocation();
   const navigate = useNavigate();
-  const { signOut } = useAuth();
+  const { signOut, user } = useAuth();
+  const [brandColor, setBrandColor] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    supabase.from("brand_identity").select("primary_color").eq("user_id", user.id).maybeSingle()
+      .then(({ data }) => setBrandColor((data as any)?.primary_color || null));
+  }, [user]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -46,12 +56,20 @@ export function AppSidebar() {
             <SidebarMenu>
               {items.map((item) => {
                 const active = location.pathname.startsWith(item.url);
+                const isBrand = item.url === "/brand";
                 return (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild isActive={active}>
                       <NavLink to={item.url}>
                         <item.icon className="h-4 w-4" />
-                        {!collapsed && <span>{item.title}</span>}
+                        {!collapsed && <span className="flex-1">{item.title}</span>}
+                        {!collapsed && isBrand && brandColor && (
+                          <span
+                            className="h-2.5 w-2.5 rounded-full ring-1 ring-sidebar-border"
+                            style={{ background: brandColor }}
+                            title="Your brand color"
+                          />
+                        )}
                       </NavLink>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
