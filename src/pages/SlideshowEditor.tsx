@@ -8,6 +8,8 @@ import { Loader2, Download, Save, ArrowLeft, Image as ImageIcon, Plus, RotateCcw
 import { toast } from "sonner";
 import { SEO } from "@/components/SEO";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { CleanDesignedEditor } from "@/components/designed/CleanDesignedEditor";
+import type { BrandIdentity } from "@/lib/designed/brand";
 
 interface TextPlacement {
   x?: number; y?: number;
@@ -149,6 +151,7 @@ const SlideshowEditor = () => {
   const [loading, setLoading] = useState(true);
   const [titleEditing, setTitleEditing] = useState(false);
   const [title, setTitle] = useState("");
+  const [brand, setBrand] = useState<BrandIdentity | null>(null);
 
   // Inspector state
   const [hasSelection, setHasSelection] = useState(false);
@@ -173,6 +176,15 @@ const SlideshowEditor = () => {
       if (error || !ss) { toast.error("Not found"); navigate("/slideshows"); return; }
       setSlideshow(ss);
       setTitle(ss.title || "Untitled");
+
+      // For clean_designed, also load brand identity (required to render)
+      if ((ss as any).generation_mode === "clean_designed") {
+        const { data: b } = await supabase.from("brand_identity").select("*").eq("user_id", user.id).maybeSingle();
+        setBrand(b as any);
+        setLoading(false);
+        return;
+      }
+
       const ids: string[] = ss.image_ids || [];
       const map: Record<string, string> = {};
       if (ids.length) {
@@ -211,9 +223,10 @@ const SlideshowEditor = () => {
     setStroke(((t.stroke as string) || "#000000").toUpperCase());
   };
 
-  // (Re)init the canvas every time the active slide changes
+  // (Re)init the canvas every time the active slide changes (skip for clean_designed mode)
   useEffect(() => {
     if (loading || !canvasRef.current || !active) return;
+    if (slideshow?.generation_mode === "clean_designed") return;
 
     // Dispose any prior canvas
     if (fabricRef.current) {
@@ -504,6 +517,30 @@ const SlideshowEditor = () => {
       <div className="flex min-h-screen items-center justify-center" style={{ background: C.bg }}>
         <Loader2 className="h-8 w-8 animate-spin" style={{ color: C.accent }} />
       </div>
+    );
+  }
+
+  // Branch: clean_designed slideshows use a dedicated template editor
+  if (slideshow.generation_mode === "clean_designed") {
+    if (!brand) {
+      return (
+        <div className="flex min-h-screen items-center justify-center text-center p-6" style={{ background: C.bg, color: C.text }}>
+          <div>
+            <p className="mb-4">This slideshow uses your brand identity, but no brand is set up.</p>
+            <button onClick={() => navigate("/brand")} style={{ background: C.accent, color: "#fff", padding: "10px 18px", borderRadius: 8, border: "none", fontWeight: 600 }}>
+              Set up your brand
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return (
+      <CleanDesignedEditor
+        slideshow={slideshow}
+        brand={brand}
+        onBack={() => navigate("/slideshows")}
+        refresh={() => { /* noop — local state handles updates */ }}
+      />
     );
   }
 
