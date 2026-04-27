@@ -39,8 +39,8 @@ Deno.serve(async (req) => {
     const userClient = createClient(supabaseUrl, anonKey, {
       global: { headers: { Authorization: authHeader } },
     });
-    const { data: claims } = await userClient.auth.getClaims(authHeader.replace('Bearer ', ''));
-    const userId = claims?.claims?.sub;
+    const { data: { user } } = await userClient.auth.getUser();
+    const userId = user?.id;
     if (!userId) return j({ error: 'unauthorized' }, 401);
 
     if (!apifyKey) return j({ error: 'apify_key_missing' }, 200);
