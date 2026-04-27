@@ -170,11 +170,11 @@ const NewSlideshow = () => {
   };
 
   // Mode cards — only show modes the workspace allows
-  const modeOptions: { id: Mode; label: string; desc: string; Icon: any }[] = [
-    { id: "auto", label: "Let AI choose", desc: "AI tests both modes to learn what works best.", Icon: Wand2 },
-    { id: "photo", label: "Photo slides", desc: "Use uploaded or stock photos.", Icon: ImageIcon },
-    { id: "designed", label: "AI-designed", desc: "Custom AI visuals + smart text placement.", Icon: Sparkles },
-  ].filter((o) => o.id === "auto" ? allowed.length > 1 : allowed.includes(o.id));
+  const modeOptions: { id: Mode; label: string; desc: string; Icon: any }[] = ([
+    { id: "auto" as Mode, label: "Let AI choose", desc: "AI tests both modes to learn what works best.", Icon: Wand2 },
+    { id: "photo" as Mode, label: "Photo slides", desc: "Use uploaded or stock photos.", Icon: ImageIcon },
+    { id: "designed" as Mode, label: "AI-designed", desc: "Custom AI visuals + smart text placement.", Icon: Sparkles },
+  ]).filter((o) => o.id === "auto" ? allowed.length > 1 : allowed.includes(o.id));
 
   return (
     <>
