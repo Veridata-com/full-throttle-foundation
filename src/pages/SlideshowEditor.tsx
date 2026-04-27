@@ -223,9 +223,10 @@ const SlideshowEditor = () => {
     setStroke(((t.stroke as string) || "#000000").toUpperCase());
   };
 
-  // (Re)init the canvas every time the active slide changes
+  // (Re)init the canvas every time the active slide changes (skip for clean_designed mode)
   useEffect(() => {
     if (loading || !canvasRef.current || !active) return;
+    if (slideshow?.generation_mode === "clean_designed") return;
 
     // Dispose any prior canvas
     if (fabricRef.current) {
