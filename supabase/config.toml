@@ -6,6 +6,9 @@ verify_jwt = false
 [functions.generate-slideshow]
 verify_jwt = false
 
+[functions.generate-designed-slideshow]
+verify_jwt = false
+
 [functions.create-checkout]
 verify_jwt = false
 
