@@ -176,6 +176,15 @@ const SlideshowEditor = () => {
       if (error || !ss) { toast.error("Not found"); navigate("/slideshows"); return; }
       setSlideshow(ss);
       setTitle(ss.title || "Untitled");
+
+      // For clean_designed, also load brand identity (required to render)
+      if ((ss as any).generation_mode === "clean_designed") {
+        const { data: b } = await supabase.from("brand_identity").select("*").eq("user_id", user.id).maybeSingle();
+        setBrand(b as any);
+        setLoading(false);
+        return;
+      }
+
       const ids: string[] = ss.image_ids || [];
       const map: Record<string, string> = {};
       if (ids.length) {
