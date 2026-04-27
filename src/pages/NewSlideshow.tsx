@@ -12,15 +12,8 @@ import { Loader2, Sparkles, Upload, AlertCircle, Image as ImageIcon, Layers, Wan
 import { toast } from "sonner";
 import { SEO } from "@/components/SEO";
 import { ImageSourceToggle, type ImageSource } from "@/components/ImageSourceToggle";
-
-const DESIGN_STYLES = [
-  { id: "dark", label: "Dark & Moody" },
-  { id: "minimal", label: "Clean & Minimal" },
-  { id: "gradient", label: "Gradient Vibes" },
-  { id: "luxury", label: "Luxury" },
-  { id: "tech", label: "Tech / Digital" },
-  { id: "nature", label: "Nature / Organic" },
-];
+import { renderAndPersistSlideshow } from "@/lib/designed/renderSlideshow";
+import type { BrandIdentity } from "@/lib/designed/brand";
 
 type Mode = "auto" | "photo" | "designed";
 
