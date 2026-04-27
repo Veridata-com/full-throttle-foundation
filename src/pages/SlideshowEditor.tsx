@@ -269,8 +269,9 @@ const SlideshowEditor = () => {
       } else {
         const raw = slideToText(active);
         const wrapped = wrapTextToMaxChars(raw);
-        const fs = calculateOptimalFontSize(wrapped);
-        const t = buildText(wrapped, { fontSize: fs, wrap: false });
+        const placement = active.text_placement || null;
+        const fs = placement?.fontSize ?? calculateOptimalFontSize(wrapped);
+        const t = buildText(wrapped, { fontSize: fs, wrap: false, placement });
         canvas.add(t);
         setSlideText(wrapped);
         setFontSize(fs);
