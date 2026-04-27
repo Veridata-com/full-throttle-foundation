@@ -7,9 +7,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Trash2 } from "lucide-react";
+import { Loader2, Trash2, Image as ImageIcon, Sparkles, Layers } from "lucide-react";
 import { toast } from "sonner";
 import { SEO } from "@/components/SEO";
+
+const MODE_OPTIONS = [
+  { id: "photo", label: "Photo slides", desc: "Use uploaded or stock photos.", Icon: ImageIcon },
+  { id: "designed", label: "AI-designed slides", desc: "Custom AI visuals with smart text placement.", Icon: Sparkles },
+  { id: "mixed", label: "Mixed", desc: "Let the AI pick photo OR designed per slideshow.", Icon: Layers },
+];
 
 const WorkspaceSettings = () => {
   const { current, refresh, workspaces, setCurrentId } = useWorkspace();
@@ -19,6 +25,7 @@ const WorkspaceSettings = () => {
   const [audience, setAudience] = useState("");
   const [voice, setVoice] = useState("");
   const [cta, setCta] = useState("");
+  const [allowedModes, setAllowedModes] = useState<string[]>(["photo", "designed"]);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
@@ -29,17 +36,29 @@ const WorkspaceSettings = () => {
       setAudience(current.target_audience || "");
       setVoice(current.brand_voice || "");
       setCta(current.default_cta || "");
+      setAllowedModes((current as any).allowed_generation_modes?.length ? (current as any).allowed_generation_modes : ["photo", "designed"]);
     }
   }, [current]);
 
   if (!current) return <div className="container py-8">No workspace selected.</div>;
+
+  const toggleMode = (id: string) => {
+    setAllowedModes((prev) => {
+      if (prev.includes(id)) {
+        if (prev.length === 1) return prev; // at least one required
+        return prev.filter((m) => m !== id);
+      }
+      return [...prev, id];
+    });
+  };
 
   const save = async () => {
     setSaving(true);
     const { error } = await supabase.from("workspaces").update({
       name, tagline: tagline || null, target_audience: audience || null,
       brand_voice: voice || null, default_cta: cta || null,
-    }).eq("id", current.id);
+      allowed_generation_modes: allowedModes,
+    } as any).eq("id", current.id);
     setSaving(false);
     if (error) { toast.error(error.message); return; }
     await refresh();
@@ -71,6 +90,31 @@ const WorkspaceSettings = () => {
           <div className="space-y-2"><Label>Brand voice</Label><Textarea rows={2} value={voice} onChange={(e) => setVoice(e.target.value)} /></div>
           <div className="space-y-2"><Label>Default CTA</Label><Input value={cta} onChange={(e) => setCta(e.target.value)} /></div>
           <Button onClick={save} disabled={saving}>{saving && <Loader2 className="h-4 w-4 animate-spin" />} Save</Button>
+        </Card>
+
+        <Card className="p-6 mt-6 space-y-4 shadow-card">
+          <div>
+            <h2 className="font-display text-xl font-bold">Generation modes the AI can use</h2>
+            <p className="text-sm text-muted-foreground">Pick which slideshow styles the AI is allowed to create for this workspace. A slideshow always uses one mode end-to-end — never mixed within a single slideshow.</p>
+          </div>
+          <div className="grid sm:grid-cols-3 gap-3">
+            {MODE_OPTIONS.map((m) => {
+              const active = allowedModes.includes(m.id);
+              return (
+                <button
+                  key={m.id}
+                  type="button"
+                  onClick={() => toggleMode(m.id)}
+                  className={`text-left rounded-xl border-2 p-4 transition ${active ? "border-primary bg-primary/5 ring-4 ring-primary/10" : "border-border hover:border-muted-foreground"}`}
+                >
+                  <m.Icon className="h-5 w-5 mb-2" />
+                  <div className="font-semibold text-sm">{m.label}</div>
+                  <div className="text-xs text-muted-foreground mt-1">{m.desc}</div>
+                </button>
+              );
+            })}
+          </div>
+          <Button onClick={save} disabled={saving} variant="secondary">{saving && <Loader2 className="h-4 w-4 animate-spin" />} Save modes</Button>
         </Card>
 
         <Card className="p-6 mt-6 border-destructive/40">
