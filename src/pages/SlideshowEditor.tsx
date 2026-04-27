@@ -520,6 +520,30 @@ const SlideshowEditor = () => {
     );
   }
 
+  // Branch: clean_designed slideshows use a dedicated template editor
+  if (slideshow.generation_mode === "clean_designed") {
+    if (!brand) {
+      return (
+        <div className="flex min-h-screen items-center justify-center text-center p-6" style={{ background: C.bg, color: C.text }}>
+          <div>
+            <p className="mb-4">This slideshow uses your brand identity, but no brand is set up.</p>
+            <button onClick={() => navigate("/brand")} style={{ background: C.accent, color: "#fff", padding: "10px 18px", borderRadius: 8, border: "none", fontWeight: 600 }}>
+              Set up your brand
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return (
+      <CleanDesignedEditor
+        slideshow={slideshow}
+        brand={brand}
+        onBack={() => navigate("/slideshows")}
+        refresh={() => { /* noop — local state handles updates */ }}
+      />
+    );
+  }
+
   const Swatch = ({ color, active, onClick }: { color: string; active: boolean; onClick: () => void }) => (
     <button
       onClick={onClick}
