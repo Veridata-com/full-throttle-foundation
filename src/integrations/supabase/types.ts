@@ -332,6 +332,8 @@ export type Database = {
       posted_slideshows: {
         Row: {
           all_slide_texts: string[]
+          auto_imported: boolean
+          caption: string | null
           created_at: string
           hook_text: string
           id: string
@@ -339,9 +341,10 @@ export type Database = {
           last_synced_at: string | null
           posted_at: string
           slide_count: number
-          slideshow_id: string
+          slideshow_id: string | null
           style: string
           sync_status: string
+          thumbnail_url: string | null
           tiktok_handle: string
           tiktok_post_url: string | null
           topic: string
@@ -349,6 +352,8 @@ export type Database = {
         }
         Insert: {
           all_slide_texts?: string[]
+          auto_imported?: boolean
+          caption?: string | null
           created_at?: string
           hook_text: string
           id?: string
@@ -356,9 +361,10 @@ export type Database = {
           last_synced_at?: string | null
           posted_at?: string
           slide_count: number
-          slideshow_id: string
+          slideshow_id?: string | null
           style?: string
           sync_status?: string
+          thumbnail_url?: string | null
           tiktok_handle: string
           tiktok_post_url?: string | null
           topic?: string
@@ -366,6 +372,8 @@ export type Database = {
         }
         Update: {
           all_slide_texts?: string[]
+          auto_imported?: boolean
+          caption?: string | null
           created_at?: string
           hook_text?: string
           id?: string
@@ -373,9 +381,10 @@ export type Database = {
           last_synced_at?: string | null
           posted_at?: string
           slide_count?: number
-          slideshow_id?: string
+          slideshow_id?: string | null
           style?: string
           sync_status?: string
+          thumbnail_url?: string | null
           tiktok_handle?: string
           tiktok_post_url?: string | null
           topic?: string

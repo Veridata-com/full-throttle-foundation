@@ -58,8 +58,22 @@ const Analytics = () => {
     setConnecting(true);
     await supabase.from("profiles").update({ tiktok_handle: clean, apify_sync_enabled: true }).eq("id", user!.id);
     await refreshProfile();
-    toast.success(`Connected to @${clean}`);
+    toast.success(`Connected to @${clean}. Importing your posts…`);
     setConnecting(false);
+    // Auto-import on connect
+    setSyncing(true);
+    try {
+      const { data } = await supabase.functions.invoke("import-tiktok-posts", { body: { limit: 30 } });
+      const err = (data as any)?.error;
+      if (!err) {
+        toast.success(`Imported ${(data as any)?.imported ?? 0} posts`);
+      } else if (err === "apify_failed") {
+        toast.error("Couldn't fetch posts. Click Sync to retry.");
+      }
+      await load();
+    } finally {
+      setSyncing(false);
+    }
   };
 
   const disconnect = async () => {
@@ -71,16 +85,27 @@ const Analytics = () => {
   const syncNow = async () => {
     setSyncing(true);
     try {
-      const { data, error } = await supabase.functions.invoke("sync-tiktok-metrics", { body: { sync_all_pending: true } });
-      if (error) throw error;
-      const err = (data as any)?.error;
-      if (err === "apify_key_missing") {
-        toast.error("Apify API key not configured yet. Performance sync will work once it's added.");
-      } else if (err) {
-        toast.error(err);
+      // Step 1: auto-import recent posts from the user's TikTok profile
+      const { data: imp, error: impErr } = await supabase.functions.invoke("import-tiktok-posts", { body: { limit: 30 } });
+      if (impErr) throw impErr;
+      const ierr = (imp as any)?.error;
+      if (ierr === "apify_key_missing") {
+        toast.error("Performance sync isn't configured yet.");
+      } else if (ierr === "no_handle") {
+        toast.error("Connect your TikTok handle first.");
+      } else if (ierr === "apify_failed") {
+        toast.error("TikTok scrape failed. Try again in a minute.");
+      } else if (ierr) {
+        toast.error(String(ierr));
       } else {
-        toast.success(`Synced ${(data as any)?.synced ?? 0} posts`);
+        const i = (imp as any)?.imported ?? 0;
+        const u = (imp as any)?.updated ?? 0;
+        toast.success(`Imported ${i} new · refreshed ${u}`);
       }
+
+      // Step 2: kick off async metric refresh for any slideshow-linked posts
+      await supabase.functions.invoke("sync-tiktok-metrics", { body: { sync_all_pending: true } }).catch(() => {});
+
       await load();
     } catch (e: any) {
       toast.error(e.message || "Sync failed");
@@ -259,7 +284,7 @@ const Analytics = () => {
           ) : posted.length === 0 ? (
             <div className="text-center py-8">
               <p className="text-muted-foreground mb-3">No posts tracked yet.</p>
-              <p className="text-xs text-muted-foreground mb-4">Mark a slideshow as posted to start tracking performance.</p>
+              <p className="text-xs text-muted-foreground mb-4">Click "Sync now" above to import your recent TikTok posts, or mark a slideshow as posted.</p>
               <Button asChild variant="outline"><Link to="/slideshows">Go to my slideshows <ArrowRight className="h-4 w-4" /></Link></Button>
             </div>
           ) : (
