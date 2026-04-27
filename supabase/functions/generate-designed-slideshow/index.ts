@@ -123,7 +123,8 @@ Deno.serve(async (req) => {
     const styles = (design_styles && design_styles.length ? design_styles : (slideshow.design_styles || ["dark", "moody"])).slice(0, 2);
     const styleWords = styles.flatMap((s) => STYLE_KEYWORDS[s] || [s]);
 
-    const numSlides = Math.min(12, Math.max(3, slideshow.num_slides || 6));
+    // Cap designed slides at 8 to control AI cost + stay under edge timeout
+    const numSlides = Math.min(8, Math.max(3, slideshow.num_slides || 6));
     const needDesigned = numSlides - 1; // last slide = product shot
 
     await admin.from("slideshows").update({ status: "generating", generation_error: null }).eq("id", slideshowId);
