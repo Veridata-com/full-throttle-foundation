@@ -58,8 +58,22 @@ const Analytics = () => {
     setConnecting(true);
     await supabase.from("profiles").update({ tiktok_handle: clean, apify_sync_enabled: true }).eq("id", user!.id);
     await refreshProfile();
-    toast.success(`Connected to @${clean}`);
+    toast.success(`Connected to @${clean}. Importing your posts…`);
     setConnecting(false);
+    // Auto-import on connect
+    setSyncing(true);
+    try {
+      const { data } = await supabase.functions.invoke("import-tiktok-posts", { body: { limit: 30 } });
+      const err = (data as any)?.error;
+      if (!err) {
+        toast.success(`Imported ${(data as any)?.imported ?? 0} posts`);
+      } else if (err === "apify_failed") {
+        toast.error("Couldn't fetch posts. Click Sync to retry.");
+      }
+      await load();
+    } finally {
+      setSyncing(false);
+    }
   };
 
   const disconnect = async () => {
@@ -270,7 +284,7 @@ const Analytics = () => {
           ) : posted.length === 0 ? (
             <div className="text-center py-8">
               <p className="text-muted-foreground mb-3">No posts tracked yet.</p>
-              <p className="text-xs text-muted-foreground mb-4">Mark a slideshow as posted to start tracking performance.</p>
+              <p className="text-xs text-muted-foreground mb-4">Click "Sync now" above to import your recent TikTok posts, or mark a slideshow as posted.</p>
               <Button asChild variant="outline"><Link to="/slideshows">Go to my slideshows <ArrowRight className="h-4 w-4" /></Link></Button>
             </div>
           ) : (
