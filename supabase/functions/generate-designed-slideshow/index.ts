@@ -101,8 +101,8 @@ Deno.serve(async (req) => {
       return j({ error: "designed_quota_exceeded" }, 402);
     }
 
-    // Cost cap (designed slideshows are pricier — reserve ~12 cents)
-    const { data: capOk } = await admin.rpc("check_and_increment_ai_cost", { _user_id: userId, _cost_cents: 12 });
+    // Cost cap (designed slideshows on Nano Banana 2 — reserve ~6 cents)
+    const { data: capOk } = await admin.rpc("check_and_increment_ai_cost", { _user_id: userId, _cost_cents: 6 });
     if (capOk === false) {
       await admin.from("slideshows").update({ status: "failed", generation_error: "Monthly AI cost cap reached." }).eq("id", slideshowId);
       return j({ error: "cost_cap_reached" }, 402);
