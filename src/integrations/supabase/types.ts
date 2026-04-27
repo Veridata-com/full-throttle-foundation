@@ -14,6 +14,87 @@ export type Database = {
   }
   public: {
     Tables: {
+      brand_identity: {
+        Row: {
+          accent_muted: string | null
+          background_dark: string
+          background_light: string
+          body_font: string
+          body_weight: string
+          brand_name: string
+          brand_tagline: string | null
+          brand_url: string | null
+          corner_radius: string
+          created_at: string
+          heading_font: string
+          heading_weight: string
+          id: string
+          primary_color: string
+          secondary_color: string | null
+          slide_mood: string
+          text_on_dark: string
+          text_on_light: string
+          updated_at: string
+          use_brand_watermark: boolean
+          use_dividers: boolean
+          use_icons: boolean
+          use_numbers: boolean
+          user_id: string
+        }
+        Insert: {
+          accent_muted?: string | null
+          background_dark?: string
+          background_light?: string
+          body_font?: string
+          body_weight?: string
+          brand_name: string
+          brand_tagline?: string | null
+          brand_url?: string | null
+          corner_radius?: string
+          created_at?: string
+          heading_font?: string
+          heading_weight?: string
+          id?: string
+          primary_color?: string
+          secondary_color?: string | null
+          slide_mood?: string
+          text_on_dark?: string
+          text_on_light?: string
+          updated_at?: string
+          use_brand_watermark?: boolean
+          use_dividers?: boolean
+          use_icons?: boolean
+          use_numbers?: boolean
+          user_id: string
+        }
+        Update: {
+          accent_muted?: string | null
+          background_dark?: string
+          background_light?: string
+          body_font?: string
+          body_weight?: string
+          brand_name?: string
+          brand_tagline?: string | null
+          brand_url?: string | null
+          corner_radius?: string
+          created_at?: string
+          heading_font?: string
+          heading_weight?: string
+          id?: string
+          primary_color?: string
+          secondary_color?: string | null
+          slide_mood?: string
+          text_on_dark?: string
+          text_on_light?: string
+          updated_at?: string
+          use_brand_watermark?: boolean
+          use_dividers?: boolean
+          use_icons?: boolean
+          use_numbers?: boolean
+          user_id?: string
+        }
+        Relationships: []
+      }
       feedback: {
         Row: {
           body: string
@@ -566,6 +647,39 @@ export type Database = {
           title?: string
           updated_at?: string
           version?: string | null
+        }
+        Relationships: []
+      }
+      slide_templates: {
+        Row: {
+          created_at: string
+          html_template: string
+          id: string
+          is_system: boolean
+          layout_type: string
+          name: string
+          preview_svg: string | null
+          suitable_for: string[]
+        }
+        Insert: {
+          created_at?: string
+          html_template: string
+          id?: string
+          is_system?: boolean
+          layout_type: string
+          name: string
+          preview_svg?: string | null
+          suitable_for?: string[]
+        }
+        Update: {
+          created_at?: string
+          html_template?: string
+          id?: string
+          is_system?: boolean
+          layout_type?: string
+          name?: string
+          preview_svg?: string | null
+          suitable_for?: string[]
         }
         Relationships: []
       }
