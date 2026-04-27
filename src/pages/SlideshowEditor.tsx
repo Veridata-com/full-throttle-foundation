@@ -151,6 +151,7 @@ const SlideshowEditor = () => {
   const [loading, setLoading] = useState(true);
   const [titleEditing, setTitleEditing] = useState(false);
   const [title, setTitle] = useState("");
+  const [brand, setBrand] = useState<BrandIdentity | null>(null);
 
   // Inspector state
   const [hasSelection, setHasSelection] = useState(false);
