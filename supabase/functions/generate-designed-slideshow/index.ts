@@ -101,8 +101,8 @@ Deno.serve(async (req) => {
       return j({ error: "designed_quota_exceeded" }, 402);
     }
 
-    // Cost cap (designed slideshows are pricier — reserve ~12 cents)
-    const { data: capOk } = await admin.rpc("check_and_increment_ai_cost", { _user_id: userId, _cost_cents: 12 });
+    // Cost cap (designed slideshows on Nano Banana 2 — reserve ~6 cents)
+    const { data: capOk } = await admin.rpc("check_and_increment_ai_cost", { _user_id: userId, _cost_cents: 6 });
     if (capOk === false) {
       await admin.from("slideshows").update({ status: "failed", generation_error: "Monthly AI cost cap reached." }).eq("id", slideshowId);
       return j({ error: "cost_cap_reached" }, 402);
@@ -123,7 +123,8 @@ Deno.serve(async (req) => {
     const styles = (design_styles && design_styles.length ? design_styles : (slideshow.design_styles || ["dark", "moody"])).slice(0, 2);
     const styleWords = styles.flatMap((s) => STYLE_KEYWORDS[s] || [s]);
 
-    const numSlides = Math.min(12, Math.max(3, slideshow.num_slides || 6));
+    // Cap designed slides at 8 to control AI cost + stay under edge timeout
+    const numSlides = Math.min(8, Math.max(3, slideshow.num_slides || 6));
     const needDesigned = numSlides - 1; // last slide = product shot
 
     await admin.from("slideshows").update({ status: "generating", generation_error: null }).eq("id", slideshowId);
@@ -215,46 +216,65 @@ Return ${needDesigned} hook+value slides, plus a final cta_text. For each of the
       }
     }
 
-    // === Phase 2: generate images sequentially (with progress updates) ===
+    // === Phase 2: generate ALL images in parallel (Nano Banana 2 — fast + cheap + pro quality) ===
+    await progress(admin, slideshowId, { phase: "imaging", current: 0, total: rawSlides.length, label: `Designing ${rawSlides.length} images in parallel` });
+
+    const IMAGE_MODEL = "google/gemini-3.1-flash-image-preview";
+
+    async function generateOneImage(slide: any, i: number): Promise<{ ok: true; dataUrl: string; mime: string; bytes: Uint8Array; genTime: number } | { ok: false; status: number; error: string }> {
+      const t0 = Date.now();
+      try {
+        const imgRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${lovableKey}` },
+          body: JSON.stringify({
+            model: IMAGE_MODEL,
+            messages: [{ role: "user", content: `${slide.image_prompt}\n\nAspect ratio: 9:16 portrait (1080x1920). NO text, NO letters, NO words, NO typography anywhere in the image.` }],
+            modalities: ["image", "text"],
+          }),
+        });
+        if (!imgRes.ok) {
+          const txt = await imgRes.text();
+          console.error(`image gen ${i} failed`, imgRes.status, txt);
+          return { ok: false, status: imgRes.status, error: txt };
+        }
+        const imgData = await imgRes.json();
+        const dataUrl: string | undefined = imgData?.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+        if (!dataUrl || !dataUrl.startsWith("data:")) {
+          return { ok: false, status: 500, error: "no image returned" };
+        }
+        const [meta, b64] = dataUrl.split(",");
+        const mime = meta.match(/data:([^;]+)/)?.[1] || "image/png";
+        const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+        return { ok: true, dataUrl, mime, bytes, genTime: Date.now() - t0 };
+      } catch (e: any) {
+        return { ok: false, status: 500, error: e?.message || "fetch error" };
+      }
+    }
+
+    const imageResults = await Promise.all(rawSlides.map((s, i) => generateOneImage(s, i)));
+
+    // Bail early on hard failures
+    for (let i = 0; i < imageResults.length; i++) {
+      const r = imageResults[i];
+      if (!r.ok) {
+        if (r.status === 429) { await admin.from("slideshows").update({ status: "failed", generation_error: "Rate limited during image generation. Try again in a moment." }).eq("id", slideshowId); return j({ error: "rate_limit" }, 429); }
+        if (r.status === 402) { await admin.from("slideshows").update({ status: "failed", generation_error: "AI credits exhausted on your Lovable workspace. Add credits in Settings → Workspace → Usage." }).eq("id", slideshowId); return j({ error: "payment_required" }, 402); }
+        await admin.from("slideshows").update({ status: "failed", generation_error: `Image gen failed on slide ${i + 1}: ${r.error.slice(0, 200)}` }).eq("id", slideshowId);
+        return j({ error: "image_failed" }, 500);
+      }
+    }
+
+    // === Phase 3: upload + deterministic placement (no extra AI call per slide) ===
+    await progress(admin, slideshowId, { phase: "assembling", current: 0, total: rawSlides.length, label: "Storing images" });
+
     const finalSlides: any[] = [];
     for (let i = 0; i < rawSlides.length; i++) {
       const slide = rawSlides[i];
-      await progress(admin, slideshowId, { phase: "imaging", current: i + 1, total: rawSlides.length, label: `Designing image ${i + 1} of ${rawSlides.length}` });
-
-      const t0 = Date.now();
-      const imgRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${lovableKey}` },
-        body: JSON.stringify({
-          model: "google/gemini-3-pro-image-preview",
-          messages: [{ role: "user", content: `${slide.image_prompt}\n\nAspect ratio: 9:16 portrait (1080x1920). Photorealistic or stylized per the prompt. NO text, NO letters, NO words, NO typography anywhere in the image.` }],
-          modalities: ["image", "text"],
-        }),
-      });
-      if (!imgRes.ok) {
-        const txt = await imgRes.text();
-        console.error(`image gen ${i} failed`, imgRes.status, txt);
-        if (imgRes.status === 429) { await admin.from("slideshows").update({ status: "failed", generation_error: "Rate limited during image generation." }).eq("id", slideshowId); return j({ error: "rate_limit" }, 429); }
-        if (imgRes.status === 402) { await admin.from("slideshows").update({ status: "failed", generation_error: "AI credits exhausted." }).eq("id", slideshowId); return j({ error: "payment_required" }, 402); }
-        await admin.from("slideshows").update({ status: "failed", generation_error: `Image gen: ${txt.slice(0, 200)}` }).eq("id", slideshowId);
-        return j({ error: "image_failed" }, 500);
-      }
-      const imgData = await imgRes.json();
-      const dataUrl: string | undefined = imgData?.choices?.[0]?.message?.images?.[0]?.image_url?.url;
-      if (!dataUrl || !dataUrl.startsWith("data:")) {
-        console.error(`image ${i} missing data url`, imgData);
-        await admin.from("slideshows").update({ status: "failed", generation_error: "Image generator returned no image." }).eq("id", slideshowId);
-        return j({ error: "image_failed" }, 500);
-      }
-      const genTime = Date.now() - t0;
-
-      // Decode base64 -> upload to private bucket
-      const [meta, b64] = dataUrl.split(",");
-      const mime = meta.match(/data:([^;]+)/)?.[1] || "image/png";
-      const ext = mime === "image/jpeg" ? "jpg" : "png";
-      const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+      const r = imageResults[i] as { ok: true; dataUrl: string; mime: string; bytes: Uint8Array; genTime: number };
+      const ext = r.mime === "image/jpeg" ? "jpg" : "png";
       const storagePath = `${userId}/${slideshowId}/slide-${i}.${ext}`;
-      const { error: upErr } = await admin.storage.from("generated-images").upload(storagePath, bytes, { contentType: mime, upsert: true });
+      const { error: upErr } = await admin.storage.from("generated-images").upload(storagePath, r.bytes, { contentType: r.mime, upsert: true });
       if (upErr) {
         console.error("upload error", upErr);
         await admin.from("slideshows").update({ status: "failed", generation_error: "Failed to store generated image." }).eq("id", slideshowId);
@@ -263,79 +283,37 @@ Return ${needDesigned} hook+value slides, plus a final cta_text. For each of the
       const { data: signed } = await admin.storage.from("generated-images").createSignedUrl(storagePath, 60 * 60 * 24 * 7);
       const permanentUrl = signed?.signedUrl || "";
 
-      // === Phase 3 (per-slide): GPT-5 vision picks text placement ===
-      await progress(admin, slideshowId, { phase: "placement", current: i + 1, total: rawSlides.length, label: `Placing text on slide ${i + 1}` });
-
-      let placement: any = {
-        x: 540,
-        y: slide.negative_space_position === "upper" ? 480 : slide.negative_space_position === "lower" ? 1500 : 960,
-        originX: "center", originY: "center",
-        fontSize: 72,
+      // Deterministic placement based on the negative-space position the writer chose.
+      // Fast, free, predictable. (Vision-based placement removed — saved 1 AI call per slide.)
+      const pos = slide.negative_space_position || "center";
+      const textLen = (slide.text || "").length;
+      const fontSize = textLen < 20 ? 88 : textLen < 35 ? 76 : textLen < 50 ? 60 : 48;
+      const yByPos: Record<string, number> = { upper: 480, center: 960, lower: 1500, left: 960, right: 960 };
+      const xByPos: Record<string, number> = { left: 320, right: 760, upper: 540, center: 540, lower: 540 };
+      const placement = {
+        x: xByPos[pos] ?? 540,
+        y: yByPos[pos] ?? 960,
+        originX: "center" as const,
+        originY: "center" as const,
+        fontSize,
         fillColor: slide.suggested_text_color || "#FFFFFF",
         strokeColor: slide.suggested_stroke_color || "#000000",
-        strokeWidth: 12, maxWidth: 900, textAlign: "center",
+        strokeWidth: 12,
+        maxWidth: 900,
+        textAlign: "center" as const,
       };
-      try {
-        const vis = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${lovableKey}` },
-          body: JSON.stringify({
-            model: "openai/gpt-5-mini",
-            messages: [
-              { role: "system", content: `You analyze a 1080x1920 image and decide where to place a TikTok text overlay. Coords: (0,0) top-left, (540,960) center, (1080,1920) bottom-right. Intended negative-space area: ${slide.negative_space_position}. Use Arial Black 900. Font size: <20 chars 88, 20-35 chars 76, 35-50 chars 60, 50+ chars 48; cap 52 if 5+ lines, 42 if 7+ lines. Dark image -> #FFFFFF text + #000000 stroke. Light image -> #000000 text + #FFFFFF stroke. Mixed -> #FFFFFF + #000000 strokeWidth 12.` },
-              { role: "user", content: [
-                { type: "image_url", image_url: { url: dataUrl } },
-                { type: "text", text: `Text to place:\n"${slide.text}"\n\nReturn placement.` },
-              ] },
-            ],
-            tools: [{
-              type: "function",
-              function: {
-                name: "set_placement",
-                description: "Set text placement",
-                parameters: {
-                  type: "object",
-                  properties: {
-                    x: { type: "number" }, y: { type: "number" },
-                    originX: { type: "string", enum: ["left", "center", "right"] },
-                    originY: { type: "string", enum: ["top", "center", "bottom"] },
-                    fontSize: { type: "number" },
-                    fillColor: { type: "string" }, strokeColor: { type: "string" },
-                    strokeWidth: { type: "number" }, maxWidth: { type: "number" },
-                    textAlign: { type: "string", enum: ["left", "center", "right"] },
-                    reasoning: { type: "string" },
-                  },
-                  required: ["x", "y", "originX", "originY", "fontSize", "fillColor", "strokeColor", "strokeWidth", "maxWidth", "textAlign"],
-                },
-              },
-            }],
-            tool_choice: { type: "function", function: { name: "set_placement" } },
-          }),
-        });
-        if (vis.ok) {
-          const vd = await vis.json();
-          const pa = vd?.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
-          if (pa) {
-            const p = JSON.parse(pa);
-            placement = { ...placement, ...p };
-          }
-        }
-      } catch (e) {
-        console.warn("vision placement failed, using fallback", e);
-      }
 
-      // Persist generated_images row
       const { data: genRow } = await admin.from("generated_images").insert({
         user_id: userId,
         slideshow_id: slideshowId,
         slide_index: i,
         image_prompt: slide.image_prompt,
         style_keywords: styles,
-        negative_space_position: slide.negative_space_position,
+        negative_space_position: pos,
         image_url: permanentUrl,
         storage_path: storagePath,
-        generation_model: "google/gemini-3-pro-image-preview",
-        generation_time_ms: genTime,
+        generation_model: IMAGE_MODEL,
+        generation_time_ms: r.genTime,
         text_placement: placement,
       }).select("id").single();
 
