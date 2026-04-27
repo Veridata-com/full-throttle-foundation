@@ -28,7 +28,8 @@ const NewSlideshow = () => {
   const [imageSource, setImageSource] = useState<ImageSource>("both");
   const [noImagesErr, setNoImagesErr] = useState(false);
   const [mode, setMode] = useState<Mode>("auto");
-  const [designStyles, setDesignStyles] = useState<string[]>(["dark"]);
+  const [brand, setBrand] = useState<BrandIdentity | null>(null);
+  const [brandLoaded, setBrandLoaded] = useState(false);
 
   // Live progress (for designed/auto-resolved-to-designed)
   const [progress, setProgress] = useState<{ phase: string; current: number; total: number; label: string } | null>(null);
