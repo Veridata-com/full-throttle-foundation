@@ -82,6 +82,93 @@ export type Database = {
           },
         ]
       }
+      generated_images: {
+        Row: {
+          created_at: string
+          generation_model: string | null
+          generation_time_ms: number | null
+          id: string
+          image_prompt: string
+          image_url: string
+          negative_space_position: string
+          slide_index: number | null
+          slideshow_id: string | null
+          storage_path: string | null
+          style_keywords: string[] | null
+          text_placement: Json
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          generation_model?: string | null
+          generation_time_ms?: number | null
+          id?: string
+          image_prompt: string
+          image_url: string
+          negative_space_position?: string
+          slide_index?: number | null
+          slideshow_id?: string | null
+          storage_path?: string | null
+          style_keywords?: string[] | null
+          text_placement?: Json
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          generation_model?: string | null
+          generation_time_ms?: number | null
+          id?: string
+          image_prompt?: string
+          image_url?: string
+          negative_space_position?: string
+          slide_index?: number | null
+          slideshow_id?: string | null
+          storage_path?: string | null
+          style_keywords?: string[] | null
+          text_placement?: Json
+          user_id?: string
+        }
+        Relationships: []
+      }
+      generation_style_performance: {
+        Row: {
+          created_at: string
+          id: string
+          negative_space_position: string | null
+          performance_score: number | null
+          posted_slideshow_id: string | null
+          style_keywords: string[] | null
+          text_fill_color: string | null
+          text_font_size: number | null
+          text_stroke_color: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          negative_space_position?: string | null
+          performance_score?: number | null
+          posted_slideshow_id?: string | null
+          style_keywords?: string[] | null
+          text_fill_color?: string | null
+          text_font_size?: number | null
+          text_stroke_color?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          negative_space_position?: string | null
+          performance_score?: number | null
+          posted_slideshow_id?: string | null
+          style_keywords?: string[] | null
+          text_fill_color?: string | null
+          text_font_size?: number | null
+          text_stroke_color?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       image_folders: {
         Row: {
           created_at: string
@@ -477,7 +564,10 @@ export type Database = {
         Row: {
           created_at: string
           cta: string | null
+          design_styles: string[] | null
           generation_error: string | null
+          generation_mode: string
+          generation_progress: Json
           hook_style: string | null
           id: string
           image_ids: string[]
@@ -493,7 +583,10 @@ export type Database = {
         Insert: {
           created_at?: string
           cta?: string | null
+          design_styles?: string[] | null
           generation_error?: string | null
+          generation_mode?: string
+          generation_progress?: Json
           hook_style?: string | null
           id?: string
           image_ids?: string[]
@@ -509,7 +602,10 @@ export type Database = {
         Update: {
           created_at?: string
           cta?: string | null
+          design_styles?: string[] | null
           generation_error?: string | null
+          generation_mode?: string
+          generation_progress?: Json
           hook_style?: string | null
           id?: string
           image_ids?: string[]
@@ -569,6 +665,7 @@ export type Database = {
         Row: {
           ai_cost_cents: number
           created_at: string
+          designed_slideshows_generated: number
           id: string
           images_uploaded: number
           period_start: string
@@ -579,6 +676,7 @@ export type Database = {
         Insert: {
           ai_cost_cents?: number
           created_at?: string
+          designed_slideshows_generated?: number
           id?: string
           images_uploaded?: number
           period_start?: string
@@ -589,6 +687,7 @@ export type Database = {
         Update: {
           ai_cost_cents?: number
           created_at?: string
+          designed_slideshows_generated?: number
           id?: string
           images_uploaded?: number
           period_start?: string
@@ -672,6 +771,7 @@ export type Database = {
       }
       workspaces: {
         Row: {
+          allowed_generation_modes: string[]
           brand_voice: string | null
           created_at: string
           default_cta: string | null
@@ -684,6 +784,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          allowed_generation_modes?: string[]
           brand_voice?: string | null
           created_at?: string
           default_cta?: string | null
@@ -696,6 +797,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          allowed_generation_modes?: string[]
           brand_voice?: string | null
           created_at?: string
           default_cta?: string | null

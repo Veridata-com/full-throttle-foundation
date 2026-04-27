@@ -11,6 +11,7 @@ export interface Workspace {
   brand_voice: string | null;
   default_cta: string | null;
   story_style_history: string[];
+  allowed_generation_modes: string[];
   created_at: string;
   updated_at: string;
 }
