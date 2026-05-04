@@ -47,12 +47,22 @@ Deno.serve(async (req) => {
 
     const admin = createClient(supabaseUrl, serviceKey);
 
-    const { data: profile } = await admin.from('profiles').select('tiktok_handle').eq('id', userId).maybeSingle();
-    const handle = (profile?.tiktok_handle || '').trim().replace(/^@/, '');
-    if (!handle) return j({ error: 'no_handle' }, 400);
-
     const body = await req.json().catch(() => ({}));
     const limit = Math.min(Number(body?.limit ?? 30), 50);
+
+    // Resolve handle from explicit param, tiktok_account_id, or fall back to profile
+    let handle = (body?.handle || '').toString().trim().replace(/^@/, '');
+    let accountId: string | null = body?.tiktok_account_id || null;
+    if (accountId) {
+      const { data: acc } = await admin.from('tiktok_accounts').select('handle, user_id').eq('id', accountId).maybeSingle();
+      if (!acc || acc.user_id !== userId) return j({ error: 'account_not_found' }, 404);
+      handle = acc.handle.trim().replace(/^@/, '');
+    }
+    if (!handle) {
+      const { data: profile } = await admin.from('profiles').select('tiktok_handle').eq('id', userId).maybeSingle();
+      handle = (profile?.tiktok_handle || '').trim().replace(/^@/, '');
+    }
+    if (!handle) return j({ error: 'no_handle' }, 400);
 
     // Apify run-sync — returns dataset items directly
     const url = `https://api.apify.com/v2/acts/${APIFY_ACTOR}/run-sync-get-dataset-items?token=${apifyKey}&timeout=120`;
