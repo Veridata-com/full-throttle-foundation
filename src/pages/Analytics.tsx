@@ -101,41 +101,7 @@ const Analytics = () => {
           <p className="text-muted-foreground">Track your TikTok performance and let AI improve your slideshows.</p>
         </header>
 
-        {/* TikTok connection */}
-        <Card className="p-6">
-          {!tiktokHandle ? (
-            <div className="space-y-3">
-              <h2 className="font-display text-xl font-bold">Connect your TikTok</h2>
-              <p className="text-sm text-muted-foreground">Enter your TikTok handle so AdRise can track your post performance automatically.</p>
-              <div className="flex gap-2 items-center max-w-md">
-                <span className="text-muted-foreground">@</span>
-                <Input value={handleInput} onChange={(e) => setHandleInput(e.target.value.replace(/^@/, ""))} placeholder="yourtiktokhandle" />
-                <Button onClick={connect} disabled={connecting || !handleInput.trim()}>
-                  {connecting && <Loader2 className="h-4 w-4 animate-spin" />}
-                  Connect
-                </Button>
-              </div>
-              <p className="text-xs text-muted-foreground">We only read public post metrics. We never post on your behalf.</p>
-            </div>
-          ) : (
-            <div className="flex items-start justify-between gap-4 flex-wrap">
-              <div>
-                <div className="flex items-center gap-2 text-success font-medium"><CheckCircle2 className="h-4 w-4" /> TikTok connected</div>
-                <p className="font-display text-lg font-bold mt-1">@{tiktokHandle}</p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {synced.length > 0 ? `Last synced: ${new Date(Math.max(...synced.map(s => new Date(s.last_synced_at || 0).getTime()))).toLocaleString()}` : "Not yet synced"}
-                </p>
-              </div>
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" onClick={disconnect}><X className="h-4 w-4" /> Disconnect</Button>
-                <Button size="sm" onClick={syncNow} disabled={syncing}>
-                  {syncing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-                  Sync now
-                </Button>
-              </div>
-            </div>
-          )}
-        </Card>
+        <TiktokAccountsManager onChange={load} />
 
         {/* Overview */}
         {synced.length > 0 && (
