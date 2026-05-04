@@ -189,7 +189,15 @@ Deno.serve(async (req) => {
       }
     }
 
-    return j({ imported, updated, total: items.length, errors });
+    if (accountId) {
+      await admin.from('tiktok_accounts').update({
+        last_synced_at: new Date().toISOString(),
+        last_sync_status: 'synced',
+        last_sync_error: null,
+      }).eq('id', accountId);
+    }
+
+    return j({ imported, updated, total: items.length, handle, errors });
   } catch (e: any) {
     console.error('import-tiktok-posts error', e);
     return j({ error: e.message || 'failed' }, 500);
