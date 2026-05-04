@@ -106,14 +106,32 @@ Deno.serve(async (req) => {
     const { data: workspace } = await admin.from('workspaces').select('*').eq('id', slideshow.workspace_id).single();
     if (!workspace) return j({ error: 'workspace_not_found' }, 404);
 
-    await admin.from('slideshows').update({ status: 'generating', generation_error: null }).eq('id', slideshowId);
+    await admin.from('slideshows').update({
+      status: 'generating',
+      generation_error: null,
+      generation_progress: { step: 'started', step_index: 0, total_steps: 4, message: 'Analyzing your topic...', percent: 0 },
+    }).eq('id', slideshowId);
+
+    // Autonomous decisions
+    const HOOK_POOL = ['question','contrarian','pain','result','curiosity'];
+    const { data: insights } = await admin
+      .from('user_insights').select('*')
+      .eq('user_id', userId).eq('is_current', true)
+      .order('generated_at', { ascending: false }).limit(1).maybeSingle();
+    const isExploration = Math.random() < (insights ? 0.3 : 0.7);
+    const autoHook = isExploration ? HOOK_POOL[Math.floor(Math.random()*HOOK_POOL.length)] : (HOOK_POOL[Math.floor(Math.random()*HOOK_POOL.length)]);
+    const hookStyle = slideshow.hook_style || autoHook;
 
     // Pick a narrative style different from recent history
     const history: string[] = Array.isArray(workspace.story_style_history) ? workspace.story_style_history : [];
     const recent = new Set(history.slice(-5));
     const available = STORY_STYLES.filter((s) => !recent.has(s));
     const pool = available.length ? available : STORY_STYLES;
-    const chosenStyle = pool[Math.floor(Math.random() * pool.length)];
+    const chosenStyle = (insights?.best_style as any) && !isExploration ? insights.best_style as string : pool[Math.floor(Math.random() * pool.length)];
+
+    await admin.from('slideshows').update({
+      generation_progress: { step: 'writing_copy', step_index: 1, total_steps: 4, message: 'Writing slide scripts...', percent: 25 },
+    }).eq('id', slideshowId);
 
     // Fetch all workspace images with quality + tags (non-product)
     const { data: allImages } = await admin.from('images')
