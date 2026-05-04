@@ -211,16 +211,20 @@ Deno.serve(async (req) => {
       `#${idx} [${i.quality || 'medium'}]${recentKeys.has(keyOf(i)) ? ' [recently-used]' : ''} ${i.ai_description || i.file_name || 'image'} | tags: ${(i.ai_tags || []).join(', ')}`
     ).join('\n');
 
-    const prompt = `Write a ${numSlides}-slide viral TikTok slideshow for:
+    const topic = (slideshow as any).topic || workspace.tagline || workspace.name;
+    const ctaOverride = (slideshow as any).cta_text || workspace.default_cta || 'Try it now';
 
+    const prompt = `Write a ${numSlides}-slide viral TikTok slideshow.
+
+TOPIC: "${topic}"
 PRODUCT: ${workspace.name}
 TAGLINE: ${workspace.tagline || '(none)'}
 AUDIENCE: ${workspace.target_audience || 'general'}
 BRAND VOICE: ${workspace.brand_voice || 'punchy, native to TikTok'}
-DEFAULT CTA: ${workspace.default_cta || 'Try it now'}
+DEFAULT CTA: ${ctaOverride}
 
 NARRATIVE STYLE THIS TIME: ${chosenStyle}
-HOOK STYLE: ${slideshow.hook_style || 'curiosity'}
+HOOK STYLE: ${hookStyle}
 
 AVAILABLE IMAGES (pick ${needNonProduct} DISTINCT indexes — never repeat the same index, and STRONGLY prefer images NOT marked [recently-used] so this slideshow looks different from the last few):
 ${imageContext || '(no images, reuse index 0)'}
