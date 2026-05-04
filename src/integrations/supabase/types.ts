@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_decisions: {
+        Row: {
+          content_style_chosen: string | null
+          created_at: string
+          decision_type: string
+          design_styles_chosen: string[] | null
+          generation_mode_chosen: string | null
+          hook_style_chosen: string | null
+          hypothesis_id: string | null
+          id: string
+          reasoning: string | null
+          slide_count_chosen: number | null
+          slideshow_id: string | null
+          user_id: string
+        }
+        Insert: {
+          content_style_chosen?: string | null
+          created_at?: string
+          decision_type?: string
+          design_styles_chosen?: string[] | null
+          generation_mode_chosen?: string | null
+          hook_style_chosen?: string | null
+          hypothesis_id?: string | null
+          id?: string
+          reasoning?: string | null
+          slide_count_chosen?: number | null
+          slideshow_id?: string | null
+          user_id: string
+        }
+        Update: {
+          content_style_chosen?: string | null
+          created_at?: string
+          decision_type?: string
+          design_styles_chosen?: string[] | null
+          generation_mode_chosen?: string | null
+          hook_style_chosen?: string | null
+          hypothesis_id?: string | null
+          id?: string
+          reasoning?: string | null
+          slide_count_chosen?: number | null
+          slideshow_id?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       brand_identity: {
         Row: {
           accent_muted: string | null
