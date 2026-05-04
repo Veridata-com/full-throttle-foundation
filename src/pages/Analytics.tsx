@@ -20,17 +20,13 @@ const fmt = (n: number) => {
 };
 
 const Analytics = () => {
-  const { user, profile, refreshProfile } = useAuth();
-  const [handleInput, setHandleInput] = useState("");
-  const [connecting, setConnecting] = useState(false);
-  const [syncing, setSyncing] = useState(false);
+  const { user, profile } = useAuth();
   const [posted, setPosted] = useState<any[]>([]);
   const [metrics, setMetrics] = useState<Record<string, any>>({});
   const [insight, setInsight] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [generatingInsight, setGeneratingInsight] = useState(false);
   const [linkTarget, setLinkTarget] = useState<any | null>(null);
-  const tiktokHandle = (profile as any)?.tiktok_handle as string | undefined;
 
   const load = async () => {
     if (!user) return;
@@ -46,7 +42,6 @@ const Analytics = () => {
     setInsight(ins);
     setLoading(false);
 
-    // Mark insights as seen
     if (ins) {
       await supabase.from("profiles").update({ insights_last_seen_at: new Date().toISOString() }).eq("id", user.id);
     }
@@ -54,81 +49,15 @@ const Analytics = () => {
 
   useEffect(() => { load(); }, [user]);
 
-  const connect = async () => {
-    const clean = handleInput.trim().replace(/^@/, "");
-    if (!clean) return;
-    setConnecting(true);
-    await supabase.from("profiles").update({ tiktok_handle: clean, apify_sync_enabled: true }).eq("id", user!.id);
-    await refreshProfile();
-    toast.success(`Connected to @${clean}. Importing your posts…`);
-    setConnecting(false);
-    // Auto-import on connect
-    setSyncing(true);
-    try {
-      const { data } = await supabase.functions.invoke("import-tiktok-posts", { body: { limit: 30 } });
-      const err = (data as any)?.error;
-      if (!err) {
-        toast.success(`Imported ${(data as any)?.imported ?? 0} posts`);
-      } else if (err === "apify_failed") {
-        toast.error("Couldn't fetch posts. Click Sync to retry.");
-      }
-      await load();
-    } finally {
-      setSyncing(false);
-    }
-  };
-
-  const disconnect = async () => {
-    await supabase.from("profiles").update({ tiktok_handle: null, apify_sync_enabled: false }).eq("id", user!.id);
-    await refreshProfile();
-    toast.success("Disconnected");
-  };
-
-  const syncNow = async () => {
-    setSyncing(true);
-    try {
-      // Step 1: auto-import recent posts from the user's TikTok profile
-      const { data: imp, error: impErr } = await supabase.functions.invoke("import-tiktok-posts", { body: { limit: 30 } });
-      if (impErr) throw impErr;
-      const ierr = (imp as any)?.error;
-      if (ierr === "apify_key_missing") {
-        toast.error("Performance sync isn't configured yet.");
-      } else if (ierr === "no_handle") {
-        toast.error("Connect your TikTok handle first.");
-      } else if (ierr === "apify_failed") {
-        toast.error("TikTok scrape failed. Try again in a minute.");
-      } else if (ierr) {
-        toast.error(String(ierr));
-      } else {
-        const i = (imp as any)?.imported ?? 0;
-        const u = (imp as any)?.updated ?? 0;
-        toast.success(`Imported ${i} new · refreshed ${u}`);
-      }
-
-      // Step 2: kick off async metric refresh for any slideshow-linked posts
-      await supabase.functions.invoke("sync-tiktok-metrics", { body: { sync_all_pending: true } }).catch(() => {});
-
-      await load();
-    } catch (e: any) {
-      toast.error(e.message || "Sync failed");
-    } finally {
-      setSyncing(false);
-    }
-  };
-
   const generateInsights = async () => {
     setGeneratingInsight(true);
     try {
       const { data, error } = await supabase.functions.invoke("generate-insights", { body: {} });
       if (error) throw error;
       const err = (data as any)?.error;
-      if (err === "not_enough_posts") {
-        toast.error("Need 10+ tracked posts");
-      } else if (err) {
-        toast.error(err);
-      } else {
-        toast.success("Insights refreshed");
-      }
+      if (err === "not_enough_posts") toast.error("Need 10+ tracked posts");
+      else if (err) toast.error(err);
+      else toast.success("Insights refreshed");
       await load();
     } catch (e: any) {
       toast.error(e.message || "Failed");
