@@ -30,6 +30,7 @@ import ReleaseNotes from "./pages/ReleaseNotes";
 import AdminReleaseNotes from "./pages/AdminReleaseNotes";
 import Analytics from "./pages/Analytics";
 import Brand from "./pages/Brand";
+import Generating from "./pages/Generating";
 
 const queryClient = new QueryClient();
 
