@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+
 import { Badge } from "@/components/ui/badge";
 import { SEO } from "@/components/SEO";
 import { BarChart2, Loader2, RefreshCw, Sparkles, ArrowRight, AlertCircle, Link2 } from "lucide-react";
@@ -20,7 +20,7 @@ const fmt = (n: number) => {
 };
 
 const Analytics = () => {
-  const { user, profile } = useAuth();
+  const { user } = useAuth();
   const [posted, setPosted] = useState<any[]>([]);
   const [metrics, setMetrics] = useState<Record<string, any>>({});
   const [insight, setInsight] = useState<any>(null);
