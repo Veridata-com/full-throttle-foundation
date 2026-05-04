@@ -322,6 +322,10 @@ Use these learnings to bias your decisions. Do not mention this context in the o
       return j({ error: 'ai_failed', detail: txt }, 500);
     }
 
+    await admin.from('slideshows').update({
+      generation_progress: { step: 'rendering', step_index: 2, total_steps: 4, message: 'Selecting and arranging images...', percent: 60 },
+    }).eq('id', slideshowId);
+
     const data = await aiRes.json();
     const call = data?.choices?.[0]?.message?.tool_calls?.[0];
     let parsed: any = {};
@@ -351,12 +355,11 @@ Use these learnings to bias your decisions. Do not mention this context in the o
       };
     });
 
-    // Append final CTA slide using a product shot (always a user image)
     const productShot = productShots[Math.floor(Math.random() * productShots.length)];
     slides.push({
       id: crypto.randomUUID(),
       type: 'cta',
-      text: clean(parsed.cta_text || workspace.default_cta || 'try it now').slice(0, 400),
+      text: clean(parsed.cta_text || ctaOverride).slice(0, 400),
       image_id: productShot.id,
       image_url: null,
       is_stock: false,
@@ -366,25 +369,45 @@ Use these learnings to bias your decisions. Do not mention this context in the o
     const finalImageIds = [...pickedImageIds, productShot.id];
 
     await admin.from('slideshows').update({
+      generation_progress: { step: 'finishing', step_index: 3, total_steps: 4, message: 'Wrapping up...', percent: 85 },
+    }).eq('id', slideshowId);
+
+    const allTexts = slides.map((s: any) => s.text || '');
+    await admin.from('slideshows').update({
       status: 'ready',
       slides,
       image_ids: finalImageIds,
       generation_error: null,
+      hook_style: hookStyle,
+      content_style: chosenStyle,
+      hook_text: allTexts[0] || null,
+      all_slide_texts: allTexts,
+      generation_progress: { step: 'complete', step_index: 4, total_steps: 4, message: 'Your slideshow is ready!', percent: 100 },
     }).eq('id', slideshowId);
 
-    // Update workspace story history
     const newHistory = [...history, chosenStyle].slice(-20);
     await admin.from('workspaces').update({ story_style_history: newHistory }).eq('id', workspace.id);
 
-    // Usage increment
-    const periodStart = new Date(); periodStart.setDate(1);
-    const ps = periodStart.toISOString().slice(0, 10);
+    const periodStart2 = new Date(); periodStart2.setDate(1);
+    const ps = periodStart2.toISOString().slice(0, 10);
     const { data: existing } = await admin.from('usage').select('id, slideshows_generated').eq('user_id', userId).eq('period_start', ps).maybeSingle();
     if (existing) {
       await admin.from('usage').update({ slideshows_generated: (existing.slideshows_generated || 0) + 1 }).eq('id', existing.id);
     } else {
       await admin.from('usage').insert({ user_id: userId, period_start: ps, slideshows_generated: 1 });
     }
+
+    await admin.from('ai_decisions').insert({
+      user_id: userId,
+      slideshow_id: slideshowId,
+      decision_type: isExploration ? 'explore' : 'exploit',
+      hook_style_chosen: hookStyle,
+      slide_count_chosen: numSlides,
+      content_style_chosen: chosenStyle,
+      generation_mode_chosen: 'photo',
+      design_styles_chosen: [],
+      reasoning: `${isExploration ? 'Exploration' : 'Exploitation'}: hook=${hookStyle}, slides=${numSlides}, style=${chosenStyle}, mode=photo. ${insights ? `Based on ${insights.posts_analyzed} tracked posts.` : 'No data yet, used defaults.'}`,
+    });
 
     return j({ ok: true, slides, style: chosenStyle });
   } catch (e: any) {
