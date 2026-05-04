@@ -730,58 +730,82 @@ export type Database = {
       }
       slideshows: {
         Row: {
+          ai_decided: boolean
+          all_slide_texts: string[] | null
+          content_style: string | null
           created_at: string
           cta: string | null
+          cta_text: string | null
           design_styles: string[] | null
           generation_error: string | null
           generation_mode: string
           generation_progress: Json
           hook_style: string | null
+          hook_text: string | null
+          icons_used: string[] | null
           id: string
           image_ids: string[]
           num_slides: number
           slides: Json
           status: Database["public"]["Enums"]["slideshow_status"]
           target_audience: string | null
+          templates_used: string[] | null
           title: string
+          topic: string | null
           updated_at: string
           user_id: string
           workspace_id: string | null
         }
         Insert: {
+          ai_decided?: boolean
+          all_slide_texts?: string[] | null
+          content_style?: string | null
           created_at?: string
           cta?: string | null
+          cta_text?: string | null
           design_styles?: string[] | null
           generation_error?: string | null
           generation_mode?: string
           generation_progress?: Json
           hook_style?: string | null
+          hook_text?: string | null
+          icons_used?: string[] | null
           id?: string
           image_ids?: string[]
           num_slides?: number
           slides?: Json
           status?: Database["public"]["Enums"]["slideshow_status"]
           target_audience?: string | null
+          templates_used?: string[] | null
           title?: string
+          topic?: string | null
           updated_at?: string
           user_id: string
           workspace_id?: string | null
         }
         Update: {
+          ai_decided?: boolean
+          all_slide_texts?: string[] | null
+          content_style?: string | null
           created_at?: string
           cta?: string | null
+          cta_text?: string | null
           design_styles?: string[] | null
           generation_error?: string | null
           generation_mode?: string
           generation_progress?: Json
           hook_style?: string | null
+          hook_text?: string | null
+          icons_used?: string[] | null
           id?: string
           image_ids?: string[]
           num_slides?: number
           slides?: Json
           status?: Database["public"]["Enums"]["slideshow_status"]
           target_audience?: string | null
+          templates_used?: string[] | null
           title?: string
+          topic?: string | null
           updated_at?: string
           user_id?: string
           workspace_id?: string | null
