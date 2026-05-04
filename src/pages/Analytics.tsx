@@ -290,10 +290,6 @@ const Analytics = () => {
             </div>
           ) : (
             <div className="overflow-x-auto -mx-2">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border text-xs text-muted-foreground text-left">
-            <div className="overflow-x-auto -mx-2">
               {posted.some((p) => p.auto_imported && !p.slideshow_id) && (
                 <div className="mx-2 mb-3 p-3 rounded-md border border-primary/30 bg-primary/5 flex items-start gap-2 text-sm">
                   <AlertCircle className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
