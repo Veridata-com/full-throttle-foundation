@@ -238,9 +238,60 @@ Return exactly ${numSlides} slides. First = hook, last = cta_card.`;
       }
       return v;
     }
+    function fillFromText(template: string, text: string, vars: any, icon: string | null): any {
+      const lines = text.split("\n").map((l) => l.trim()).filter(Boolean);
+      const v = { ...(vars || {}) };
+      const has = (k: string) => typeof v[k] === "string" && v[k].trim().length > 0;
+      switch (template) {
+        case "title_card":
+          if (!has("heading")) v.heading = lines[0] || "";
+          if (!has("subtext")) v.subtext = lines.slice(1).join(" ") || "";
+          if (!has("label")) v.label = "";
+          break;
+        case "centered_text":
+          if (!has("main_text")) v.main_text = lines[0] || "";
+          if (!has("support_text")) v.support_text = lines.slice(1).join(" ") || "";
+          break;
+        case "big_number": {
+          const m = (lines[0] || "").match(/([\d.,]+\s*[%xX$€£+]?|\$[\d.,]+[kKmMbB]?)/);
+          if (!has("number")) v.number = m ? m[1].trim() : (lines[0] || "");
+          if (!has("unit")) v.unit = "";
+          if (!has("context")) v.context = lines.slice(1).join(" ") || lines[0] || "";
+          break;
+        }
+        case "list_items":
+          if (!has("section_label")) v.section_label = lines[0] || "";
+          if (!Array.isArray(v.items) || v.items.length === 0) {
+            v.items = lines.slice(1).map((l) => ({ icon: icon || "check", item_title: l, item_description: "" }));
+            if (v.items.length === 0) v.items = lines.map((l) => ({ icon: icon || "check", item_title: l, item_description: "" }));
+          }
+          break;
+        case "step_number":
+          if (!has("step_number")) v.step_number = "1";
+          if (!has("instruction")) v.instruction = lines[0] || "";
+          if (!has("detail")) v.detail = lines.slice(1).join(" ") || "";
+          break;
+        case "highlight_box":
+          if (!has("highlight_text")) v.highlight_text = lines[0] || "";
+          if (!has("context_above")) v.context_above = "";
+          if (!has("context_below")) v.context_below = lines.slice(1).join(" ") || "";
+          break;
+        case "cta_card":
+          if (!has("cta_heading")) v.cta_heading = lines[0] || "ready to try it?";
+          if (!has("cta_text")) v.cta_text = lines.slice(1).join(" ") || "tap the link";
+          break;
+        case "quote_style":
+          if (!has("quote_text")) v.quote_text = lines[0] || "";
+          if (!has("attribution")) v.attribution = lines[1] || "";
+          break;
+      }
+      return v;
+    }
+
     for (const s of slides) {
       s.variables = deepClean(s.variables || {});
       s.text = clean(s.text || "");
+      s.variables = fillFromText(s.template, s.text, s.variables, s.icon);
       if (s.template === "cta_card" && !s.variables.brand_url) s.variables.brand_url = brand.brand_url || "";
     }
 
