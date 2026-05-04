@@ -7,8 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { SEO } from "@/components/SEO";
-import { BarChart2, Loader2, RefreshCw, Sparkles, CheckCircle2, X, ArrowRight, AlertCircle } from "lucide-react";
+import { BarChart2, Loader2, RefreshCw, Sparkles, CheckCircle2, X, ArrowRight, AlertCircle, Link2 } from "lucide-react";
 import { toast } from "sonner";
+import { LinkSlideshowDialog } from "@/components/LinkSlideshowDialog";
 
 const fmt = (n: number) => {
   if (!n) return "0";
@@ -27,7 +28,7 @@ const Analytics = () => {
   const [insight, setInsight] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [generatingInsight, setGeneratingInsight] = useState(false);
-
+  const [linkTarget, setLinkTarget] = useState<any | null>(null);
   const tiktokHandle = (profile as any)?.tiktok_handle as string | undefined;
 
   const load = async () => {
@@ -289,6 +290,15 @@ const Analytics = () => {
             </div>
           ) : (
             <div className="overflow-x-auto -mx-2">
+              {posted.some((p) => p.auto_imported && !p.slideshow_id) && (
+                <div className="mx-2 mb-3 p-3 rounded-md border border-primary/30 bg-primary/5 flex items-start gap-2 text-sm">
+                  <AlertCircle className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-medium">Some imported posts aren't linked to a slideshow yet.</p>
+                    <p className="text-muted-foreground text-xs mt-0.5">Link each one to its source slideshow so the AI can learn what hooks, styles, and topics actually perform for you.</p>
+                  </div>
+                </div>
+              )}
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border text-xs text-muted-foreground text-left">
@@ -299,12 +309,14 @@ const Analytics = () => {
                     <th className="px-2 py-2 font-medium">Likes</th>
                     <th className="px-2 py-2 font-medium">Eng.</th>
                     <th className="px-2 py-2 font-medium">Score</th>
+                    <th className="px-2 py-2 font-medium">Source</th>
                     <th className="px-2 py-2 font-medium">Status</th>
                   </tr>
                 </thead>
                 <tbody>
                   {sortedPosts.map(p => {
                     const m = metrics[p.id];
+                    const needsLink = p.auto_imported && !p.slideshow_id;
                     return (
                       <tr key={p.id} className="border-b border-border/50 hover:bg-muted/30">
                         <td className="px-2 py-2 max-w-[280px] truncate" title={p.hook_text}>{p.hook_text.slice(0, 50)}{p.hook_text.length > 50 ? "…" : ""}</td>
@@ -314,6 +326,17 @@ const Analytics = () => {
                         <td className="px-2 py-2">{m ? fmt(m.likes) : "—"}</td>
                         <td className="px-2 py-2">{m ? Number(m.engagement_rate).toFixed(1) + "%" : "—"}</td>
                         <td className="px-2 py-2 font-bold">{m ? Math.round(Number(m.performance_score)) : "—"}</td>
+                        <td className="px-2 py-2">
+                          {needsLink ? (
+                            <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setLinkTarget(p)}>
+                              <Link2 className="h-3 w-3" /> Link
+                            </Button>
+                          ) : p.slideshow_id ? (
+                            <Badge variant="secondary" className="text-xs">linked</Badge>
+                          ) : (
+                            <Badge variant="secondary" className="text-xs">manual</Badge>
+                          )}
+                        </td>
                         <td className="px-2 py-2"><StatusPill status={p.sync_status} /></td>
                       </tr>
                     );
@@ -324,6 +347,12 @@ const Analytics = () => {
           )}
         </Card>
       </div>
+      <LinkSlideshowDialog
+        open={!!linkTarget}
+        onOpenChange={(o) => !o && setLinkTarget(null)}
+        postedSlideshow={linkTarget}
+        onLinked={load}
+      />
     </>
   );
 };
