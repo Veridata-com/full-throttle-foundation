@@ -7,9 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { SEO } from "@/components/SEO";
-import { BarChart2, Loader2, RefreshCw, Sparkles, CheckCircle2, X, ArrowRight, AlertCircle, Link2 } from "lucide-react";
+import { BarChart2, Loader2, RefreshCw, Sparkles, ArrowRight, AlertCircle, Link2 } from "lucide-react";
 import { toast } from "sonner";
 import { LinkSlideshowDialog } from "@/components/LinkSlideshowDialog";
+import { TiktokAccountsManager } from "@/components/TiktokAccountsManager";
 
 const fmt = (n: number) => {
   if (!n) return "0";
