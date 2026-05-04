@@ -471,6 +471,7 @@ export type Database = {
           style: string
           sync_status: string
           thumbnail_url: string | null
+          tiktok_account_id: string | null
           tiktok_handle: string
           tiktok_post_url: string | null
           topic: string
@@ -491,6 +492,7 @@ export type Database = {
           style?: string
           sync_status?: string
           thumbnail_url?: string | null
+          tiktok_account_id?: string | null
           tiktok_handle: string
           tiktok_post_url?: string | null
           topic?: string
@@ -511,6 +513,7 @@ export type Database = {
           style?: string
           sync_status?: string
           thumbnail_url?: string | null
+          tiktok_account_id?: string | null
           tiktok_handle?: string
           tiktok_post_url?: string | null
           topic?: string
@@ -522,6 +525,13 @@ export type Database = {
             columns: ["slideshow_id"]
             isOneToOne: false
             referencedRelation: "slideshows"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "posted_slideshows_tiktok_account_id_fkey"
+            columns: ["tiktok_account_id"]
+            isOneToOne: false
+            referencedRelation: "tiktok_accounts"
             referencedColumns: ["id"]
           },
         ]
@@ -852,6 +862,56 @@ export type Database = {
           storage_path?: string
         }
         Relationships: []
+      }
+      tiktok_accounts: {
+        Row: {
+          created_at: string
+          handle: string
+          id: string
+          label: string | null
+          last_sync_error: string | null
+          last_sync_status: string | null
+          last_synced_at: string | null
+          sync_enabled: boolean
+          updated_at: string
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          handle: string
+          id?: string
+          label?: string | null
+          last_sync_error?: string | null
+          last_sync_status?: string | null
+          last_synced_at?: string | null
+          sync_enabled?: boolean
+          updated_at?: string
+          user_id: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          handle?: string
+          id?: string
+          label?: string | null
+          last_sync_error?: string | null
+          last_sync_status?: string | null
+          last_synced_at?: string | null
+          sync_enabled?: boolean
+          updated_at?: string
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tiktok_accounts_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       usage: {
         Row: {
