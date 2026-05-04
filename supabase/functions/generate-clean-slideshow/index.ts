@@ -192,7 +192,7 @@ Return exactly ${numSlides} slides. First = hook, last = cta_card.`;
                       text: { type: "string", description: "REQUIRED. Plain-text version of the slide, 1-3 short lowercase sentences separated by \\n. This is what the viewer reads." },
                       variables: {
                         type: "object",
-                        description: "Template-specific vars. title_card={label, heading, subtext}; centered_text={main_text, support_text}; big_number={number, unit, context}; list_items={section_label, items:[{icon,item_title,item_description}]}; step_number={step_number, instruction, detail}; highlight_box={context_above, highlight_text, context_below}; cta_card={cta_heading, cta_text, brand_url}; quote_style={quote_text, attribution}.",
+                        description: "REQUIRED. Template-specific text vars — must be filled with REAL copy, never empty strings. Schemas: title_card={label,heading,subtext}; centered_text={main_text,support_text}; big_number={number,unit,context}; list_items={section_label,items:[{icon,item_title,item_description}]} (3-5 items, every item has icon from the icon list); step_number={step_number,instruction,detail}; highlight_box={context_above,highlight_text,context_below}; cta_card={cta_heading,cta_text,brand_url}; quote_style={quote_text,attribution}.",
                         additionalProperties: true,
                       },
                     },
