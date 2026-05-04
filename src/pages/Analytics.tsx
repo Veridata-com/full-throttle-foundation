@@ -28,7 +28,7 @@ const Analytics = () => {
   const [insight, setInsight] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [generatingInsight, setGeneratingInsight] = useState(false);
-
+  const [linkTarget, setLinkTarget] = useState<any | null>(null);
   const tiktokHandle = (profile as any)?.tiktok_handle as string | undefined;
 
   const load = async () => {
