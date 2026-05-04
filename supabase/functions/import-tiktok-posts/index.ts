@@ -148,6 +148,7 @@ Deno.serve(async (req) => {
             user_id: userId,
             slideshow_id: null,
             tiktok_handle: handle,
+            tiktok_account_id: accountId,
             tiktok_post_url: postUrl,
             hook_text: hookText,
             slide_count: slideCount,
