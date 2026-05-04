@@ -1,6 +1,9 @@
-// generate-clean-slideshow: GPT-5 picks templates + writes variables for each slide.
-// Rendering happens client-side (html2canvas in src/lib/designed/renderer.ts).
-// This function returns the slide specs; the client renders + uploads PNGs and patches the slideshow.
+// generate-clean-slideshow: fully autonomous designer.
+// Picks hook style, content style, slide count (if not provided), templates,
+// icons, mood, and writes ALL text. Logs decisions to ai_decisions.
+// Updates slideshows.generation_progress in real time so the client can
+// stream progress via Supabase Realtime.
+// Rendering still happens client-side (html2canvas) — this fn returns specs.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
@@ -16,24 +19,25 @@ interface Body {
 const TEMPLATES = ["title_card", "centered_text", "big_number", "list_items", "step_number", "highlight_box", "cta_card", "quote_style"];
 const ICONS = ["arrow_right", "check", "star", "lightning", "chart_up", "users", "target", "rocket", "clock", "dollar", "eye", "lock", "heart", "message", "code", "globe", "shield", "zap", "refresh", "x_mark", "minus", "plus", "share", "award", "layers", "trending", "fire", "brain", "book", "briefcase", "cart", "gift", "smile", "thumbs_up", "bell", "search", "settings"];
 
-const SYSTEM = `You are a world-class editorial slide designer for TikTok carousels. You design clean, typographic, minimalist slides that convert viewers into customers. Your designs use NO AI-generated images — only typography, geometric shapes, icons, and color.
+const HOOK_STYLES = ["question", "contrarian", "pain", "result", "curiosity"] as const;
+const CONTENT_STYLES = ["educational", "storytelling", "product_showcase", "myth-bust", "listicle"] as const;
+const SLIDE_COUNT_POOL = [6, 7, 8, 9];
 
-Three things that matter most:
-1) HOOK (slide 1) — contrarian, uncomfortable, sharp question. Information gap. Never opens with "I", "we", or the product name. Use title_card or quote_style.
-2) VALUE SLIDES (middles) — each ends on an open loop. One concrete insight per slide. Mix centered_text, big_number, list_items, step_number, highlight_box.
-3) CTA (last slide) — resolve the tension first, drop the CTA. Always use cta_card.
+function pick<T>(arr: readonly T[]): T { return arr[Math.floor(Math.random() * arr.length)]; }
+
+const SYSTEM = `You are an autonomous TikTok carousel designer + scriptwriter. Decide nothing about strategy — that has already been decided for you. Just write the copy and pick the templates.
 
 Rules:
-- Pick the best template for each slide's purpose.
-- Vary templates across slides — never use the same template twice in a row.
-- For big_number: use a real-sounding specific number, not a round one (e.g. "73%", "11.4x", "$2,847").
-- Choose icons that directly support the text content, not decorative ones. Set icon to null if the template doesn't display one.
-- Templates that DO display an icon: centered_text, list_items, cta_card.
-- For list_items, each item must include an icon name from the icon list.
-- All text in lowercase except acronyms and the brand name.
+- Pick the best template per slide. Vary across slides.
+- For big_number: a real-sounding specific number (73%, 11.4x, $2,847).
+- Choose icons that support the content. Set icon to null if template doesn't display one. Templates that show icons: centered_text, list_items, cta_card.
+- For list_items, every item must include an icon name from the icon list.
+- All text lowercase except acronyms and the brand name.
 - Banned words: game-changer, unlock, journey, leverage, utilize, dive in, explore. No exclamation marks, no caps lock, no emoji, no em-dashes.
-- Keep text concise — same viral TikTok copywriting rules apply.
-
+- Hook (slide 1): pattern interrupt; never opens with "I", "we", or the brand name. Information gap.
+- Middle slides: each ends on an open loop.
+- Last slide: cta_card. Resolve tension then drop the CTA naturally.
+- Each slide also needs a "text" field — the plain text version (1-3 short sentences, lowercase, separated by \\n) used as a fallback.
 Return ONLY a valid tool call.`;
 
 function clean(s: any): string {
@@ -52,8 +56,11 @@ function clean(s: any): string {
   return t;
 }
 
-async function progress(admin: any, id: string, payload: Record<string, any>) {
-  await admin.from("slideshows").update({ generation_progress: payload }).eq("id", id);
+async function setProgress(admin: any, id: string, step: string, stepIndex: number, totalSteps: number, message: string) {
+  const percent = Math.round((stepIndex / totalSteps) * 100);
+  await admin.from("slideshows").update({
+    generation_progress: { step, step_index: stepIndex, total_steps: totalSteps, message, percent },
+  }).eq("id", id);
 }
 
 Deno.serve(async (req) => {
@@ -85,14 +92,12 @@ Deno.serve(async (req) => {
     const { data: profile } = await admin.from("profiles").select("plan").eq("id", userId).single();
     if (!profile || profile.plan === "none") return j({ error: "plan_required" }, 402);
 
-    // Cost cap — clean designed slides only use a single GPT-5 call (cheap), reserve 2 cents.
     const { data: capOk } = await admin.rpc("check_and_increment_ai_cost", { _user_id: userId, _cost_cents: 2 });
     if (capOk === false) {
       await admin.from("slideshows").update({ status: "failed", generation_error: "Monthly AI cost cap reached." }).eq("id", slideshowId);
       return j({ error: "cost_cap_reached" }, 402);
     }
 
-    // Plan limit (re-use designed quota for now)
     const periodStart = new Date(); periodStart.setDate(1);
     const ps = periodStart.toISOString().slice(0, 10);
     const { data: usage } = await admin.from("usage").select("designed_slideshows_generated, slideshows_generated").eq("user_id", userId).eq("period_start", ps).maybeSingle();
@@ -105,32 +110,59 @@ Deno.serve(async (req) => {
     const { data: workspace } = await admin.from("workspaces").select("*").eq("id", slideshow.workspace_id).single();
     if (!workspace) return j({ error: "workspace_not_found" }, 404);
 
-    // Brand identity is required for clean designed mode
     const { data: brand } = await admin.from("brand_identity").select("*").eq("user_id", userId).maybeSingle();
     if (!brand) return j({ error: "brand_required" }, 400);
 
-    const numSlides = Math.min(10, Math.max(3, slideshow.num_slides || 6));
-
     await admin.from("slideshows").update({ status: "generating", generation_error: null }).eq("id", slideshowId);
-    await progress(admin, slideshowId, { phase: "writing", current: 0, total: numSlides, label: "Designing slides" });
+    await setProgress(admin, slideshowId, "started", 0, 4, "Analyzing your topic...");
 
-    const writePrompt = `Design a ${numSlides}-slide TikTok carousel for the brand "${brand.brand_name}".
-${brand.brand_tagline ? `Brand tagline: ${brand.brand_tagline}\n` : ""}${brand.brand_url ? `Brand URL: ${brand.brand_url}\n` : ""}
-PRODUCT WORKSPACE: ${workspace.name}
+    // === Autonomous decision making ===
+    // Pull user's insights as a strategy proxy.
+    const { data: insights } = await admin
+      .from("user_insights").select("*")
+      .eq("user_id", userId).eq("is_current", true)
+      .order("generated_at", { ascending: false }).limit(1).maybeSingle();
+
+    const explorationRate = insights ? 0.3 : 0.7;
+    const isExploration = Math.random() < explorationRate;
+
+    const userProvidedSlideCount = slideshow.ai_decided ? null : slideshow.num_slides;
+    const hookStyle = isExploration ? pick(HOOK_STYLES) : (insights?.next_hook_suggestion ? "result" : pick(HOOK_STYLES));
+    const slideCount = userProvidedSlideCount ?? insights?.best_slide_count ?? pick(SLIDE_COUNT_POOL);
+    const contentStyle = isExploration ? pick(CONTENT_STYLES) : (insights?.best_style as any) || pick(CONTENT_STYLES);
+    const numSlides = Math.min(10, Math.max(3, slideCount));
+
+    const ctaText = slideshow.cta_text || workspace.default_cta || "";
+    const topic = slideshow.topic || slideshow.title || workspace.name;
+
+    await setProgress(admin, slideshowId, "writing_copy", 1, 4, "Writing slide scripts...");
+
+    const writePrompt = `Create a ${numSlides}-slide TikTok carousel.
+
+BRAND: ${brand.brand_name}
+${brand.brand_tagline ? `TAGLINE: ${brand.brand_tagline}\n` : ""}${brand.brand_url ? `URL: ${brand.brand_url}\n` : ""}
+WORKSPACE: ${workspace.name}
 AUDIENCE: ${workspace.target_audience || "general"}
 BRAND VOICE: ${workspace.brand_voice || "punchy, native to TikTok"}
-DEFAULT CTA: ${workspace.default_cta || "try it now"}
-HOOK STYLE: ${slideshow.hook_style || "curiosity"}
 
-Brand visual style:
-- Mood: ${brand.slide_mood}
-- Icons enabled: ${brand.use_icons}
-- Watermark enabled: ${brand.use_brand_watermark}
+TOPIC: "${topic}"
+CTA: ${ctaText || "write a compelling CTA yourself"}
 
+HOOK STYLE TO USE: ${hookStyle}
+${hookStyle === "question" ? "Open with a provocative question that makes the viewer feel called out." : ""}
+${hookStyle === "contrarian" ? "Open with a statement that contradicts common belief." : ""}
+${hookStyle === "pain" ? "Open by describing a specific frustration the viewer feels right now." : ""}
+${hookStyle === "result" ? "Open with a specific impressive result or number." : ""}
+${hookStyle === "curiosity" ? "Open with an incomplete thought that demands the next slide." : ""}
+
+CONTENT STYLE: ${contentStyle}
+SLIDE COUNT: ${numSlides}
+
+Brand visuals — mood: ${brand.slide_mood}, icons: ${brand.use_icons}, watermark: ${brand.use_brand_watermark}
 Available templates: ${TEMPLATES.join(", ")}
 Available icons: ${ICONS.join(", ")}
 
-Return exactly ${numSlides} slides. The first must be a hook, the last must use cta_card. Vary templates across the middle slides.`;
+Return exactly ${numSlides} slides. First = hook, last = cta_card.`;
 
     const writeRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -157,13 +189,14 @@ Return exactly ${numSlides} slides. The first must be a hook, the last must use 
                       template: { type: "string", enum: TEMPLATES },
                       mood_override: { type: ["string", "null"], enum: ["dark", "light", null] },
                       icon: { type: ["string", "null"] },
+                      text: { type: "string", description: "Plain-text version of the slide, 1-3 short lowercase sentences separated by \\n." },
                       variables: {
                         type: "object",
-                        description: "Template-specific variables. Examples: title_card needs {label, heading, subtext}; centered_text needs {main_text, support_text}; big_number needs {number, unit, context}; list_items needs {section_label, items:[{icon,item_title,item_description}]}; step_number needs {step_number, instruction, detail}; highlight_box needs {context_above, highlight_text, context_below}; cta_card needs {cta_heading, cta_text, brand_url}; quote_style needs {quote_text, attribution}.",
+                        description: "Template-specific vars. title_card={label, heading, subtext}; centered_text={main_text, support_text}; big_number={number, unit, context}; list_items={section_label, items:[{icon,item_title,item_description}]}; step_number={step_number, instruction, detail}; highlight_box={context_above, highlight_text, context_below}; cta_card={cta_heading, cta_text, brand_url}; quote_style={quote_text, attribution}.",
                         additionalProperties: true,
                       },
                     },
-                    required: ["template", "variables"],
+                    required: ["template", "variables", "text"],
                   },
                 },
               },
@@ -195,7 +228,6 @@ Return exactly ${numSlides} slides. The first must be a hook, the last must use 
       return j({ error: "ai_failed" }, 500);
     }
 
-    // Sanitize text in variables (apply clean() to all string values)
     function deepClean(v: any): any {
       if (typeof v === "string") return clean(v).slice(0, 600);
       if (Array.isArray(v)) return v.map(deepClean);
@@ -208,25 +240,26 @@ Return exactly ${numSlides} slides. The first must be a hook, the last must use 
     }
     for (const s of slides) {
       s.variables = deepClean(s.variables || {});
-      // Ensure cta_card always has brand_url
+      s.text = clean(s.text || "");
       if (s.template === "cta_card" && !s.variables.brand_url) s.variables.brand_url = brand.brand_url || "";
     }
 
-    // Force last slide to be cta_card if AI ignored the rule
     const last = slides[slides.length - 1];
     if (last.template !== "cta_card") {
       slides[slides.length - 1] = {
         template: "cta_card",
         icon: "rocket",
+        text: clean(ctaText || workspace.default_cta || "ready to try it?"),
         variables: {
           cta_heading: clean(workspace.default_cta || "ready to try it?"),
-          cta_text: "Try it now",
+          cta_text: ctaText || "Try it now",
           brand_url: brand.brand_url || "",
         },
       };
     }
 
-    // Usage increment
+    await setProgress(admin, slideshowId, "rendering", 2, 4, "Designing your slides...");
+
     if (usage) {
       await admin.from("usage").update({
         designed_slideshows_generated: designedThisMonth + 1,
@@ -236,11 +269,34 @@ Return exactly ${numSlides} slides. The first must be a hook, the last must use 
       await admin.from("usage").insert({ user_id: userId, period_start: ps, slideshows_generated: 1, designed_slideshows_generated: 1 });
     }
 
-    // Mark as awaiting_render — client will render PNGs, upload, then PATCH slideshow rows
+    // Persist learning context on the slideshow row
+    const allTexts = slides.map((s: any) => s.text || "");
+    const templatesUsed = slides.map((s: any) => s.template);
+    const iconsUsed = slides.map((s: any) => s.icon).filter(Boolean);
+
     await admin.from("slideshows").update({
       generation_mode: "clean_designed",
-      generation_progress: { phase: "rendering", current: 0, total: slides.length, label: "Rendering slides on your device" },
+      hook_style: hookStyle,
+      content_style: contentStyle,
+      num_slides: numSlides,
+      hook_text: allTexts[0] || null,
+      all_slide_texts: allTexts,
+      templates_used: templatesUsed,
+      icons_used: iconsUsed,
     }).eq("id", slideshowId);
+
+    // Log decision
+    await admin.from("ai_decisions").insert({
+      user_id: userId,
+      slideshow_id: slideshowId,
+      decision_type: isExploration ? "explore" : "exploit",
+      hook_style_chosen: hookStyle,
+      slide_count_chosen: numSlides,
+      content_style_chosen: contentStyle,
+      generation_mode_chosen: "clean_designed",
+      design_styles_chosen: [brand.slide_mood],
+      reasoning: `${isExploration ? "Exploration" : "Exploitation"}: hook=${hookStyle}, slides=${numSlides}, style=${contentStyle}, mode=clean_designed. ${insights ? `Based on ${insights.posts_analyzed} tracked posts.` : "No data yet, used defaults."}`,
+    });
 
     return j({ ok: true, slides, brand });
   } catch (e: any) {

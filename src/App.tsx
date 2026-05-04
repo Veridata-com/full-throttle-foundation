@@ -30,6 +30,7 @@ import ReleaseNotes from "./pages/ReleaseNotes";
 import AdminReleaseNotes from "./pages/AdminReleaseNotes";
 import Analytics from "./pages/Analytics";
 import Brand from "./pages/Brand";
+import Generating from "./pages/Generating";
 
 const queryClient = new QueryClient();
 
@@ -59,6 +60,7 @@ const App = () => (
                   <Route path="/slideshows" element={<Slideshows />} />
                   <Route path="/slideshows/new" element={<ProtectedRoute requirePlan requireWorkspace><NewSlideshow /></ProtectedRoute>} />
                   <Route path="/slideshows/:id/edit" element={<SlideshowEditor />} />
+                  <Route path="/generating/:id" element={<Generating />} />
                   <Route path="/analytics" element={<Analytics />} />
                   <Route path="/brand" element={<Brand />} />
                   <Route path="/account" element={<Account />} />

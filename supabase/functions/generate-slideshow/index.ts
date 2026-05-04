@@ -106,14 +106,32 @@ Deno.serve(async (req) => {
     const { data: workspace } = await admin.from('workspaces').select('*').eq('id', slideshow.workspace_id).single();
     if (!workspace) return j({ error: 'workspace_not_found' }, 404);
 
-    await admin.from('slideshows').update({ status: 'generating', generation_error: null }).eq('id', slideshowId);
+    await admin.from('slideshows').update({
+      status: 'generating',
+      generation_error: null,
+      generation_progress: { step: 'started', step_index: 0, total_steps: 4, message: 'Analyzing your topic...', percent: 0 },
+    }).eq('id', slideshowId);
+
+    // Autonomous decisions
+    const HOOK_POOL = ['question','contrarian','pain','result','curiosity'];
+    const { data: insights } = await admin
+      .from('user_insights').select('*')
+      .eq('user_id', userId).eq('is_current', true)
+      .order('generated_at', { ascending: false }).limit(1).maybeSingle();
+    const isExploration = Math.random() < (insights ? 0.3 : 0.7);
+    const autoHook = isExploration ? HOOK_POOL[Math.floor(Math.random()*HOOK_POOL.length)] : (HOOK_POOL[Math.floor(Math.random()*HOOK_POOL.length)]);
+    const hookStyle = slideshow.hook_style || autoHook;
 
     // Pick a narrative style different from recent history
     const history: string[] = Array.isArray(workspace.story_style_history) ? workspace.story_style_history : [];
     const recent = new Set(history.slice(-5));
     const available = STORY_STYLES.filter((s) => !recent.has(s));
     const pool = available.length ? available : STORY_STYLES;
-    const chosenStyle = pool[Math.floor(Math.random() * pool.length)];
+    const chosenStyle = (insights?.best_style as any) && !isExploration ? insights.best_style as string : pool[Math.floor(Math.random() * pool.length)];
+
+    await admin.from('slideshows').update({
+      generation_progress: { step: 'writing_copy', step_index: 1, total_steps: 4, message: 'Writing slide scripts...', percent: 25 },
+    }).eq('id', slideshowId);
 
     // Fetch all workspace images with quality + tags (non-product)
     const { data: allImages } = await admin.from('images')
@@ -193,16 +211,20 @@ Deno.serve(async (req) => {
       `#${idx} [${i.quality || 'medium'}]${recentKeys.has(keyOf(i)) ? ' [recently-used]' : ''} ${i.ai_description || i.file_name || 'image'} | tags: ${(i.ai_tags || []).join(', ')}`
     ).join('\n');
 
-    const prompt = `Write a ${numSlides}-slide viral TikTok slideshow for:
+    const topic = (slideshow as any).topic || workspace.tagline || workspace.name;
+    const ctaOverride = (slideshow as any).cta_text || workspace.default_cta || 'Try it now';
 
+    const prompt = `Write a ${numSlides}-slide viral TikTok slideshow.
+
+TOPIC: "${topic}"
 PRODUCT: ${workspace.name}
 TAGLINE: ${workspace.tagline || '(none)'}
 AUDIENCE: ${workspace.target_audience || 'general'}
 BRAND VOICE: ${workspace.brand_voice || 'punchy, native to TikTok'}
-DEFAULT CTA: ${workspace.default_cta || 'Try it now'}
+DEFAULT CTA: ${ctaOverride}
 
 NARRATIVE STYLE THIS TIME: ${chosenStyle}
-HOOK STYLE: ${slideshow.hook_style || 'curiosity'}
+HOOK STYLE: ${hookStyle}
 
 AVAILABLE IMAGES (pick ${needNonProduct} DISTINCT indexes — never repeat the same index, and STRONGLY prefer images NOT marked [recently-used] so this slideshow looks different from the last few):
 ${imageContext || '(no images, reuse index 0)'}
@@ -300,6 +322,10 @@ Use these learnings to bias your decisions. Do not mention this context in the o
       return j({ error: 'ai_failed', detail: txt }, 500);
     }
 
+    await admin.from('slideshows').update({
+      generation_progress: { step: 'rendering', step_index: 2, total_steps: 4, message: 'Selecting and arranging images...', percent: 60 },
+    }).eq('id', slideshowId);
+
     const data = await aiRes.json();
     const call = data?.choices?.[0]?.message?.tool_calls?.[0];
     let parsed: any = {};
@@ -329,12 +355,11 @@ Use these learnings to bias your decisions. Do not mention this context in the o
       };
     });
 
-    // Append final CTA slide using a product shot (always a user image)
     const productShot = productShots[Math.floor(Math.random() * productShots.length)];
     slides.push({
       id: crypto.randomUUID(),
       type: 'cta',
-      text: clean(parsed.cta_text || workspace.default_cta || 'try it now').slice(0, 400),
+      text: clean(parsed.cta_text || ctaOverride).slice(0, 400),
       image_id: productShot.id,
       image_url: null,
       is_stock: false,
@@ -344,25 +369,45 @@ Use these learnings to bias your decisions. Do not mention this context in the o
     const finalImageIds = [...pickedImageIds, productShot.id];
 
     await admin.from('slideshows').update({
+      generation_progress: { step: 'finishing', step_index: 3, total_steps: 4, message: 'Wrapping up...', percent: 85 },
+    }).eq('id', slideshowId);
+
+    const allTexts = slides.map((s: any) => s.text || '');
+    await admin.from('slideshows').update({
       status: 'ready',
       slides,
       image_ids: finalImageIds,
       generation_error: null,
+      hook_style: hookStyle,
+      content_style: chosenStyle,
+      hook_text: allTexts[0] || null,
+      all_slide_texts: allTexts,
+      generation_progress: { step: 'complete', step_index: 4, total_steps: 4, message: 'Your slideshow is ready!', percent: 100 },
     }).eq('id', slideshowId);
 
-    // Update workspace story history
     const newHistory = [...history, chosenStyle].slice(-20);
     await admin.from('workspaces').update({ story_style_history: newHistory }).eq('id', workspace.id);
 
-    // Usage increment
-    const periodStart = new Date(); periodStart.setDate(1);
-    const ps = periodStart.toISOString().slice(0, 10);
+    const periodStart2 = new Date(); periodStart2.setDate(1);
+    const ps = periodStart2.toISOString().slice(0, 10);
     const { data: existing } = await admin.from('usage').select('id, slideshows_generated').eq('user_id', userId).eq('period_start', ps).maybeSingle();
     if (existing) {
       await admin.from('usage').update({ slideshows_generated: (existing.slideshows_generated || 0) + 1 }).eq('id', existing.id);
     } else {
       await admin.from('usage').insert({ user_id: userId, period_start: ps, slideshows_generated: 1 });
     }
+
+    await admin.from('ai_decisions').insert({
+      user_id: userId,
+      slideshow_id: slideshowId,
+      decision_type: isExploration ? 'explore' : 'exploit',
+      hook_style_chosen: hookStyle,
+      slide_count_chosen: numSlides,
+      content_style_chosen: chosenStyle,
+      generation_mode_chosen: 'photo',
+      design_styles_chosen: [],
+      reasoning: `${isExploration ? 'Exploration' : 'Exploitation'}: hook=${hookStyle}, slides=${numSlides}, style=${chosenStyle}, mode=photo. ${insights ? `Based on ${insights.posts_analyzed} tracked posts.` : 'No data yet, used defaults.'}`,
+    });
 
     return j({ ok: true, slides, style: chosenStyle });
   } catch (e: any) {
