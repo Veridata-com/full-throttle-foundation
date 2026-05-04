@@ -65,11 +65,15 @@ function escapeHtml(s: string): string {
   return String(s ?? "").replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[c] || c);
 }
 
-/** Replace {{key}} with raw value (no escape — values are author-controlled by AI). */
+/** Keys whose value is raw HTML/SVG and must NOT be escaped. */
+const RAW_KEYS = new Set(["icon_svg", "item_icon_svg"]);
+
+/** Replace {{key}} with value. Escapes text; passes SVG/HTML through for raw keys. */
 function fillVars(html: string, vars: Record<string, any>): string {
   return html.replace(/\{\{(\w+)\}\}/g, (_, k) => {
     const v = vars[k];
     if (v === undefined || v === null) return "";
+    if (RAW_KEYS.has(k)) return String(v);
     return escapeHtml(String(v)).replace(/\n/g, "<br>");
   });
 }
