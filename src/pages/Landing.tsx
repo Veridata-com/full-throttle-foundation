@@ -21,8 +21,8 @@ const Landing = () => {
   return (
     <>
       <SEO title="AdRise — Create on-brand product ads in seconds" description="Upload your product, choose your style, and generate beautiful on-brand ads in seconds with AdRise." canonical="/" />
-      <div className="min-h-screen bg-background">
-        <header className="border-b">
+      <div className="min-h-screen bg-white text-foreground">
+        <header className="border-b bg-white">
           <div className="container flex h-16 items-center justify-between">
             <Link to="/" className="flex items-center gap-2">
               <Logo className="h-8 w-8" />
