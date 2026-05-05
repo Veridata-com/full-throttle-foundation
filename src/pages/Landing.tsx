@@ -14,8 +14,8 @@ import { Logo } from "@/components/Logo";
 const ACCENT = "#FF3B5C";
 
 const stats = [
-  { num: "847K+", label: "Total views generated" },
-  { num: "34K", label: "Best single slideshow" },
+  { num: "827K+", label: "Average views generated" },
+  { num: "3.2M", label: "Best single slideshow" },
   { num: "96%", label: "Gross margin per slideshow" },
   { num: "3 days", label: "Average time to first customer" },
 ];
