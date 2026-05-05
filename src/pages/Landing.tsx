@@ -1,667 +1,218 @@
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
-import { Pencil, Sparkles, BarChart3, Check, X, ArrowRight } from "lucide-react";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Image as ImageIcon, Wand2, Download, Check, ArrowRight, LogOut, Megaphone, Sparkles } from "lucide-react";
 import { SEO } from "@/components/SEO";
 import { useAuth } from "@/contexts/AuthContext";
+import { CountdownBanner } from "@/components/CountdownBanner";
 import { Logo } from "@/components/Logo";
-
-const ACCENT = "#FF3B5C";
-
-const stats = [
-  { num: "827K+", label: "Average views generated" },
-  { num: "3.2M", label: "Best single slideshow" },
-  { num: "96%", label: "Gross margin per slideshow" },
-  { num: "3 days", label: "Average time to first customer" },
-];
-
-const steps = [
-  {
-    n: "01",
-    icon: Pencil,
-    title: "Type your topic",
-    desc: "That's literally it. Tell AdRise what your product does or what problem it solves. The AI handles everything from here.",
-  },
-  {
-    n: "02",
-    icon: Sparkles,
-    title: "AI writes and designs",
-    desc: "AdRise picks the hook style, writes all the slide text, chooses the design, and renders your slides — automatically.",
-  },
-  {
-    n: "03",
-    icon: BarChart3,
-    title: "It gets smarter every post",
-    desc: "Connect your TikTok and AdRise tracks which hooks, slide counts and styles actually convert. Every slideshow is better than the last.",
-  },
-];
-
-const insights = [
-  "Question hooks outperformed statement hooks by 4x for SaaS audiences",
-  "7-9 slides consistently outperforms 3-5 for educational content",
-  "Clean designed slides get 2.3x more saves than AI-generated image slides",
-  "Average engagement rate improves 60-80% after 10 tracked posts",
-];
-
-const resultCards = [
-  {
-    bg: "rgba(34,197,94,0.06)",
-    border: "rgba(34,197,94,0.25)",
-    emoji: "📈",
-    metric: "34,200 views",
-    quote: "switched hook style on week 3 — this was the first post after",
-    who: "— adrise.app user",
-  },
-  {
-    bg: "rgba(59,130,246,0.06)",
-    border: "rgba(59,130,246,0.25)",
-    emoji: "💰",
-    metric: "3 paying customers",
-    quote: "came from TikTok in month 1. never had organic conversions before.",
-    who: "— SaaS founder, Netherlands",
-  },
-  {
-    bg: "rgba(255,59,92,0.06)",
-    border: "rgba(255,59,92,0.25)",
-    emoji: "🔁",
-    metric: "96% gross margin",
-    quote: "$19/mo plan, AI costs under $0.80/month for a typical user",
-    who: "— founder math breakdown",
-  },
-];
-
-const comparisons = [
-  ["You pick the hook", "AI picks and tests hooks"],
-  ["Same template every time", "Learns your best-performing format"],
-  ["No idea what worked", "Tracks every post automatically"],
-  ["You manually optimize", "System improves with each post"],
-  ["Generic output", "Personalized to your audience"],
-];
-
-const starterFeatures = [
-  "75 images in library",
-  "40 slideshows per month",
-  "Self-learning AI optimization",
-  "TikTok performance tracking",
-  "Clean designed slides",
-  "Export as PNG / ZIP",
-];
-
-const proFeatures = [
-  "Everything in Starter",
-  "Unlimited images",
-  "Unlimited slideshows",
-  "Full AI autopilot mode (Tier 3)",
-  "Priority generation",
-  "Advanced analytics",
-];
-
-const faqs = [
-  {
-    q: "Do I need to know TikTok to use this?",
-    a: "No. AdRise handles the content creation. You just download the slides and post them. The AI even learns which formats work best for your audience over time.",
-  },
-  {
-    q: "What does \"self-learning\" actually mean?",
-    a: "Every slideshow you generate gets tracked. When you connect your TikTok and log your posts, AdRise pulls the view and engagement data, figures out what worked, and applies those learnings to the next generation. The more you use it, the better it gets.",
-  },
-  {
-    q: "How are the slides created?",
-    a: "You type a topic. The AI writes all the copy, picks the design style, chooses the hook format, renders the slides, and delivers them ready to post. No design skills needed.",
-  },
-  {
-    q: "Why is the first month $0.99?",
-    a: "We want you to experience the product before committing. $0.99 removes all friction. If you don't love it after a month, cancel — no hard feelings.",
-  },
-  {
-    q: "What TikTok format are the slides?",
-    a: "All slides are 1080×1920px (9:16 portrait), the standard TikTok format. Exported as individual PNGs in a ZIP file.",
-  },
-  {
-    q: "Is there a free plan?",
-    a: "No. We don't have a free tier — it keeps the product focused on users who are serious about growing their SaaS. The $0.99 first month is the trial.",
-  },
-];
-
-const heroSlides = [
-  {
-    grad: "linear-gradient(135deg,#FF3B5C 0%,#FF7A8E 100%)",
-    label: "HOOK",
-    text: "Why your SaaS isn't growing on TikTok",
-  },
-  {
-    grad: "linear-gradient(135deg,#0A0A0A 0%,#3B3B3B 100%)",
-    label: "INSIGHT",
-    text: "It's not the algorithm. It's your hook.",
-  },
-  {
-    grad: "linear-gradient(135deg,#3B82F6 0%,#22C55E 100%)",
-    label: "CTA",
-    text: "Try AdRise → first month $0.99",
-  },
-];
+import { FeedbackDialog } from "@/components/FeedbackDialog";
+import featureLibrary from "@/assets/feature-library.png";
+import featureEditor from "@/assets/feature-editor.png";
+import featureExport from "@/assets/feature-export.png";
+import heroMobileBg from "@/assets/hero-mobile-bg.png";
+import heroDesktopBg from "@/assets/hero-desktop-bg.png";
 
 const Landing = () => {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const navigate = useNavigate();
-  const ctaTarget = user ? "/dashboard" : "/auth?mode=signup";
-
+  const handleSignOut = async () => { await signOut(); navigate("/"); };
   return (
     <>
-      <SEO
-        title="AdRise — Self-learning AI for viral TikTok slideshows"
-        description="AdRise writes, designs and tracks your TikTok slideshows — and learns what actually converts your audience. Start for $0.99."
-        canonical="/"
-      />
-      <div className="min-h-screen bg-white text-[#0A0A0A]">
-        {/* NAVBAR */}
-        <header
-          className="sticky top-0 z-50 bg-white/95 backdrop-blur border-b border-[#E5E7EB]"
-          style={{ height: 64 }}
-        >
-          <div className="mx-auto flex h-full max-w-[1100px] items-center justify-between px-6 md:px-10">
+      <SEO title="AdRise — Create on-brand product ads in seconds" description="Upload your product, choose your style, and generate beautiful on-brand ads in seconds with AdRise." canonical="/" />
+      <div className="min-h-screen bg-background">
+        <header className="border-b">
+          <div className="container flex h-16 items-center justify-between">
             <Link to="/" className="flex items-center gap-2">
-              <Logo className="h-7 w-7" />
-              <span className="font-display text-lg font-bold">AdRise</span>
+              <Logo className="h-8 w-8" />
+              <span className="font-display text-xl font-bold">AdRise</span>
             </Link>
-            <nav className="flex items-center gap-3 md:gap-5">
-              <Link
-                to="/auth"
-                className="text-sm font-medium text-[#6B7280] hover:text-[#0A0A0A]"
-              >
-                Log in
-              </Link>
-              <Link
-                to={ctaTarget}
-                className="rounded-[10px] px-4 py-2 text-sm font-bold text-white shadow-sm transition hover:opacity-90"
-                style={{ background: ACCENT }}
-              >
-                Start for $0.99
-              </Link>
+            <nav className="flex items-center gap-2">
+              <Button variant="ghost" size="sm" asChild className="hidden sm:inline-flex">
+                <Link to="/release-notes"><Megaphone className="h-4 w-4" />Release notes</Link>
+              </Button>
+              <FeedbackDialog variant="ghost" size="sm" />
+              {user ? (
+                <>
+                  <Button asChild><Link to="/dashboard">Dashboard</Link></Button>
+                  <Button variant="ghost" size="icon" onClick={handleSignOut} aria-label="Sign out">
+                    <LogOut className="h-4 w-4" />
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button variant="ghost" asChild><Link to="/auth">Log in</Link></Button>
+                  <Button asChild><Link to="/auth?mode=signup">Get started</Link></Button>
+                </>
+              )}
             </nav>
           </div>
         </header>
 
-        {/* HERO */}
-        <section className="px-6 md:px-10 py-16 md:py-[120px]">
-          <div className="mx-auto max-w-[1100px] text-center">
-            <span
-              className="inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium"
-              style={{
-                background: "rgba(255,59,92,0.08)",
-                color: ACCENT,
-                border: "1px solid rgba(255,59,92,0.2)",
-              }}
-            >
-              🧪 Early beta · Self-improving with every post
-            </span>
-            <h1 className="mt-6 font-display font-extrabold tracking-tight text-[40px] md:text-[64px] leading-[1.1]">
-              The AI that makes your TikTok
-              <br className="hidden md:inline" /> slideshows go viral — and learns
-              <br className="hidden md:inline" /> what works for YOUR audience.
+        <section className="relative py-20 md:py-32 text-center overflow-hidden">
+          {/* Mobile-only background image */}
+          <div
+            className="md:hidden absolute inset-0 z-0 bg-no-repeat bg-cover bg-center opacity-60"
+            style={{ backgroundImage: `url(${heroMobileBg})` }}
+            aria-hidden
+          />
+          <div className="md:hidden absolute inset-0 z-0 bg-gradient-to-b from-background/40 via-background/70 to-background" aria-hidden />
+
+          {/* Desktop-only background image */}
+          <div
+            className="hidden md:block absolute inset-0 z-0 bg-no-repeat bg-cover bg-center opacity-70"
+            style={{ backgroundImage: `url(${heroDesktopBg})` }}
+            aria-hidden
+          />
+          <div className="hidden md:block absolute inset-0 z-0 bg-gradient-to-b from-background/30 via-background/60 to-background" aria-hidden />
+
+          <div className="relative z-10 container">
+            <div className="mb-6"><CountdownBanner /></div>
+            <Badge className="mb-5 bg-warning/15 text-warning border border-warning/30" variant="outline">
+              <Sparkles className="h-3 w-3 mr-1" />Early beta · Improving rapidly from your feedback
+            </Badge>
+            <h1 className="font-display text-4xl md:text-7xl font-bold tracking-tighter mb-6 animate-fade-in">
+              First <span className="text-gradient">self-learning algorithm</span> that optimizes TikTok slideshow virality and conversion
             </h1>
-            <p className="mx-auto mt-6 max-w-[580px] text-lg md:text-xl leading-relaxed text-[#6B7280]">
-              AdRise does everything, improves itself, gets you results.
+            <p className="mx-auto max-w-2xl text-lg md:text-xl text-muted-foreground mb-4 animate-fade-in">
+              AdRise creates your slideshows, tests different formats, tracks performance and finds exactly what works best for your product. Don't guess what works, let AdRise analyze and optimize your organic marketing.
             </p>
-            <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Link
-                to={ctaTarget}
-                className="rounded-[10px] px-8 py-4 text-[17px] font-bold text-white transition hover:opacity-90"
-                style={{ background: ACCENT }}
-              >
-                Start for $0.99 →
-              </Link>
-              <a
-                href="#how-it-works"
-                className="rounded-[10px] border-[1.5px] border-[#E5E7EB] px-8 py-4 text-[17px] font-bold text-[#6B7280] transition hover:bg-[#F9FAFB]"
-              >
-                See how it works ↓
-              </a>
-            </div>
-            <p className="mt-4 text-[13px] text-[#9CA3AF]">
-              First month $0.99 · Cancel anytime · No free tier
-            </p>
-
-            {/* Hero visual */}
-            <div
-              className="mx-auto mt-12 md:mt-16 max-w-[900px] overflow-hidden rounded-2xl border border-[#E5E7EB]"
-              style={{ boxShadow: "0 20px 60px rgba(0,0,0,0.08)" }}
-            >
-              <div className="grid grid-cols-3 gap-3 bg-[#F9FAFB] p-4 md:p-6">
-                {heroSlides.map((s, i) => (
-                  <div
-                    key={i}
-                    className="relative aspect-[9/16] overflow-hidden rounded-lg p-3 md:p-4 flex flex-col justify-between text-white"
-                    style={{ background: s.grad }}
-                  >
-                    <span className="text-[10px] md:text-xs font-bold tracking-widest opacity-80">
-                      {s.label}
-                    </span>
-                    <span className="text-sm md:text-xl font-extrabold leading-tight">
-                      {s.text}
-                    </span>
-                  </div>
-                ))}
-              </div>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center animate-fade-in">
+              <Button size="lg" className="text-base h-12 px-8 shadow-glow" asChild>
+                <Link to="/auth?mode=signup">Start creating <ArrowRight className="ml-1 h-4 w-4" /></Link>
+              </Button>
+              <Button size="lg" variant="outline" className="text-base h-12 px-8" asChild>
+                <a href="#demo">Watch the demo</a>
+              </Button>
             </div>
           </div>
         </section>
 
-        {/* SOCIAL PROOF */}
-        <section className="border-y border-[#E5E7EB] bg-white px-6 md:px-10 py-16 md:py-24">
-          <div className="mx-auto max-w-[1100px]">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-y-10 md:divide-x md:divide-[#E5E7EB]">
-              {stats.map((s) => (
-                <div key={s.label} className="px-4 text-center">
-                  <div
-                    className="font-display text-4xl md:text-5xl font-extrabold"
-                    style={{ color: ACCENT }}
-                  >
-                    {s.num}
-                  </div>
-                  <div className="mt-1 text-[15px] text-[#6B7280]">{s.label}</div>
-                </div>
-              ))}
-            </div>
-            <p className="mt-8 text-center text-[13px] text-[#9CA3AF] italic">
-              * Average results from long-term users. Your mileage will vary based on niche, posting frequency and product.
+        {/* Features Overview */}
+        <section className="container py-16 border-t">
+          <div className="text-center">
+            <h2 className="font-display text-3xl md:text-4xl font-bold mb-3">Everything you need to go viral</h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto">
+              Every slideshow you post is a datapoint that helps the AdRise algorithm find YOUR highest converting format.
             </p>
           </div>
         </section>
 
-        {/* HOW IT WORKS */}
-        <section id="how-it-works" className="px-6 md:px-10 py-16 md:py-[120px]">
-          <div className="mx-auto max-w-[1100px]">
-            <p
-              className="text-xs font-bold tracking-[0.2em] uppercase"
-              style={{ color: ACCENT }}
-            >
-              How it works
+        {/* Demo + early beta context */}
+        <section id="demo" className="container py-16 border-t">
+          <div className="max-w-3xl mx-auto text-center mb-8">
+            <Badge variant="outline" className="mb-3">Live demo</Badge>
+            <h2 className="font-display text-3xl md:text-4xl font-bold mb-3">See AdRise in 2 minutes</h2>
+            <p className="text-muted-foreground">
+            We're in early beta; My name is Manasse, I am the founder of AdRise and I have extensive experience in UGC, social media analytics and machine learning. I also have a part-time occupation in marketing at a european software startup (Quodari). I use my skillset and combine it into creating the most converting TikTok slideshow system.
             </p>
-            <h2 className="mt-3 font-display text-3xl md:text-5xl font-extrabold tracking-tight max-w-[800px]">
-              From topic to viral slideshow in under 60 seconds.
-            </h2>
-            <div className="mt-12 grid md:grid-cols-3 gap-6">
-              {steps.map((s) => (
-                <div
-                  key={s.n}
-                  className="rounded-xl border border-[#E5E7EB] bg-white p-8"
-                >
-                  <div className="flex items-center gap-3">
-                    <span
-                      className="rounded-md px-2 py-0.5 text-[13px] font-bold"
-                      style={{
-                        color: ACCENT,
-                        background: "rgba(255,59,92,0.08)",
-                      }}
+          </div>
+          <div className="relative max-w-4xl mx-auto rounded-2xl overflow-hidden border border-border/60 shadow-glow bg-card">
+            <div className="relative" style={{ paddingBottom: "56.25%", height: 0 }}>
+              <iframe
+                src="https://www.loom.com/embed/3ff4dc9d2cb040a9a184e4eef18f60f0"
+                title="AdRise demo"
+                allowFullScreen
+                className="absolute inset-0 w-full h-full"
+              />
+            </div>
+          </div>
+          <div className="mt-6 flex flex-wrap justify-center gap-3">
+            <Button variant="outline" asChild><Link to="/release-notes"><Megaphone className="h-4 w-4" />See what's shipped & what's coming</Link></Button>
+            <FeedbackDialog />
+          </div>
+        </section>
+
+        <section className="container py-20 border-t">
+          <div className="grid md:grid-cols-2 gap-8">
+            {[
+              { icon: ImageIcon, title: "Smart image library", desc: "Upload once. AI auto-tags and sorts every image so you can find it fast.", img: featureLibrary, alt: "AdRise image library with auto-tagged folders" },
+              { icon: Wand2, title: "AI writes the script", desc: "Hooks, value props, and CTAs. Tuned for TikTok-native, human voice.", img: featureEditor, alt: "AdRise slideshow editor with AI-generated TikTok hook" },
+            ].map((f, i) => (
+              <div key={f.title} className="group relative">
+                {/* glow */}
+                <div className="absolute -inset-1 rounded-3xl bg-gradient-primary opacity-0 group-hover:opacity-30 blur-2xl transition-opacity duration-500" aria-hidden />
+                <div className="relative h-full rounded-3xl border border-border/60 bg-card/60 backdrop-blur-xl p-7 shadow-card overflow-hidden flex flex-col transition-all duration-500 hover:-translate-y-1 hover:border-primary/40">
+                  {/* subtle corner gradient */}
+                  <div className="pointer-events-none absolute -top-24 -right-24 h-56 w-56 rounded-full bg-gradient-primary opacity-20 blur-3xl" aria-hidden />
+
+                  <div className="relative flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-primary shadow-glow mb-5">
+                    <f.icon className="h-5 w-5 text-primary-foreground" />
+                  </div>
+                  <h3 className="relative font-display text-xl font-bold mb-2">{f.title}</h3>
+                  <p className="relative text-muted-foreground mb-6">{f.desc}</p>
+
+                  {/* floating screenshot mockup */}
+                  <div className="relative mt-auto">
+                    <div className="absolute inset-x-4 -bottom-2 h-12 bg-primary/30 blur-2xl rounded-full" aria-hidden />
+                    <div
+                      className="relative rounded-xl overflow-hidden border border-border/80 bg-background shadow-2xl transition-transform duration-500 group-hover:-translate-y-2 group-hover:rotate-0"
+                      style={{ transform: `rotate(${i % 2 === 0 ? -1.5 : 1.5}deg)` }}
                     >
-                      {s.n}
-                    </span>
-                    <s.icon className="h-5 w-5" style={{ color: ACCENT }} />
+                      {/* faux window chrome */}
+                      <div className="flex items-center gap-1.5 px-3 py-2 bg-muted/60 border-b border-border/60">
+                        <span className="h-2.5 w-2.5 rounded-full bg-destructive/70" />
+                        <span className="h-2.5 w-2.5 rounded-full bg-warning/70" />
+                        <span className="h-2.5 w-2.5 rounded-full bg-success/70" />
+                      </div>
+                      <div className="bg-background">
+                        <img src={f.img} alt={f.alt} loading="lazy" className="w-full h-auto block" />
+                      </div>
+                    </div>
                   </div>
-                  <h3 className="mt-5 font-display text-xl font-bold">{s.title}</h3>
-                  <p className="mt-2 text-[15px] leading-relaxed text-[#6B7280]">
-                    {s.desc}
-                  </p>
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
           </div>
         </section>
 
-        {/* RESULTS */}
-        <section className="px-6 md:px-10 py-16 md:py-[120px] border-t border-[#E5E7EB]">
-          <div className="mx-auto max-w-[1100px] grid md:grid-cols-2 gap-12 md:gap-16">
-            <div>
-              <p
-                className="text-xs font-bold tracking-[0.2em] uppercase"
-                style={{ color: ACCENT }}
-              >
-                Real results
-              </p>
-              <h2 className="mt-3 font-display text-3xl md:text-5xl font-extrabold tracking-tight">
-                What happens when the algorithm learns your audience.
-              </h2>
-              <h3 className="mt-6 font-display text-xl font-bold">
-                The self-learning system isn't a gimmick.
-              </h3>
-              <p className="mt-3 text-[15px] leading-relaxed text-[#6B7280]">
-                Most TikTok tools give you a template. AdRise gives you a system
-                that runs experiments on your behalf — testing hook styles, slide
-                counts, and design approaches — then doubles down on what actually
-                converts your specific audience.
-              </p>
-              <ul className="mt-6 space-y-3">
-                {insights.map((i) => (
-                  <li key={i} className="flex gap-3 text-[15px]">
-                    <Check className="mt-0.5 h-5 w-5 shrink-0 text-[#22C55E]" />
-                    <span>{i}</span>
-                  </li>
+        <section id="pricing" className="container py-20 border-t">
+          <div className="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto">
+            <Card className="p-8 shadow-card relative">
+              <span className="absolute -top-3 left-6 bg-warning text-warning-foreground text-xs font-bold px-3 py-1 rounded-full">EARLY BETA · $0.99 first month</span>
+              <h3 className="font-display text-2xl font-bold mb-1">Starter</h3>
+              <p className="text-muted-foreground mb-6">For solo creators getting going</p>
+              <div className="mb-2 flex items-baseline gap-2">
+                <span className="text-5xl font-bold font-display">$0.99</span>
+                <span className="text-muted-foreground line-through">$19</span>
+                <span className="text-muted-foreground">first month</span>
+              </div>
+              <p className="text-xs text-muted-foreground mb-6">Then $19/mo. Limited-time offer for early beta adopters.</p>
+              <ul className="space-y-3 mb-8 text-sm">
+                {["1 workspace", "50 slideshows / month", "500 image uploads", "All AI features", "ZIP export"].map(f => (
+                  <li key={f} className="flex items-center gap-2"><Check className="h-4 w-4 text-success" />{f}</li>
                 ))}
               </ul>
-            </div>
-            <div className="space-y-4">
-              {resultCards.map((c, i) => (
-                <div
-                  key={i}
-                  className="rounded-xl p-6"
-                  style={{ background: c.bg, border: `1px solid ${c.border}` }}
-                >
-                  <div className="flex items-baseline gap-3">
-                    <span className="text-[28px]">{c.emoji}</span>
-                    <span className="text-2xl font-bold">{c.metric}</span>
-                  </div>
-                  <p className="mt-2 text-sm text-[#6B7280]">"{c.quote}"</p>
-                  <p className="mt-2 text-[13px] text-[#9CA3AF]">{c.who}</p>
-                </div>
-              ))}
-            </div>
+              <Button variant="outline" className="w-full" asChild><Link to="/auth?mode=signup">Get Starter for $0.99</Link></Button>
+            </Card>
+            <Card className="p-8 shadow-glow border-primary border-2 relative">
+              <span className="absolute -top-3 right-6 bg-gradient-primary text-primary-foreground text-xs font-bold px-3 py-1 rounded-full">POPULAR · 60% OFF</span>
+              <h3 className="font-display text-2xl font-bold mb-1">Pro</h3>
+              <p className="text-muted-foreground mb-6">For teams shipping ads daily</p>
+              <div className="mb-2 flex items-baseline gap-2">
+                <span className="text-5xl font-bold font-display">$19.60</span>
+                <span className="text-muted-foreground line-through">$49</span>
+                <span className="text-muted-foreground">/mo</span>
+              </div>
+              <p className="text-xs text-muted-foreground mb-6">First month, then $49/mo.</p>
+              <ul className="space-y-3 mb-8 text-sm">
+                {["5 workspaces", "Unlimited slideshows", "Unlimited uploads", "Priority AI processing", "ZIP export", "Priority support"].map(f => (
+                  <li key={f} className="flex items-center gap-2"><Check className="h-4 w-4 text-success" />{f}</li>
+                ))}
+              </ul>
+              <Button className="w-full shadow-glow" asChild><Link to="/auth?mode=signup">Get Pro</Link></Button>
+            </Card>
           </div>
         </section>
 
-        {/* THE STORY — how the AI learns your brand */}
-        <section className="px-6 md:px-10 py-16 md:py-[120px] border-t border-[#E5E7EB]">
-          <div className="mx-auto max-w-[900px]">
-            <p
-              className="text-xs font-bold tracking-[0.2em] uppercase text-center"
-              style={{ color: ACCENT }}
-            >
-              The story
-            </p>
-            <h2 className="mt-3 text-center font-display text-3xl md:text-5xl font-extrabold tracking-tight">
-              How the AI quietly turns your brand into a TikTok machine.
-            </h2>
-
-            <div className="mt-14 space-y-6">
-              <div className="rounded-2xl border border-[#E5E7EB] bg-white p-7 md:p-8">
-                <div className="flex items-center gap-3">
-                  <span className="rounded-md px-2.5 py-1 text-[12px] font-bold tracking-wide" style={{ color: ACCENT, background: "rgba(255,59,92,0.08)" }}>DAY 1</span>
-                  <span className="text-[13px] text-[#9CA3AF]">You sign up</span>
-                </div>
-                <h3 className="mt-4 font-display text-xl md:text-2xl font-bold">It knows nothing about you yet.</h3>
-                <p className="mt-3 text-[15px] md:text-[16px] leading-relaxed text-[#4B5563]">
-                  You type your product, drop in your brand colors, and AdRise spits out your first slideshow. Honestly? It's a guess. A good guess — but still a guess. Every brand starts here.
-                </p>
-              </div>
-
-              <div className="rounded-2xl border border-[#E5E7EB] bg-white p-7 md:p-8">
-                <div className="flex items-center gap-3">
-                  <span className="rounded-md px-2.5 py-1 text-[12px] font-bold tracking-wide" style={{ color: ACCENT, background: "rgba(255,59,92,0.08)" }}>WEEK 1</span>
-                  <span className="text-[13px] text-[#9CA3AF]">First 5 posts go live</span>
-                </div>
-                <h3 className="mt-4 font-display text-xl md:text-2xl font-bold">It starts watching.</h3>
-                <p className="mt-3 text-[15px] md:text-[16px] leading-relaxed text-[#4B5563]">
-                  You connect your TikTok. AdRise pulls every view, like, save and watch-time on your posts — automatically, every few hours. No spreadsheets. No manual tagging. It just sees what your audience actually does.
-                </p>
-                <div className="mt-5 grid grid-cols-3 gap-3 text-center">
-                  {[
-                    { k: "Hook style", v: "question vs statement" },
-                    { k: "Slide count", v: "3 vs 7 vs 10" },
-                    { k: "Design", v: "clean vs photo" },
-                  ].map((x) => (
-                    <div key={x.k} className="rounded-lg border border-[#E5E7EB] bg-[#FAFAFA] p-3">
-                      <div className="text-[11px] font-bold tracking-wider text-[#9CA3AF] uppercase">{x.k}</div>
-                      <div className="mt-1 text-[13px] font-medium text-[#0A0A0A]">{x.v}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="rounded-2xl border border-[#E5E7EB] bg-white p-7 md:p-8">
-                <div className="flex items-center gap-3">
-                  <span className="rounded-md px-2.5 py-1 text-[12px] font-bold tracking-wide" style={{ color: ACCENT, background: "rgba(255,59,92,0.08)" }}>WEEK 2–3</span>
-                  <span className="text-[13px] text-[#9CA3AF]">10+ posts tracked</span>
-                </div>
-                <h3 className="mt-4 font-display text-xl md:text-2xl font-bold">It finds the pattern nobody else would.</h3>
-                <p className="mt-3 text-[15px] md:text-[16px] leading-relaxed text-[#4B5563]">
-                  Maybe your audience saves 3x more on question hooks. Maybe 8-slide posts crush 4-slide ones for you specifically. The AI notices things you'd never spot in a dashboard — and it doesn't ask for permission to use them.
-                </p>
-                <div className="mt-5 rounded-lg p-4 border-l-4 text-[14px] italic text-[#4B5563]" style={{ borderColor: ACCENT, background: "rgba(255,59,92,0.04)" }}>
-                  "Question hooks + 7 slides + clean design = 4.2x avg engagement for your account."
-                </div>
-              </div>
-
-              <div className="rounded-2xl p-7 md:p-8 text-white" style={{ background: "linear-gradient(135deg,#0A0A0A 0%,#1F1F1F 100%)" }}>
-                <div className="flex items-center gap-3">
-                  <span className="rounded-md px-2.5 py-1 text-[12px] font-bold tracking-wide text-white" style={{ background: ACCENT }}>MONTH 1+</span>
-                  <span className="text-[13px] text-[#9CA3AF]">Autopilot unlocks</span>
-                </div>
-                <h3 className="mt-4 font-display text-xl md:text-2xl font-bold">Now it's basically your in-house creative team.</h3>
-                <p className="mt-3 text-[15px] md:text-[16px] leading-relaxed text-[#D1D5DB]">
-                  Every new slideshow is built on top of everything it has learned about your audience. You stop guessing. You stop A/B testing manually. You just type a topic — and the AI ships the format it knows your people respond to.
-                </p>
-                <div className="mt-6 grid grid-cols-3 gap-4">
-                  {[
-                    { v: "5–10x", k: "engagement lift" },
-                    { v: "0 min", k: "spent guessing" },
-                    { v: "∞", k: "compounding edge" },
-                  ].map((x) => (
-                    <div key={x.k}>
-                      <div className="font-display text-2xl md:text-3xl font-extrabold" style={{ color: ACCENT }}>{x.v}</div>
-                      <div className="mt-1 text-[12px] text-[#9CA3AF]">{x.k}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <p className="mt-10 text-center text-[15px] text-[#6B7280]">
-              That's the whole product. You post. It learns. It gets better. Forever.
-            </p>
-          </div>
-        </section>
-
-        {/* COMPARISON */}
-        <section className="border-y border-[#E5E7EB] bg-white px-6 md:px-10 py-16 md:py-[120px]">
-          <div className="mx-auto max-w-[900px]">
-            <h2 className="text-center font-display text-3xl md:text-5xl font-extrabold tracking-tight">
-              Most tools guess. AdRise experiments.
-            </h2>
-            <div className="mt-12 overflow-hidden rounded-xl border border-[#E5E7EB] bg-white">
-              <div className="grid grid-cols-2 border-b border-[#E5E7EB] bg-white">
-                <div className="p-4 md:p-5 text-sm md:text-base font-semibold text-[#6B7280] border-r border-[#E5E7EB]">
-                  Other tools
-                </div>
-                <div
-                  className="p-4 md:p-5 text-sm md:text-base font-semibold"
-                  style={{ color: ACCENT }}
-                >
-                  AdRise
-                </div>
-              </div>
-              {comparisons.map(([a, b], i) => (
-                <div
-                  key={i}
-                  className="grid grid-cols-2 border-b border-[#E5E7EB] last:border-b-0"
-                  style={{ background: i % 2 === 1 ? "rgba(0,0,0,0.02)" : "white" }}
-                >
-                  <div className="flex items-center gap-2 p-4 md:p-5 text-sm md:text-base text-[#6B7280] border-r border-[#E5E7EB]">
-                    <X className="h-4 w-4 shrink-0 text-[#EF4444]" />
-                    {a}
-                  </div>
-                  <div className="flex items-center gap-2 p-4 md:p-5 text-sm md:text-base text-[#0A0A0A]">
-                    <Check className="h-4 w-4 shrink-0 text-[#22C55E]" />
-                    {b}
-                  </div>
-                </div>
-              ))}
-            </div>
-            <p className="mt-6 text-center text-[15px] text-[#6B7280]">
-              After 10 posts: AI unlocks optimization mode.
-              <br />
-              After 25 posts: Full autopilot. You just type the topic.
-            </p>
-          </div>
-        </section>
-
-        {/* PRICING */}
-        <section className="px-6 md:px-10 py-16 md:py-[120px]">
-          <div className="mx-auto max-w-[1100px] text-center">
-            <p
-              className="text-xs font-bold tracking-[0.2em] uppercase"
-              style={{ color: ACCENT }}
-            >
-              Pricing
-            </p>
-            <h2 className="mt-3 font-display text-3xl md:text-5xl font-extrabold tracking-tight">
-              Start for less than a coffee.
-            </h2>
-            <p className="mt-4 text-[17px] text-[#6B7280]">
-              First month is $0.99 on any plan. Cancel anytime.
-            </p>
-
-            <div className="mt-12 grid md:grid-cols-2 gap-6 max-w-[820px] mx-auto text-left">
-              {/* Starter */}
-              <div className="relative rounded-2xl border-[1.5px] border-[#E5E7EB] p-8 md:p-10 bg-white">
-                <span className="inline-block rounded-full bg-[#22C55E] px-3 py-1 text-xs font-bold text-white">
-                  First month $0.99
-                </span>
-                <h3 className="mt-5 font-display text-2xl font-bold">Starter</h3>
-                <div className="mt-3 flex items-baseline gap-1">
-                  <span className="text-5xl font-extrabold font-display">$19</span>
-                  <span className="text-[#6B7280]">/mo</span>
-                </div>
-                <ul className="mt-6 space-y-3">
-                  {starterFeatures.map((f) => (
-                    <li key={f} className="flex gap-2 text-[15px]">
-                      <Check className="mt-0.5 h-5 w-5 shrink-0 text-[#22C55E]" />
-                      {f}
-                    </li>
-                  ))}
-                </ul>
-                <Link
-                  to={ctaTarget}
-                  className="mt-8 block rounded-[10px] py-3.5 text-center text-[16px] font-bold text-white transition hover:opacity-90"
-                  style={{ background: ACCENT }}
-                >
-                  Start for $0.99 →
-                </Link>
-              </div>
-
-              {/* Pro */}
-              <div
-                className="relative rounded-2xl border-2 p-8 md:p-10 bg-white"
-                style={{
-                  borderColor: ACCENT,
-                  boxShadow: "0 0 0 4px rgba(255,59,92,0.08)",
-                }}
-              >
-                <div className="flex flex-wrap gap-2">
-                  <span
-                    className="inline-block rounded-full px-3 py-1 text-xs font-bold text-white"
-                    style={{ background: ACCENT }}
-                  >
-                    Most popular
-                  </span>
-                  <span className="inline-block rounded-full bg-[#22C55E] px-3 py-1 text-xs font-bold text-white">
-                    First month $0.99
-                  </span>
-                </div>
-                <h3 className="mt-5 font-display text-2xl font-bold">Pro</h3>
-                <div className="mt-3 flex items-baseline gap-1">
-                  <span className="text-5xl font-extrabold font-display">$49</span>
-                  <span className="text-[#6B7280]">/mo</span>
-                </div>
-                <ul className="mt-6 space-y-3">
-                  {proFeatures.map((f) => (
-                    <li key={f} className="flex gap-2 text-[15px]">
-                      <Check className="mt-0.5 h-5 w-5 shrink-0 text-[#22C55E]" />
-                      {f}
-                    </li>
-                  ))}
-                </ul>
-                <Link
-                  to={ctaTarget}
-                  className="mt-8 block rounded-[10px] py-3.5 text-center text-[16px] font-bold text-white transition hover:opacity-90"
-                  style={{ background: ACCENT }}
-                >
-                  Start for $0.99 →
-                </Link>
-              </div>
-            </div>
-
-            <p className="mt-8 text-[15px] text-[#6B7280]">
-              Both plans include the self-learning algorithm.
-              <br />
-              The AI improves regardless of which plan you're on.
-            </p>
-          </div>
-        </section>
-
-        {/* FAQ */}
-        <section className="px-6 md:px-10 py-16 md:py-[120px] border-t border-[#E5E7EB]">
-          <div className="mx-auto max-w-[800px]">
-            <h2 className="font-display text-3xl md:text-5xl font-extrabold tracking-tight">
-              Questions.
-            </h2>
-            <Accordion
-              type="single"
-              collapsible
-              className="mt-10 rounded-xl border border-[#E5E7EB] divide-y divide-[#E5E7EB]"
-            >
-              {faqs.map((f, i) => (
-                <AccordionItem
-                  key={i}
-                  value={`item-${i}`}
-                  className="border-b-0 px-5 md:px-6"
-                >
-                  <AccordionTrigger className="text-left text-[16px] md:text-[17px] font-semibold py-5 hover:no-underline">
-                    {f.q}
-                  </AccordionTrigger>
-                  <AccordionContent className="text-[15px] leading-relaxed text-[#6B7280] pb-5">
-                    {f.a}
-                  </AccordionContent>
-                </AccordionItem>
-              ))}
-            </Accordion>
-          </div>
-        </section>
-
-        {/* FINAL CTA */}
-        <section className="bg-[#0A0A0A] px-6 md:px-10 py-20 md:py-[120px]">
-          <div className="mx-auto max-w-[900px] text-center">
-            <h2 className="font-display text-4xl md:text-[52px] font-extrabold tracking-tight text-white leading-[1.1]">
-              Your first viral slideshow is one topic away.
-            </h2>
-            <p className="mt-4 text-lg text-[#9CA3AF]">
-              The AI writes it. Designs it. Learns from it. You just post.
-            </p>
-            <div className="mt-10">
-              <Link
-                to={ctaTarget}
-                className="inline-flex items-center gap-2 rounded-[10px] px-9 py-4 text-[17px] font-bold text-white transition hover:opacity-90"
-                style={{ background: ACCENT }}
-              >
-                Start for $0.99 <ArrowRight className="h-4 w-4" />
-              </Link>
-            </div>
-            <p className="mt-4 text-[13px] text-[#4B5563]">
-              First month $0.99 · Cancel anytime · Starts improving after your
-              first 10 posts
-            </p>
-          </div>
-        </section>
-
-        {/* FOOTER */}
-        <footer className="border-t border-[#E5E7EB] bg-white px-6 md:px-10 py-10">
-          <div className="mx-auto flex max-w-[1100px] flex-col md:flex-row items-center justify-between gap-4 text-sm text-[#6B7280]">
-            <div className="flex items-center gap-2">
-              <Logo className="h-6 w-6" />
-              <span>© {new Date().getFullYear()} AdRise</span>
-            </div>
-            <div className="flex items-center gap-5">
-              <Link to="/privacy" className="hover:text-[#0A0A0A]">
-                Privacy Policy
-              </Link>
-              <Link to="/terms" className="hover:text-[#0A0A0A]">
-                Terms of Service
-              </Link>
-              <span>adrise.app</span>
+        <footer className="border-t py-12">
+          <div className="container flex flex-col md:flex-row justify-between gap-4 text-sm text-muted-foreground">
+            <p>© {new Date().getFullYear()} AdRise. All rights reserved.</p>
+            <div className="flex gap-6">
+              <Link to="/release-notes" className="hover:text-foreground">Release notes</Link>
+              <Link to="/privacy" className="hover:text-foreground">Privacy</Link>
+              <Link to="/terms" className="hover:text-foreground">Terms</Link>
             </div>
           </div>
         </footer>
