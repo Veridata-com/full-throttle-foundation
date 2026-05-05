@@ -364,6 +364,98 @@ const Landing = () => {
           </div>
         </section>
 
+        {/* THE STORY — how the AI learns your brand */}
+        <section className="px-6 md:px-10 py-16 md:py-[120px] border-t border-[#E5E7EB]">
+          <div className="mx-auto max-w-[900px]">
+            <p
+              className="text-xs font-bold tracking-[0.2em] uppercase text-center"
+              style={{ color: ACCENT }}
+            >
+              The story
+            </p>
+            <h2 className="mt-3 text-center font-display text-3xl md:text-5xl font-extrabold tracking-tight">
+              How the AI quietly turns your brand into a TikTok machine.
+            </h2>
+
+            <div className="mt-14 space-y-6">
+              <div className="rounded-2xl border border-[#E5E7EB] bg-white p-7 md:p-8">
+                <div className="flex items-center gap-3">
+                  <span className="rounded-md px-2.5 py-1 text-[12px] font-bold tracking-wide" style={{ color: ACCENT, background: "rgba(255,59,92,0.08)" }}>DAY 1</span>
+                  <span className="text-[13px] text-[#9CA3AF]">You sign up</span>
+                </div>
+                <h3 className="mt-4 font-display text-xl md:text-2xl font-bold">It knows nothing about you yet.</h3>
+                <p className="mt-3 text-[15px] md:text-[16px] leading-relaxed text-[#4B5563]">
+                  You type your product, drop in your brand colors, and AdRise spits out your first slideshow. Honestly? It's a guess. A good guess — but still a guess. Every brand starts here.
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-[#E5E7EB] bg-white p-7 md:p-8">
+                <div className="flex items-center gap-3">
+                  <span className="rounded-md px-2.5 py-1 text-[12px] font-bold tracking-wide" style={{ color: ACCENT, background: "rgba(255,59,92,0.08)" }}>WEEK 1</span>
+                  <span className="text-[13px] text-[#9CA3AF]">First 5 posts go live</span>
+                </div>
+                <h3 className="mt-4 font-display text-xl md:text-2xl font-bold">It starts watching.</h3>
+                <p className="mt-3 text-[15px] md:text-[16px] leading-relaxed text-[#4B5563]">
+                  You connect your TikTok. AdRise pulls every view, like, save and watch-time on your posts — automatically, every few hours. No spreadsheets. No manual tagging. It just sees what your audience actually does.
+                </p>
+                <div className="mt-5 grid grid-cols-3 gap-3 text-center">
+                  {[
+                    { k: "Hook style", v: "question vs statement" },
+                    { k: "Slide count", v: "3 vs 7 vs 10" },
+                    { k: "Design", v: "clean vs photo" },
+                  ].map((x) => (
+                    <div key={x.k} className="rounded-lg border border-[#E5E7EB] bg-[#FAFAFA] p-3">
+                      <div className="text-[11px] font-bold tracking-wider text-[#9CA3AF] uppercase">{x.k}</div>
+                      <div className="mt-1 text-[13px] font-medium text-[#0A0A0A]">{x.v}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-[#E5E7EB] bg-white p-7 md:p-8">
+                <div className="flex items-center gap-3">
+                  <span className="rounded-md px-2.5 py-1 text-[12px] font-bold tracking-wide" style={{ color: ACCENT, background: "rgba(255,59,92,0.08)" }}>WEEK 2–3</span>
+                  <span className="text-[13px] text-[#9CA3AF]">10+ posts tracked</span>
+                </div>
+                <h3 className="mt-4 font-display text-xl md:text-2xl font-bold">It finds the pattern nobody else would.</h3>
+                <p className="mt-3 text-[15px] md:text-[16px] leading-relaxed text-[#4B5563]">
+                  Maybe your audience saves 3x more on question hooks. Maybe 8-slide posts crush 4-slide ones for you specifically. The AI notices things you'd never spot in a dashboard — and it doesn't ask for permission to use them.
+                </p>
+                <div className="mt-5 rounded-lg p-4 border-l-4 text-[14px] italic text-[#4B5563]" style={{ borderColor: ACCENT, background: "rgba(255,59,92,0.04)" }}>
+                  "Question hooks + 7 slides + clean design = 4.2x avg engagement for your account."
+                </div>
+              </div>
+
+              <div className="rounded-2xl p-7 md:p-8 text-white" style={{ background: "linear-gradient(135deg,#0A0A0A 0%,#1F1F1F 100%)" }}>
+                <div className="flex items-center gap-3">
+                  <span className="rounded-md px-2.5 py-1 text-[12px] font-bold tracking-wide text-white" style={{ background: ACCENT }}>MONTH 1+</span>
+                  <span className="text-[13px] text-[#9CA3AF]">Autopilot unlocks</span>
+                </div>
+                <h3 className="mt-4 font-display text-xl md:text-2xl font-bold">Now it's basically your in-house creative team.</h3>
+                <p className="mt-3 text-[15px] md:text-[16px] leading-relaxed text-[#D1D5DB]">
+                  Every new slideshow is built on top of everything it has learned about your audience. You stop guessing. You stop A/B testing manually. You just type a topic — and the AI ships the format it knows your people respond to.
+                </p>
+                <div className="mt-6 grid grid-cols-3 gap-4">
+                  {[
+                    { v: "5–10x", k: "engagement lift" },
+                    { v: "0 min", k: "spent guessing" },
+                    { v: "∞", k: "compounding edge" },
+                  ].map((x) => (
+                    <div key={x.k}>
+                      <div className="font-display text-2xl md:text-3xl font-extrabold" style={{ color: ACCENT }}>{x.v}</div>
+                      <div className="mt-1 text-[12px] text-[#9CA3AF]">{x.k}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <p className="mt-10 text-center text-[15px] text-[#6B7280]">
+              That's the whole product. You post. It learns. It gets better. Forever.
+            </p>
+          </div>
+        </section>
+
         {/* COMPARISON */}
         <section className="border-y border-[#E5E7EB] bg-white px-6 md:px-10 py-16 md:py-[120px]">
           <div className="mx-auto max-w-[900px]">
