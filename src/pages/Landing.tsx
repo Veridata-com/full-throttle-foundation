@@ -206,9 +206,7 @@ const Landing = () => {
               <br className="hidden md:inline" /> what works for YOUR audience.
             </h1>
             <p className="mx-auto mt-6 max-w-[580px] text-lg md:text-xl leading-relaxed text-[#6B7280]">
-              Give it a topic. It writes the hooks, designs the slides, posts them,
-              tracks performance, and optimizes automatically. You just download and
-              post.
+              AdRise does everything, improves itself, gets you results.
             </p>
             <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link
