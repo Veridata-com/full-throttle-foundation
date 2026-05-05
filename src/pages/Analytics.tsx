@@ -37,6 +37,25 @@ const Analytics = () => {
   const [loading, setLoading] = useState(true);
   const [generatingInsight, setGeneratingInsight] = useState(false);
   const [linkTarget, setLinkTarget] = useState<any | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<any | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      await supabase.from("post_metrics").delete().eq("posted_slideshow_id", deleteTarget.id);
+      const { error } = await supabase.from("posted_slideshows").delete().eq("id", deleteTarget.id);
+      if (error) throw error;
+      toast.success("Deleted");
+      setDeleteTarget(null);
+      await load();
+    } catch (e: any) {
+      toast.error(e.message || "Failed to delete");
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   const load = async () => {
     if (!user) return;
