@@ -365,7 +365,7 @@ const Landing = () => {
         </section>
 
         {/* COMPARISON */}
-        <section className="border-y border-[#E5E7EB] bg-[#F9FAFB] px-6 md:px-10 py-16 md:py-[120px]">
+        <section className="border-y border-[#E5E7EB] bg-white px-6 md:px-10 py-16 md:py-[120px]">
           <div className="mx-auto max-w-[900px]">
             <h2 className="text-center font-display text-3xl md:text-5xl font-extrabold tracking-tight">
               Most tools guess. AdRise experiments.
