@@ -253,19 +253,24 @@ const Landing = () => {
         </section>
 
         {/* SOCIAL PROOF */}
-        <section className="border-y border-[#E5E7EB] bg-[#F9FAFB] px-6 md:px-10 py-16 md:py-24">
-          <div className="mx-auto grid max-w-[1100px] grid-cols-2 md:grid-cols-4 gap-y-10 md:divide-x md:divide-[#E5E7EB]">
-            {stats.map((s) => (
-              <div key={s.label} className="px-4 text-center">
-                <div
-                  className="font-display text-4xl md:text-5xl font-extrabold"
-                  style={{ color: ACCENT }}
-                >
-                  {s.num}
+        <section className="border-y border-[#E5E7EB] bg-white px-6 md:px-10 py-16 md:py-24">
+          <div className="mx-auto max-w-[1100px]">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-y-10 md:divide-x md:divide-[#E5E7EB]">
+              {stats.map((s) => (
+                <div key={s.label} className="px-4 text-center">
+                  <div
+                    className="font-display text-4xl md:text-5xl font-extrabold"
+                    style={{ color: ACCENT }}
+                  >
+                    {s.num}
+                  </div>
+                  <div className="mt-1 text-[15px] text-[#6B7280]">{s.label}</div>
                 </div>
-                <div className="mt-1 text-[15px] text-[#6B7280]">{s.label}</div>
-              </div>
-            ))}
+              ))}
+            </div>
+            <p className="mt-8 text-center text-[13px] text-[#9CA3AF] italic">
+              * Average results from long-term users. Your mileage will vary based on niche, posting frequency and product.
+            </p>
           </div>
         </section>
 
