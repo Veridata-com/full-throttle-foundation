@@ -18,7 +18,7 @@ const Landing = () => {
   const handleSignOut = async () => { await signOut(); navigate("/"); };
   return (
     <>
-      <SEO title="AdRise — Create on-brand product ads in seconds" description="Upload your product, choose your style, and generate beautiful on-brand ads in seconds with AdRise." canonical="/" />
+      <SEO title="AdRise Create on-brand product ads in seconds" description="Upload your product, choose your style, and generate beautiful on-brand ads in seconds with AdRise." canonical="/" />
       <div className="min-h-screen bg-white text-foreground">
         <header className="border-b bg-white">
           <div className="container flex h-16 items-center justify-between">
@@ -92,7 +92,7 @@ const Landing = () => {
           </div>
         </section>
 
-        {/* How AdRise learns — story */}
+        {/* How AdRise learns story */}
         <section className="container py-20 border-t">
           <div className="max-w-3xl mx-auto text-center mb-12">
             <Badge variant="outline" className="mb-3">How it actually works</Badge>
@@ -105,27 +105,27 @@ const Landing = () => {
               {
                 n: "01",
                 t: "We get to know your brand",
-                d: "You drop in a few product photos and tell us what you sell. AdRise reads your visuals, your tone, your angles — and starts building a brain that's specific to your brand. Not a generic template.",
+                d: "You drop in a few product photos and tell us what you sell. AdRise reads your visuals, your tone, your angles and starts building a brain that's specific to your brand. Not a generic template.",
               },
               {
                 n: "02",
                 t: "It writes slideshows the way a real creator would",
-                d: "Hooks that feel like a person, not a marketer. Captions that sound native to TikTok. Different formats — story-style, problem/solution, POV, listicles — each one designed to test a different theory about what will hit.",
+                d: "Hooks that feel like a person, not a marketer. Captions that sound native to TikTok. Different formats story-style, problem/solution, POV, listicles each one designed to test a different theory about what will hit.",
               },
               {
                 n: "03",
                 t: "You post. We watch every number.",
-                d: "Views, watch time, saves, shares, profile visits, link clicks. Every slideshow becomes a tiny experiment. AdRise quietly logs what worked and what didn't — at the hook level, the slide level, the visual level.",
+                d: "Views, watch time, saves, shares, profile visits, link clicks. Every slideshow becomes a tiny experiment. AdRise quietly logs what worked and what didn't at the hook level, the slide level, the visual level.",
               },
               {
                 n: "04",
                 t: "The algorithm adjusts itself",
-                d: "When a hook style starts outperforming the rest, the next batch of slideshows leans into it. When a slide order kills retention, it stops using it. You don't need to read dashboards — the system just gets smarter with every post.",
+                d: "When a hook style starts outperforming the rest, the next batch of slideshows leans into it. When a slide order kills retention, it stops using it. You don't need to read dashboards the system just gets smarter with every post.",
               },
               {
                 n: "05",
                 t: "Results compound",
-                d: "Week one is decent. Week four is a different planet. By the time you're 30 slideshows in, AdRise knows your audience better than most agencies ever will — and it keeps getting sharper while you sleep.",
+                d: "Week one is decent. Week four is a different planet. By the time you're 30 slideshows in, AdRise knows your audience better than most agencies ever will and it keeps getting sharper while you sleep.",
               },
             ].map((step) => (
               <li key={step.n} className="relative rounded-2xl border border-border/60 bg-white p-6 md:p-8 shadow-card">
