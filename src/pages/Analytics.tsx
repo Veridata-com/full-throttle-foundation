@@ -236,6 +236,7 @@ const Analytics = () => {
                     <th className="px-2 py-2 font-medium">Score</th>
                     <th className="px-2 py-2 font-medium">Source</th>
                     <th className="px-2 py-2 font-medium">Status</th>
+                    <th className="px-2 py-2 font-medium"></th>
                   </tr>
                 </thead>
                 <tbody>
