@@ -50,23 +50,7 @@ const Landing = () => {
           </div>
         </header>
 
-        <section className="relative py-20 md:py-32 text-center overflow-hidden">
-          {/* Mobile-only background image */}
-          <div
-            className="md:hidden absolute inset-0 z-0 bg-no-repeat bg-cover bg-center opacity-60"
-            style={{ backgroundImage: `url(${heroMobileBg})` }}
-            aria-hidden
-          />
-          <div className="md:hidden absolute inset-0 z-0 bg-gradient-to-b from-background/40 via-background/70 to-background" aria-hidden />
-
-          {/* Desktop-only background image */}
-          <div
-            className="hidden md:block absolute inset-0 z-0 bg-no-repeat bg-cover bg-center opacity-70"
-            style={{ backgroundImage: `url(${heroDesktopBg})` }}
-            aria-hidden
-          />
-          <div className="hidden md:block absolute inset-0 z-0 bg-gradient-to-b from-background/30 via-background/60 to-background" aria-hidden />
-
+        <section className="relative py-20 md:py-32 text-center overflow-hidden bg-white">
           <div className="relative z-10 container">
             <div className="mb-6"><CountdownBanner /></div>
             <Badge className="mb-5 bg-warning/15 text-warning border border-warning/30" variant="outline">
@@ -76,7 +60,7 @@ const Landing = () => {
               First <span className="text-gradient">self-learning algorithm</span> that optimizes TikTok slideshow virality and conversion
             </h1>
             <p className="mx-auto max-w-2xl text-lg md:text-xl text-muted-foreground mb-4 animate-fade-in">
-              AdRise creates your slideshows, tests different formats, tracks performance and finds exactly what works best for your product. Don't guess what works, let AdRise analyze and optimize your organic marketing.
+              AdRise does everything, improves itself, gets you results.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center animate-fade-in">
               <Button size="lg" className="text-base h-12 px-8 shadow-glow" asChild>
@@ -86,6 +70,82 @@ const Landing = () => {
                 <a href="#demo">Watch the demo</a>
               </Button>
             </div>
+          </div>
+        </section>
+
+        {/* Results stats */}
+        <section className="container py-16 border-t">
+          <div className="text-center mb-10">
+            <h2 className="font-display text-3xl md:text-4xl font-bold mb-3">Results that speak for themselves</h2>
+            <p className="text-sm text-muted-foreground">Average results across long-term AdRise users.</p>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-5xl mx-auto">
+            {[
+              { v: "827K+", l: "Average views generated" },
+              { v: "3.2M", l: "Best single slideshow" },
+              { v: "96%", l: "Gross margin per slideshow" },
+              { v: "3 days", l: "Average time to first customer" },
+            ].map((s) => (
+              <div key={s.l} className="rounded-2xl border border-border/60 bg-white p-6 text-center shadow-card">
+                <div className="font-display text-3xl md:text-4xl font-bold text-gradient mb-2">{s.v}</div>
+                <div className="text-sm text-muted-foreground">{s.l}</div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* How AdRise learns — story */}
+        <section className="container py-20 border-t">
+          <div className="max-w-3xl mx-auto text-center mb-12">
+            <Badge variant="outline" className="mb-3">How it actually works</Badge>
+            <h2 className="font-display text-3xl md:text-4xl font-bold mb-3">It's like hiring a creative team that never sleeps</h2>
+            <p className="text-muted-foreground">Here's the honest version of what happens after you upload your first product photos.</p>
+          </div>
+
+          <ol className="relative max-w-3xl mx-auto space-y-6">
+            {[
+              {
+                n: "01",
+                t: "We get to know your brand",
+                d: "You drop in a few product photos and tell us what you sell. AdRise reads your visuals, your tone, your angles — and starts building a brain that's specific to your brand. Not a generic template.",
+              },
+              {
+                n: "02",
+                t: "It writes slideshows the way a real creator would",
+                d: "Hooks that feel like a person, not a marketer. Captions that sound native to TikTok. Different formats — story-style, problem/solution, POV, listicles — each one designed to test a different theory about what will hit.",
+              },
+              {
+                n: "03",
+                t: "You post. We watch every number.",
+                d: "Views, watch time, saves, shares, profile visits, link clicks. Every slideshow becomes a tiny experiment. AdRise quietly logs what worked and what didn't — at the hook level, the slide level, the visual level.",
+              },
+              {
+                n: "04",
+                t: "The algorithm adjusts itself",
+                d: "When a hook style starts outperforming the rest, the next batch of slideshows leans into it. When a slide order kills retention, it stops using it. You don't need to read dashboards — the system just gets smarter with every post.",
+              },
+              {
+                n: "05",
+                t: "Results compound",
+                d: "Week one is decent. Week four is a different planet. By the time you're 30 slideshows in, AdRise knows your audience better than most agencies ever will — and it keeps getting sharper while you sleep.",
+              },
+            ].map((step) => (
+              <li key={step.n} className="relative rounded-2xl border border-border/60 bg-white p-6 md:p-8 shadow-card">
+                <div className="flex items-start gap-5">
+                  <div className="font-display text-3xl md:text-4xl font-bold text-gradient shrink-0 w-14">{step.n}</div>
+                  <div>
+                    <h3 className="font-display text-xl md:text-2xl font-bold mb-2">{step.t}</h3>
+                    <p className="text-muted-foreground leading-relaxed">{step.d}</p>
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ol>
+
+          <div className="text-center mt-12">
+            <Button size="lg" className="text-base h-12 px-8 shadow-glow" asChild>
+              <Link to="/auth?mode=signup">Let AdRise start learning your brand <ArrowRight className="ml-1 h-4 w-4" /></Link>
+            </Button>
           </div>
         </section>
 
