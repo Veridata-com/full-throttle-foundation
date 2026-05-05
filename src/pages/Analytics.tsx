@@ -7,7 +7,17 @@ import { Button } from "@/components/ui/button";
 
 import { Badge } from "@/components/ui/badge";
 import { SEO } from "@/components/SEO";
-import { BarChart2, Loader2, RefreshCw, Sparkles, ArrowRight, AlertCircle, Link2 } from "lucide-react";
+import { BarChart2, Loader2, RefreshCw, Sparkles, ArrowRight, AlertCircle, Link2, Trash2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { LinkSlideshowDialog } from "@/components/LinkSlideshowDialog";
 import { TiktokAccountsManager } from "@/components/TiktokAccountsManager";
@@ -27,6 +37,25 @@ const Analytics = () => {
   const [loading, setLoading] = useState(true);
   const [generatingInsight, setGeneratingInsight] = useState(false);
   const [linkTarget, setLinkTarget] = useState<any | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<any | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      await supabase.from("post_metrics").delete().eq("posted_slideshow_id", deleteTarget.id);
+      const { error } = await supabase.from("posted_slideshows").delete().eq("id", deleteTarget.id);
+      if (error) throw error;
+      toast.success("Deleted");
+      setDeleteTarget(null);
+      await load();
+    } catch (e: any) {
+      toast.error(e.message || "Failed to delete");
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   const load = async () => {
     if (!user) return;
@@ -207,6 +236,7 @@ const Analytics = () => {
                     <th className="px-2 py-2 font-medium">Score</th>
                     <th className="px-2 py-2 font-medium">Source</th>
                     <th className="px-2 py-2 font-medium">Status</th>
+                    <th className="px-2 py-2 font-medium"></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -234,6 +264,11 @@ const Analytics = () => {
                           )}
                         </td>
                         <td className="px-2 py-2"><StatusPill status={p.sync_status} /></td>
+                        <td className="px-2 py-2">
+                          <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive" onClick={() => setDeleteTarget(p)} title="Delete">
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </td>
                       </tr>
                     );
                   })}
@@ -249,6 +284,22 @@ const Analytics = () => {
         postedSlideshow={linkTarget}
         onLinked={load}
       />
+      <AlertDialog open={!!deleteTarget} onOpenChange={(o) => !o && !deleting && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this tracked post?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This removes the post and its metrics from analytics. Your generated slideshow is not affected. If sync is still enabled, an auto-imported post may reappear on next sync.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={(e) => { e.preventDefault(); handleDelete(); }} disabled={deleting} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 };
