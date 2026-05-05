@@ -7,7 +7,17 @@ import { Button } from "@/components/ui/button";
 
 import { Badge } from "@/components/ui/badge";
 import { SEO } from "@/components/SEO";
-import { BarChart2, Loader2, RefreshCw, Sparkles, ArrowRight, AlertCircle, Link2 } from "lucide-react";
+import { BarChart2, Loader2, RefreshCw, Sparkles, ArrowRight, AlertCircle, Link2, Trash2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { LinkSlideshowDialog } from "@/components/LinkSlideshowDialog";
 import { TiktokAccountsManager } from "@/components/TiktokAccountsManager";
