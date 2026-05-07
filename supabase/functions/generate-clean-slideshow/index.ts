@@ -165,7 +165,7 @@ Deno.serve(async (req) => {
 
     await setProgress(admin, slideshowId, "writing_copy", 1, 4, "Writing slide scripts...");
 
-    const writePrompt = `Create a ${numSlides}-slide TikTok carousel.
+    const writePromptDesigned = `Create a ${numSlides}-slide TikTok carousel.
 
 BRAND: ${brand.brand_name}
 ${brand.brand_tagline ? `TAGLINE: ${brand.brand_tagline}\n` : ""}${brand.brand_url ? `URL: ${brand.brand_url}\n` : ""}
@@ -192,13 +192,27 @@ Available icons: ${ICONS.join(", ")}
 
 Return exactly ${numSlides} slides. First = hook, last = cta_card.`;
 
+    const writePromptStory = `Write a ${numSlides}-slide TikTok carousel in STORY MODE.
+
+BRAND: ${brand.brand_name}
+${brand.brand_tagline ? `TAGLINE: ${brand.brand_tagline}\n` : ""}${brand.brand_url ? `URL: ${brand.brand_url}\n` : ""}
+AUDIENCE: ${workspace.target_audience || "general"}
+TOPIC: "${topic}"
+CTA: ${ctaText || "soft, in story voice"}
+
+Write ${numSlides} slides. Every slide uses template "story_canvas" with variables { story_text }. icon = null. text = same content as story_text.
+Slide 1 = honest, contrarian or vulnerable hook. Last slide = soft CTA in story voice.`;
+
+    const isStory = designStyle === "story";
+    const writePrompt = isStory ? writePromptStory : writePromptDesigned;
+
     const writeRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: { "Content-Type": "application/json", "Authorization": `Bearer ${lovableKey}` },
       body: JSON.stringify({
         model: "openai/gpt-5",
         messages: [
-          { role: "system", content: SYSTEM },
+          { role: "system", content: isStory ? SYSTEM_STORY : SYSTEM_DESIGNED },
           { role: "user", content: writePrompt },
         ],
         tools: [{
