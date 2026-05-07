@@ -14,6 +14,8 @@ const corsHeaders = {
 
 interface Body {
   slideshowId: string;
+  /** Optional: force a design style. "designed" = templated, "story" = white canvas story mode, "auto" = let AI pick. */
+  designStyleOverride?: "auto" | "designed" | "story";
 }
 
 const TEMPLATES = ["title_card", "centered_text", "big_number", "list_items", "step_number", "highlight_box", "cta_card", "quote_style"];
@@ -22,6 +24,7 @@ const ICONS = ["arrow_right", "check", "star", "lightning", "chart_up", "users",
 const HOOK_STYLES = ["question", "contrarian", "pain", "result", "curiosity"] as const;
 const CONTENT_STYLES = ["educational", "storytelling", "product_showcase", "myth-bust", "listicle"] as const;
 const SLIDE_COUNT_POOL = [6, 7, 8, 9];
+const DESIGN_STYLES = ["designed", "story"] as const;
 
 function pick<T>(arr: readonly T[]): T { return arr[Math.floor(Math.random() * arr.length)]; }
 
