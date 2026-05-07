@@ -14,6 +14,8 @@ const corsHeaders = {
 
 interface Body {
   slideshowId: string;
+  /** Optional: force a design style. "designed" = templated, "story" = white canvas story mode, "auto" = let AI pick. */
+  designStyleOverride?: "auto" | "designed" | "story";
 }
 
 const TEMPLATES = ["title_card", "centered_text", "big_number", "list_items", "step_number", "highlight_box", "cta_card", "quote_style"];
@@ -22,10 +24,11 @@ const ICONS = ["arrow_right", "check", "star", "lightning", "chart_up", "users",
 const HOOK_STYLES = ["question", "contrarian", "pain", "result", "curiosity"] as const;
 const CONTENT_STYLES = ["educational", "storytelling", "product_showcase", "myth-bust", "listicle"] as const;
 const SLIDE_COUNT_POOL = [6, 7, 8, 9];
+const DESIGN_STYLES = ["designed", "story"] as const;
 
 function pick<T>(arr: readonly T[]): T { return arr[Math.floor(Math.random() * arr.length)]; }
 
-const SYSTEM = `You are an autonomous TikTok carousel designer + scriptwriter. Decide nothing about strategy — that has already been decided for you. Just write the copy and pick the templates.
+const SYSTEM_DESIGNED = `You are an autonomous TikTok carousel designer + scriptwriter. Decide nothing about strategy — that has already been decided for you. Just write the copy and pick the templates.
 
 Rules:
 - Pick the best template per slide. Vary across slides.
@@ -38,6 +41,22 @@ Rules:
 - Middle slides: each ends on an open loop.
 - Last slide: cta_card. Resolve tension then drop the CTA naturally.
 - Each slide also needs a "text" field — the plain text version (1-3 short sentences, lowercase, separated by \\n) used as a fallback.
+Return ONLY a valid tool call.`;
+
+const SYSTEM_STORY = `You are a real founder writing a TikTok carousel as if texting a friend about your product.
+
+STORY MODE RULES:
+- Use template "story_canvas" for EVERY slide. No exceptions.
+- Write like a real founder texting a friend about their product. Lowercase. Short sentences.
+- No hype words. Banned: game-changer, unlock, journey, leverage, utilize, dive in, explore, revolutionary, amazing.
+- No exclamation marks, no caps, no emoji, no em-dashes.
+- Tell the actual story of why the product exists and what it does. Be honest, not salesy.
+- Maximum 60 words per slide. Use \\n between sentences for natural pacing.
+- Slide 1 = hook that pulls people in (an honest moment, a confession, a contrarian thought). Never starts with "I" alone or the brand name.
+- Middle slides build the story with open loops.
+- Last slide = soft CTA, still in story voice. Mention what to do next without sounding salesy.
+- Each slide variables: { story_text: "the lowercase multi-line text" }. icon = null. template = "story_canvas".
+- Each slide also needs a "text" field — same content as story_text (used as fallback).
 Return ONLY a valid tool call.`;
 
 function clean(s: any): string {
@@ -80,7 +99,7 @@ Deno.serve(async (req) => {
     const userId = user?.id;
     if (!userId) return j({ error: "unauthorized" }, 401);
 
-    const { slideshowId } = (await req.json()) as Body;
+    const { slideshowId, designStyleOverride } = (await req.json()) as Body;
     if (!slideshowId) return j({ error: "slideshowId required" }, 400);
 
     const admin = createClient(supabaseUrl, serviceKey);
@@ -126,6 +145,15 @@ Deno.serve(async (req) => {
     const explorationRate = insights ? 0.3 : 0.7;
     const isExploration = Math.random() < explorationRate;
 
+    // Decide design style: user override > stored slideshow choice > AI pick.
+    const slideshowChoice = (slideshow as any).design_style as string | undefined;
+    const overrideRequest = (designStyleOverride && designStyleOverride !== "auto")
+      ? designStyleOverride
+      : (slideshowChoice && slideshowChoice !== "auto" ? slideshowChoice : null);
+    const designStyle: "designed" | "story" = overrideRequest === "story" || overrideRequest === "designed"
+      ? overrideRequest
+      : pick(DESIGN_STYLES);
+
     const userProvidedSlideCount = slideshow.ai_decided ? null : slideshow.num_slides;
     const hookStyle = isExploration ? pick(HOOK_STYLES) : (insights?.next_hook_suggestion ? "result" : pick(HOOK_STYLES));
     const slideCount = userProvidedSlideCount ?? insights?.best_slide_count ?? pick(SLIDE_COUNT_POOL);
@@ -137,7 +165,7 @@ Deno.serve(async (req) => {
 
     await setProgress(admin, slideshowId, "writing_copy", 1, 4, "Writing slide scripts...");
 
-    const writePrompt = `Create a ${numSlides}-slide TikTok carousel.
+    const writePromptDesigned = `Create a ${numSlides}-slide TikTok carousel.
 
 BRAND: ${brand.brand_name}
 ${brand.brand_tagline ? `TAGLINE: ${brand.brand_tagline}\n` : ""}${brand.brand_url ? `URL: ${brand.brand_url}\n` : ""}
@@ -164,13 +192,27 @@ Available icons: ${ICONS.join(", ")}
 
 Return exactly ${numSlides} slides. First = hook, last = cta_card.`;
 
+    const writePromptStory = `Write a ${numSlides}-slide TikTok carousel in STORY MODE.
+
+BRAND: ${brand.brand_name}
+${brand.brand_tagline ? `TAGLINE: ${brand.brand_tagline}\n` : ""}${brand.brand_url ? `URL: ${brand.brand_url}\n` : ""}
+AUDIENCE: ${workspace.target_audience || "general"}
+TOPIC: "${topic}"
+CTA: ${ctaText || "soft, in story voice"}
+
+Write ${numSlides} slides. Every slide uses template "story_canvas" with variables { story_text }. icon = null. text = same content as story_text.
+Slide 1 = honest, contrarian or vulnerable hook. Last slide = soft CTA in story voice.`;
+
+    const isStory = designStyle === "story";
+    const writePrompt = isStory ? writePromptStory : writePromptDesigned;
+
     const writeRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: { "Content-Type": "application/json", "Authorization": `Bearer ${lovableKey}` },
       body: JSON.stringify({
         model: "openai/gpt-5",
         messages: [
-          { role: "system", content: SYSTEM },
+          { role: "system", content: isStory ? SYSTEM_STORY : SYSTEM_DESIGNED },
           { role: "user", content: writePrompt },
         ],
         tools: [{
@@ -186,7 +228,7 @@ Return exactly ${numSlides} slides. First = hook, last = cta_card.`;
                   items: {
                     type: "object",
                     properties: {
-                      template: { type: "string", enum: TEMPLATES },
+                      template: { type: "string", enum: isStory ? ["story_canvas"] : TEMPLATES },
                       mood_override: { type: ["string", "null"], enum: ["dark", "light", null] },
                       icon: { type: ["string", "null"] },
                       text: { type: "string", description: "REQUIRED. Plain-text version of the slide, 1-3 short lowercase sentences separated by \\n. This is what the viewer reads." },
@@ -284,6 +326,9 @@ Return exactly ${numSlides} slides. First = hook, last = cta_card.`;
           if (!has("quote_text")) v.quote_text = lines[0] || "";
           if (!has("attribution")) v.attribution = lines[1] || "";
           break;
+        case "story_canvas":
+          if (!has("story_text")) v.story_text = text || lines.join("\n") || "";
+          break;
       }
       return v;
     }
@@ -296,7 +341,7 @@ Return exactly ${numSlides} slides. First = hook, last = cta_card.`;
     }
 
     const last = slides[slides.length - 1];
-    if (last.template !== "cta_card") {
+    if (!isStory && last.template !== "cta_card") {
       slides[slides.length - 1] = {
         template: "cta_card",
         icon: "rocket",
@@ -307,6 +352,17 @@ Return exactly ${numSlides} slides. First = hook, last = cta_card.`;
           brand_url: brand.brand_url || "",
         },
       };
+    }
+    if (isStory) {
+      // Force every slide template to story_canvas in case the model returned something else.
+      for (const s of slides) {
+        if (s.template !== "story_canvas") {
+          const txt = s.text || "";
+          s.template = "story_canvas";
+          s.icon = null;
+          s.variables = { story_text: txt };
+        }
+      }
     }
 
     await setProgress(admin, slideshowId, "rendering", 2, 4, "Designing your slides...");
@@ -327,6 +383,7 @@ Return exactly ${numSlides} slides. First = hook, last = cta_card.`;
 
     await admin.from("slideshows").update({
       generation_mode: "clean_designed",
+      design_style: designStyle,
       hook_style: hookStyle,
       content_style: contentStyle,
       num_slides: numSlides,
@@ -334,19 +391,19 @@ Return exactly ${numSlides} slides. First = hook, last = cta_card.`;
       all_slide_texts: allTexts,
       templates_used: templatesUsed,
       icons_used: iconsUsed,
-    }).eq("id", slideshowId);
+    } as any).eq("id", slideshowId);
 
     // Log decision
     await admin.from("ai_decisions").insert({
       user_id: userId,
       slideshow_id: slideshowId,
-      decision_type: isExploration ? "explore" : "exploit",
+      decision_type: overrideRequest ? "override" : (isExploration ? "explore" : "exploit"),
       hook_style_chosen: hookStyle,
       slide_count_chosen: numSlides,
       content_style_chosen: contentStyle,
       generation_mode_chosen: "clean_designed",
-      design_styles_chosen: [brand.slide_mood],
-      reasoning: `${isExploration ? "Exploration" : "Exploitation"}: hook=${hookStyle}, slides=${numSlides}, style=${contentStyle}, mode=clean_designed. ${insights ? `Based on ${insights.posts_analyzed} tracked posts.` : "No data yet, used defaults."}`,
+      design_styles_chosen: [designStyle],
+      reasoning: `${overrideRequest ? `User override: ${designStyle}` : (isExploration ? "Exploration" : "Exploitation")}: design_style=${designStyle}, hook=${hookStyle}, slides=${numSlides}, style=${contentStyle}. ${insights ? `Based on ${insights.posts_analyzed} tracked posts.` : "No data yet, used defaults."}`,
     });
 
     return j({ ok: true, slides, brand });
