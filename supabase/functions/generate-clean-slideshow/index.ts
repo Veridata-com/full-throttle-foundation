@@ -43,21 +43,19 @@ Rules:
 - Each slide also needs a "text" field — the plain text version (1-3 short sentences, lowercase, separated by \\n) used as a fallback.
 Return ONLY a valid tool call.`;
 
-const SYSTEM_STORY = `You are a real founder writing a TikTok carousel as if texting a friend about your product.
+const SYSTEM_STORY = `You're writing TikTok slideshow text for a SaaS product. Write like a real founder who types fast and doesn't edit. Lowercase. Short bursts. No polish.
 
-STORY MODE RULES:
-- Use template "story_canvas" for EVERY slide. No exceptions.
-- Write like a real founder texting a friend about their product. Lowercase. Short sentences.
-- No hype words. Banned: game-changer, unlock, journey, leverage, utilize, dive in, explore, revolutionary, amazing.
+HARD RULES:
+- Max 4 lines per slide, max 8 words per line.
+- Some slides are just 2 lines, don't always fill space.
+- Vary line length randomly, don't make it symmetrical.
+- NO setup-payoff structure, NO punchlines, NO three-part rhythm.
+- NEVER use: honestly, literally, actually, game-changer, unlock, revolutionary, journey, leverage, utilize, dive in, explore, amazing.
 - No exclamation marks, no caps, no emoji, no em-dashes.
-- Tell the actual story of why the product exists and what it does. Be honest, not salesy.
-- Maximum 60 words per slide. Use \\n between sentences for natural pacing.
-- Slide 1 = hook that pulls people in (an honest moment, a confession, a contrarian thought). Never starts with "I" alone or the brand name.
-- Middle slides build the story with open loops.
-- Last slide = soft CTA, still in story voice. Mention what to do next without sounding salesy.
-- Each slide variables: { story_text: "the lowercase multi-line text" }. icon = null. template = "story_canvas".
-- Each slide also needs a "text" field — same content as story_text (used as fallback).
-Return ONLY a valid tool call.`;
+- Sometimes trail off mid-thought with periods...
+- Sometimes one word per line.
+- Slide 1 = hook (honest moment, confession, contrarian thought). Never starts with "I" alone or the brand name.
+- Last slide = soft CTA in the same voice. No salesy energy.`;
 
 function clean(s: any): string {
   if (typeof s !== "string") return "";
@@ -206,64 +204,109 @@ Slide 1 = honest, contrarian or vulnerable hook. Last slide = soft CTA in story 
     const isStory = designStyle === "story";
     const writePrompt = isStory ? writePromptStory : writePromptDesigned;
 
-    const writeRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${lovableKey}` },
-      body: JSON.stringify({
-        model: "openai/gpt-5",
-        messages: [
-          { role: "system", content: isStory ? SYSTEM_STORY : SYSTEM_DESIGNED },
-          { role: "user", content: writePrompt },
-        ],
-        tools: [{
-          type: "function",
-          function: {
-            name: "design_slides",
-            description: "Design a TikTok carousel of clean designed slides.",
-            parameters: {
-              type: "object",
-              properties: {
-                slides: {
-                  type: "array",
-                  items: {
-                    type: "object",
-                    properties: {
-                      template: { type: "string", enum: isStory ? ["story_canvas"] : TEMPLATES },
-                      mood_override: { type: ["string", "null"], enum: ["dark", "light", null] },
-                      icon: { type: ["string", "null"] },
-                      text: { type: "string", description: "REQUIRED. Plain-text version of the slide, 1-3 short lowercase sentences separated by \\n. This is what the viewer reads." },
-                      variables: {
-                        type: "object",
-                        description: "REQUIRED. Template-specific text vars — must be filled with REAL copy, never empty strings. Schemas: title_card={label,heading,subtext}; centered_text={main_text,support_text}; big_number={number,unit,context}; list_items={section_label,items:[{icon,item_title,item_description}]} (3-5 items, every item has icon from the icon list); step_number={step_number,instruction,detail}; highlight_box={context_above,highlight_text,context_below}; cta_card={cta_heading,cta_text,brand_url}; quote_style={quote_text,attribution}.",
-                        additionalProperties: true,
+    let slides: any[] = [];
+
+    if (isStory) {
+      // === Story Mode: Claude (Anthropic) text generation ===
+      const anthropicKey = Deno.env.get("ANTHROPIC_API_KEY");
+      if (!anthropicKey) {
+        await admin.from("slideshows").update({ status: "failed", generation_error: "ANTHROPIC_API_KEY missing for Story Mode." }).eq("id", slideshowId);
+        return j({ error: "anthropic_key_missing" }, 500);
+      }
+      const userMsg = `${writePrompt}\n\nReturn STRICT JSON only, no prose, no code fences, in this shape: {"slides":[{"text":"line1\\nline2"}, ...]} with exactly ${numSlides} slides. Each "text" follows the HARD RULES above.`;
+      const claudeRes = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": anthropicKey,
+          "anthropic-version": "2023-06-01",
+        },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 2000,
+          messages: [{ role: "user", content: SYSTEM_STORY + "\n\n" + userMsg }],
+        }),
+      });
+      if (!claudeRes.ok) {
+        const txt = await claudeRes.text();
+        console.error("claude error", claudeRes.status, txt);
+        await admin.from("slideshows").update({ status: "failed", generation_error: `Claude: ${txt.slice(0, 300)}` }).eq("id", slideshowId);
+        return j({ error: "claude_failed" }, 500);
+      }
+      const cdata = await claudeRes.json();
+      const raw = cdata?.content?.[0]?.text || "";
+      let parsedC: any = {};
+      try {
+        const m = raw.match(/\{[\s\S]*\}/);
+        parsedC = JSON.parse(m ? m[0] : raw);
+      } catch (e) { console.error("claude parse fail", raw); }
+      const arr = Array.isArray(parsedC.slides) ? parsedC.slides : [];
+      slides = arr.slice(0, numSlides).map((s: any) => ({
+        template: "story_canvas",
+        icon: null,
+        text: typeof s.text === "string" ? s.text : "",
+        variables: {},
+      }));
+    } else {
+      const writeRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${lovableKey}` },
+        body: JSON.stringify({
+          model: "openai/gpt-5",
+          messages: [
+            { role: "system", content: SYSTEM_DESIGNED },
+            { role: "user", content: writePrompt },
+          ],
+          tools: [{
+            type: "function",
+            function: {
+              name: "design_slides",
+              description: "Design a TikTok carousel of clean designed slides.",
+              parameters: {
+                type: "object",
+                properties: {
+                  slides: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        template: { type: "string", enum: TEMPLATES },
+                        mood_override: { type: ["string", "null"], enum: ["dark", "light", null] },
+                        icon: { type: ["string", "null"] },
+                        text: { type: "string", description: "REQUIRED. Plain-text version of the slide, 1-3 short lowercase sentences separated by \\n. This is what the viewer reads." },
+                        variables: {
+                          type: "object",
+                          description: "REQUIRED. Template-specific text vars — must be filled with REAL copy, never empty strings. Schemas: title_card={label,heading,subtext}; centered_text={main_text,support_text}; big_number={number,unit,context}; list_items={section_label,items:[{icon,item_title,item_description}]} (3-5 items, every item has icon from the icon list); step_number={step_number,instruction,detail}; highlight_box={context_above,highlight_text,context_below}; cta_card={cta_heading,cta_text,brand_url}; quote_style={quote_text,attribution}.",
+                          additionalProperties: true,
+                        },
                       },
+                      required: ["template", "variables", "text"],
                     },
-                    required: ["template", "variables", "text"],
                   },
                 },
+                required: ["slides"],
               },
-              required: ["slides"],
             },
-          },
-        }],
-        tool_choice: { type: "function", function: { name: "design_slides" } },
-      }),
-    });
+          }],
+          tool_choice: { type: "function", function: { name: "design_slides" } },
+        }),
+      });
 
-    if (!writeRes.ok) {
-      const txt = await writeRes.text();
-      console.error("write error", writeRes.status, txt);
-      await admin.from("slideshows").update({ status: "failed", generation_error: `AI: ${txt.slice(0, 300)}` }).eq("id", slideshowId);
-      if (writeRes.status === 429) return j({ error: "rate_limit" }, 429);
-      if (writeRes.status === 402) return j({ error: "payment_required" }, 402);
-      return j({ error: "ai_failed" }, 500);
+      if (!writeRes.ok) {
+        const txt = await writeRes.text();
+        console.error("write error", writeRes.status, txt);
+        await admin.from("slideshows").update({ status: "failed", generation_error: `AI: ${txt.slice(0, 300)}` }).eq("id", slideshowId);
+        if (writeRes.status === 429) return j({ error: "rate_limit" }, 429);
+        if (writeRes.status === 402) return j({ error: "payment_required" }, 402);
+        return j({ error: "ai_failed" }, 500);
+      }
+
+      const writeData = await writeRes.json();
+      const args = writeData?.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
+      let parsed: any = {};
+      try { parsed = JSON.parse(args || "{}"); } catch { /* noop */ }
+      slides = (parsed.slides || []).slice(0, numSlides);
     }
-
-    const writeData = await writeRes.json();
-    const args = writeData?.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
-    let parsed: any = {};
-    try { parsed = JSON.parse(args || "{}"); } catch { /* noop */ }
-    const slides: any[] = (parsed.slides || []).slice(0, numSlides);
 
     if (slides.length === 0) {
       await admin.from("slideshows").update({ status: "failed", generation_error: "AI returned no slides." }).eq("id", slideshowId);

@@ -66,7 +66,7 @@ function escapeHtml(s: string): string {
 }
 
 /** Keys whose value is raw HTML/SVG and must NOT be escaped. */
-const RAW_KEYS = new Set(["icon_svg", "item_icon_svg"]);
+const RAW_KEYS = new Set(["icon_svg", "item_icon_svg", "story_extras"]);
 
 /** Replace {{key}} with value. Escapes text; passes SVG/HTML through for raw keys. */
 function fillVars(html: string, vars: Record<string, any>): string {
@@ -91,6 +91,56 @@ function expandLists(html: string, vars: Record<string, any>): string {
       })
       .join("");
   });
+}
+
+function hexToRgb(hex: string): string {
+  const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex.trim());
+  if (!m) return "255,59,92";
+  return `${parseInt(m[1], 16)},${parseInt(m[2], 16)},${parseInt(m[3], 16)}`;
+}
+
+function buildStoryExtras(primaryHex: string): string {
+  const rgb = hexToRgb(primaryHex);
+  const elements: string[] = [];
+  // Pick 0-2 elements
+  const count = Math.floor(Math.random() * 3);
+  const pool = [
+    // Floating stat card (top-right)
+    () => {
+      const stats = ["34k", "12k", "1.2M", "847", "92%", "3.4x"];
+      const labels = ["views", "signups", "saved", "shipped", "users", "growth"];
+      const stat = stats[Math.floor(Math.random() * stats.length)];
+      const label = labels[Math.floor(Math.random() * labels.length)];
+      return `<div style="position:absolute;top:140px;right:100px;background:rgba(${rgb},0.08);border:1px solid rgba(${rgb},0.25);border-radius:14px;padding:18px 28px;">
+        <div style="font-family:var(--heading-font);font-size:36px;font-weight:700;color:rgb(${rgb});">${stat}</div>
+        <div style="font-family:var(--body-font);font-size:14px;color:#666;letter-spacing:0.05em;">${label}</div>
+      </div>`;
+    },
+    // Dotted curved arrow (bottom-left)
+    () => `<svg style="position:absolute;bottom:200px;left:90px;width:140px;height:80px;pointer-events:none;">
+        <path d="M10 10 Q70 70 130 10" stroke="rgb(${rgb})" stroke-width="2.5" stroke-dasharray="5 5" fill="none" opacity="0.7"/>
+      </svg>`,
+    // Small accent dot cluster (top-left)
+    () => `<div style="position:absolute;top:160px;left:100px;display:flex;gap:10px;">
+        <div style="width:12px;height:12px;border-radius:50%;background:rgb(${rgb});opacity:0.7;"></div>
+        <div style="width:12px;height:12px;border-radius:50%;background:rgb(${rgb});opacity:0.4;"></div>
+        <div style="width:12px;height:12px;border-radius:50%;background:rgb(${rgb});opacity:0.2;"></div>
+      </div>`,
+    // Star icon (bottom-right area)
+    () => `<svg style="position:absolute;bottom:220px;right:130px;width:48px;height:48px;color:rgb(${rgb});opacity:0.75;" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+      </svg>`,
+    // Underline swoosh below text area
+    () => `<svg style="position:absolute;bottom:300px;left:160px;width:280px;height:24px;pointer-events:none;">
+        <path d="M5 12 Q140 4 275 14" stroke="rgb(${rgb})" stroke-width="4" fill="none" opacity="0.6" stroke-linecap="round"/>
+      </svg>`,
+  ];
+  // Shuffle
+  const shuffled = pool.sort(() => Math.random() - 0.5);
+  for (let i = 0; i < count && i < shuffled.length; i++) {
+    elements.push(shuffled[i]());
+  }
+  return elements.join("\n");
 }
 
 function bgFor(brand: BrandIdentity, moodOverride?: "dark" | "light" | null): { bg: string; text: string } {
@@ -126,6 +176,11 @@ export function resolveSlideHtml({ brand, spec }: ResolveOptions): string {
   if (spec.icon && vars.icon_svg === undefined) vars.icon_svg = getIconSvg(spec.icon);
   if (vars.brand_name === undefined) vars.brand_name = brand.brand_name;
   if (vars.brand_url === undefined) vars.brand_url = brand.brand_url || "";
+
+  // Story canvas: random visual extras per slide for variety
+  if (spec.template === "story_canvas") {
+    vars.story_extras = buildStoryExtras(brand.primary_color);
+  }
 
   const cssVars = `
     --primary: ${brand.primary_color};
