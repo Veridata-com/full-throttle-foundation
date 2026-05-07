@@ -208,7 +208,60 @@ For EACH of the ${numSlides} slides, design the composition. You decide:
 - accent: optional, ONE visual accent. Object: { type, position }. Types: "stat_card" (also needs stat + label), "arrow" (curved dotted), "dots" (3-dot cluster), "star", "underline" (under text), "circle_outline", "diagonal_line", "side_bar" (vertical accent line). Position: "top-left", "top-right", "bottom-left", "bottom-right", "center-left", "center-right".
 - text_color: optional, default "#1A1A1A". Only override if you want a slide where the text itself is the brand color.
 
-Compose intentionally. Move text around the canvas across slides — don't always center. Use whitespace. Some slides should feel huge and bold, others small and quiet. The eye should travel.`;
+Compose intentionally. Move text around the canvas across slides. Use whitespace. Some slides feel huge and bold, others small and quiet. The eye should travel.`;
+
+    const isStory = designStyle === "story";
+    const writePrompt = isStory ? writePromptStory : writePromptDesigned;
+
+    let slides: any[] = [];
+
+    if (isStory) {
+      const anthropicKey = Deno.env.get("ANTHROPIC_API_KEY");
+      if (!anthropicKey) {
+        await admin.from("slideshows").update({ status: "failed", generation_error: "ANTHROPIC_API_KEY missing for Story Mode." }).eq("id", slideshowId);
+        return j({ error: "anthropic_key_missing" }, 500);
+      }
+      const claudeRes = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": anthropicKey,
+          "anthropic-version": "2023-06-01",
+        },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-5-20250929",
+          max_tokens: 3000,
+          system: SYSTEM_STORY,
+          messages: [{
+            role: "user",
+            content: `${writePrompt}\n\nReturn STRICT JSON only, no prose, no code fences. Shape:\n{"slides":[{"text":"...","font_size":72,"font_weight":600,"text_align":"left","vertical_position":"center","horizontal_padding":100,"highlight_word":"shipped","accent":{"type":"stat_card","position":"top-right","stat":"34k","label":"views"},"text_color":"#1A1A1A"}]}\n\nExactly ${numSlides} slides. Only "text" is required; everything else is optional but use them to design.`,
+          }],
+        }),
+      });
+      if (!claudeRes.ok) {
+        const txt = await claudeRes.text();
+        console.error("claude error", claudeRes.status, txt);
+        await admin.from("slideshows").update({ status: "failed", generation_error: `Claude: ${txt.slice(0, 300)}` }).eq("id", slideshowId);
+        return j({ error: "claude_failed" }, 500);
+      }
+      const cdata = await claudeRes.json();
+      const raw = cdata?.content?.[0]?.text || "";
+      let parsedC: any = {};
+      try {
+        const m = raw.match(/\{[\s\S]*\}/);
+        parsedC = JSON.parse(m ? m[0] : raw);
+      } catch (e) { console.error("claude parse fail", raw); }
+      const arr = Array.isArray(parsedC.slides) ? parsedC.slides : [];
+      slides = arr.slice(0, numSlides).map((s: any) => ({
+        template: "story_canvas",
+        icon: null,
+        text: typeof s.text === "string" ? s.text : "",
+        variables: {
+          story_html: renderStorySlide(s, brand.primary_color),
+          story_text: typeof s.text === "string" ? s.text : "",
+        },
+      }));
+    } else {
       const writeRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${lovableKey}` },
@@ -237,7 +290,7 @@ Compose intentionally. Move text around the canvas across slides — don't alway
                         text: { type: "string", description: "REQUIRED. Plain-text version of the slide, 1-3 short lowercase sentences separated by \\n. This is what the viewer reads." },
                         variables: {
                           type: "object",
-                          description: "REQUIRED. Template-specific text vars — must be filled with REAL copy, never empty strings. Schemas: title_card={label,heading,subtext}; centered_text={main_text,support_text}; big_number={number,unit,context}; list_items={section_label,items:[{icon,item_title,item_description}]} (3-5 items, every item has icon from the icon list); step_number={step_number,instruction,detail}; highlight_box={context_above,highlight_text,context_below}; cta_card={cta_heading,cta_text,brand_url}; quote_style={quote_text,attribution}.",
+                          description: "REQUIRED. Template-specific text vars must be filled with REAL copy. Schemas: title_card={label,heading,subtext}; centered_text={main_text,support_text}; big_number={number,unit,context}; list_items={section_label,items:[{icon,item_title,item_description}]}; step_number={step_number,instruction,detail}; highlight_box={context_above,highlight_text,context_below}; cta_card={cta_heading,cta_text,brand_url}; quote_style={quote_text,attribution}.",
                           additionalProperties: true,
                         },
                       },
