@@ -383,6 +383,7 @@ Slide 1 = honest, contrarian or vulnerable hook. Last slide = soft CTA in story 
 
     await admin.from("slideshows").update({
       generation_mode: "clean_designed",
+      design_style: designStyle,
       hook_style: hookStyle,
       content_style: contentStyle,
       num_slides: numSlides,
@@ -390,19 +391,19 @@ Slide 1 = honest, contrarian or vulnerable hook. Last slide = soft CTA in story 
       all_slide_texts: allTexts,
       templates_used: templatesUsed,
       icons_used: iconsUsed,
-    }).eq("id", slideshowId);
+    } as any).eq("id", slideshowId);
 
     // Log decision
     await admin.from("ai_decisions").insert({
       user_id: userId,
       slideshow_id: slideshowId,
-      decision_type: isExploration ? "explore" : "exploit",
+      decision_type: overrideRequest ? "override" : (isExploration ? "explore" : "exploit"),
       hook_style_chosen: hookStyle,
       slide_count_chosen: numSlides,
       content_style_chosen: contentStyle,
       generation_mode_chosen: "clean_designed",
-      design_styles_chosen: [brand.slide_mood],
-      reasoning: `${isExploration ? "Exploration" : "Exploitation"}: hook=${hookStyle}, slides=${numSlides}, style=${contentStyle}, mode=clean_designed. ${insights ? `Based on ${insights.posts_analyzed} tracked posts.` : "No data yet, used defaults."}`,
+      design_styles_chosen: [designStyle],
+      reasoning: `${overrideRequest ? `User override: ${designStyle}` : (isExploration ? "Exploration" : "Exploitation")}: design_style=${designStyle}, hook=${hookStyle}, slides=${numSlides}, style=${contentStyle}. ${insights ? `Based on ${insights.posts_analyzed} tracked posts.` : "No data yet, used defaults."}`,
     });
 
     return j({ ok: true, slides, brand });
