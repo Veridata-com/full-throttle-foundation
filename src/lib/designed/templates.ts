@@ -243,6 +243,24 @@ export const TEMPLATES: Record<LayoutType, SlideTemplate> = {
   ${watermark}
 </div>`.trim(),
   },
+  story_canvas: {
+    name: "story_canvas",
+    layout_type: "story_canvas",
+    suitable_for: ["hook", "value", "cta", "any"],
+    variables: [
+      { key: "story_text", label: "Story text", multiline: true },
+    ],
+    html: `
+<div style="width:1080px;height:1920px;background:#FFFFFF;display:flex;flex-direction:column;justify-content:center;padding:80px 100px;box-sizing:border-box;position:relative;">
+  <div style="position:absolute;left:60px;top:50%;transform:translateY(-50%);width:6px;height:480px;background:var(--primary);opacity:0.65;border-radius:3px;"></div>
+  <div style="font-family:var(--body-font);font-weight:500;font-size:54px;color:#1A1A1A;line-height:1.5;max-width:820px;margin-left:60px;letter-spacing:-0.005em;">
+    {{story_text}}
+  </div>
+  <div style="position:absolute;bottom:80px;right:100px;font-family:var(--body-font);font-weight:500;font-size:22px;color:#1A1A1A;opacity:0.35;letter-spacing:0.04em;">
+    {{brand_name}}
+  </div>
+</div>`.trim(),
+  },
 };
 
 export const TEMPLATE_LIST = Object.values(TEMPLATES);
