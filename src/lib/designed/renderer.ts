@@ -127,6 +127,11 @@ export function resolveSlideHtml({ brand, spec }: ResolveOptions): string {
   if (vars.brand_name === undefined) vars.brand_name = brand.brand_name;
   if (vars.brand_url === undefined) vars.brand_url = brand.brand_url || "";
 
+  // Story canvas: random visual extras per slide for variety
+  if (spec.template === "story_canvas") {
+    vars.story_extras = buildStoryExtras(brand.primary_color);
+  }
+
   const cssVars = `
     --primary: ${brand.primary_color};
     --secondary: ${brand.secondary_color || brand.primary_color};
