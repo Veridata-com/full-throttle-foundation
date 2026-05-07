@@ -66,7 +66,7 @@ function escapeHtml(s: string): string {
 }
 
 /** Keys whose value is raw HTML/SVG and must NOT be escaped. */
-const RAW_KEYS = new Set(["icon_svg", "item_icon_svg", "story_extras"]);
+const RAW_KEYS = new Set(["icon_svg", "item_icon_svg", "story_extras", "story_html"]);
 
 /** Replace {{key}} with value. Escapes text; passes SVG/HTML through for raw keys. */
 function fillVars(html: string, vars: Record<string, any>): string {
