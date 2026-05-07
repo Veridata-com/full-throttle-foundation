@@ -1,0 +1,1 @@
+ALTER TABLE public.slideshows ADD COLUMN IF NOT EXISTS design_style text NOT NULL DEFAULT 'auto';

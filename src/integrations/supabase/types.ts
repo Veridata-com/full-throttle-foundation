@@ -746,6 +746,7 @@ export type Database = {
           created_at: string
           cta: string | null
           cta_text: string | null
+          design_style: string
           design_styles: string[] | null
           generation_error: string | null
           generation_mode: string
@@ -773,6 +774,7 @@ export type Database = {
           created_at?: string
           cta?: string | null
           cta_text?: string | null
+          design_style?: string
           design_styles?: string[] | null
           generation_error?: string | null
           generation_mode?: string
@@ -800,6 +802,7 @@ export type Database = {
           created_at?: string
           cta?: string | null
           cta_text?: string | null
+          design_style?: string
           design_styles?: string[] | null
           generation_error?: string | null
           generation_mode?: string
