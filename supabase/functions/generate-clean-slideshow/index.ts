@@ -228,7 +228,7 @@ Slide 1 = honest, contrarian or vulnerable hook. Last slide = soft CTA in story 
                   items: {
                     type: "object",
                     properties: {
-                      template: { type: "string", enum: TEMPLATES },
+                      template: { type: "string", enum: isStory ? ["story_canvas"] : TEMPLATES },
                       mood_override: { type: ["string", "null"], enum: ["dark", "light", null] },
                       icon: { type: ["string", "null"] },
                       text: { type: "string", description: "REQUIRED. Plain-text version of the slide, 1-3 short lowercase sentences separated by \\n. This is what the viewer reads." },
