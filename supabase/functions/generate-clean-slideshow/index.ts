@@ -391,7 +391,9 @@ Compose intentionally. Move text around the canvas across slides. Use whitespace
     }
 
     for (const s of slides) {
+      const preservedHtml = s.variables?.story_html;
       s.variables = deepClean(s.variables || {});
+      if (preservedHtml) s.variables.story_html = preservedHtml; // never truncate/clean rendered HTML
       s.text = clean(s.text || "");
       s.variables = fillFromText(s.template, s.text, s.variables, s.icon);
       if (s.template === "cta_card" && !s.variables.brand_url) s.variables.brand_url = brand.brand_url || "";
@@ -411,13 +413,12 @@ Compose intentionally. Move text around the canvas across slides. Use whitespace
       };
     }
     if (isStory) {
-      // Force every slide template to story_canvas in case the model returned something else.
       for (const s of slides) {
         if (s.template !== "story_canvas") {
-          const txt = s.text || "";
           s.template = "story_canvas";
           s.icon = null;
-          s.variables = { story_text: txt };
+          s.variables = s.variables || {};
+          if (!s.variables.story_text) s.variables.story_text = s.text || "";
         }
       }
     }
