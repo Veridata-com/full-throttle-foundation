@@ -16,7 +16,8 @@ export type LayoutType =
   | "step_number"
   | "highlight_box"
   | "cta_card"
-  | "quote_style";
+  | "quote_style"
+  | "story_canvas";
 
 export interface SlideTemplate {
   name: string;
