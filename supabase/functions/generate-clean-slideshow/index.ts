@@ -341,7 +341,7 @@ Slide 1 = honest, contrarian or vulnerable hook. Last slide = soft CTA in story 
     }
 
     const last = slides[slides.length - 1];
-    if (last.template !== "cta_card") {
+    if (!isStory && last.template !== "cta_card") {
       slides[slides.length - 1] = {
         template: "cta_card",
         icon: "rocket",
@@ -352,6 +352,17 @@ Slide 1 = honest, contrarian or vulnerable hook. Last slide = soft CTA in story 
           brand_url: brand.brand_url || "",
         },
       };
+    }
+    if (isStory) {
+      // Force every slide template to story_canvas in case the model returned something else.
+      for (const s of slides) {
+        if (s.template !== "story_canvas") {
+          const txt = s.text || "";
+          s.template = "story_canvas";
+          s.icon = null;
+          s.variables = { story_text: txt };
+        }
+      }
     }
 
     await setProgress(admin, slideshowId, "rendering", 2, 4, "Designing your slides...");
