@@ -43,15 +43,8 @@ Rules:
 - Each slide also needs a "text" field — the plain text version (1-3 short sentences, lowercase, separated by \\n) used as a fallback.
 Return ONLY a valid tool call.`;
 
-const SYSTEM_STORY = `You design TikTok carousel slideshows that make people swipe. You decide everything about each slide: text, placement, size, visual accents.
-
-You've seen thousands of viral slideshows. You know what makes a thumb stop scrolling. Trust your instincts.
-
-Voice: like a real founder who types fast and doesn't edit. Lowercase. Short bursts. Sometimes one word. Sometimes trail off with periods... No exclamation marks, no caps, no emoji, no em-dashes. Banned words: honestly, literally, actually, game-changer, unlock, revolutionary, journey, leverage, utilize, dive in, explore, amazing.
-
-The slides tell ONE story across the carousel. Each slide is an island that pulls them to the next. Curiosity gaps. Open loops. Don't dump everything on one slide. 3-8 words per slide is the sweet spot, sometimes 1, sometimes 12. Vary it.
-
-Slide 1 = honest hook (confession, contrarian thought, vulnerable moment). Never starts with the brand name or just "I". Last slide = soft CTA in the same voice, no salesy energy.`;
+// Story Mode is rebuilt: Claude writes the full HTML for each slide.
+// The system prompt is built dynamically per request (see buildStorySystemPrompt below).
 
 function clean(s: any): string {
   if (typeof s !== "string") return "";
