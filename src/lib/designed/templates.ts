@@ -248,23 +248,10 @@ export const TEMPLATES: Record<LayoutType, SlideTemplate> = {
     layout_type: "story_canvas",
     suitable_for: ["hook", "value", "cta", "any"],
     variables: [
-      { key: "story_text", label: "Story text", multiline: true },
+      { key: "story_html", label: "Story HTML", multiline: true },
     ],
-    html: `
-<div style="width:1080px;height:1920px;background:#FFFFFF;box-sizing:border-box;position:relative;overflow:hidden;">
-  <svg style="position:absolute;top:0;left:0;width:100%;height:100%;opacity:0.05;pointer-events:none;">
-    <defs>
-      <pattern id="story_dots" x="0" y="0" width="44" height="44" patternUnits="userSpaceOnUse">
-        <circle cx="2" cy="2" r="1.6" fill="#000000"></circle>
-      </pattern>
-    </defs>
-    <rect width="100%" height="100%" fill="url(#story_dots)"></rect>
-  </svg>
-  {{story_html}}
-  <div style="position:absolute;bottom:70px;right:90px;font-family:var(--body-font);font-weight:500;font-size:22px;color:#1A1A1A;opacity:0.32;letter-spacing:0.04em;z-index:5;">
-    {{brand_name}}
-  </div>
-</div>`.trim(),
+    // Pure pass-through: Claude writes the entire 1080x1920 slide HTML.
+    html: `{{story_html}}`,
   },
 };
 
