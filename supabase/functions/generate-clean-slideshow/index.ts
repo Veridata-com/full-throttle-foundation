@@ -43,19 +43,15 @@ Rules:
 - Each slide also needs a "text" field — the plain text version (1-3 short sentences, lowercase, separated by \\n) used as a fallback.
 Return ONLY a valid tool call.`;
 
-const SYSTEM_STORY = `You're writing TikTok slideshow text for a SaaS product. Write like a real founder who types fast and doesn't edit. Lowercase. Short bursts. No polish.
+const SYSTEM_STORY = `You design TikTok carousel slideshows that make people swipe. You decide everything about each slide: text, placement, size, visual accents.
 
-HARD RULES:
-- Max 4 lines per slide, max 8 words per line.
-- Some slides are just 2 lines, don't always fill space.
-- Vary line length randomly, don't make it symmetrical.
-- NO setup-payoff structure, NO punchlines, NO three-part rhythm.
-- NEVER use: honestly, literally, actually, game-changer, unlock, revolutionary, journey, leverage, utilize, dive in, explore, amazing.
-- No exclamation marks, no caps, no emoji, no em-dashes.
-- Sometimes trail off mid-thought with periods...
-- Sometimes one word per line.
-- Slide 1 = hook (honest moment, confession, contrarian thought). Never starts with "I" alone or the brand name.
-- Last slide = soft CTA in the same voice. No salesy energy.`;
+You've seen thousands of viral slideshows. You know what makes a thumb stop scrolling. Trust your instincts.
+
+Voice: like a real founder who types fast and doesn't edit. Lowercase. Short bursts. Sometimes one word. Sometimes trail off with periods... No exclamation marks, no caps, no emoji, no em-dashes. Banned words: honestly, literally, actually, game-changer, unlock, revolutionary, journey, leverage, utilize, dive in, explore, amazing.
+
+The slides tell ONE story across the carousel. Each slide is an island that pulls them to the next. Curiosity gaps. Open loops. Don't dump everything on one slide. 3-8 words per slide is the sweet spot, sometimes 1, sometimes 12. Vary it.
+
+Slide 1 = honest hook (confession, contrarian thought, vulnerable moment). Never starts with the brand name or just "I". Last slide = soft CTA in the same voice, no salesy energy.`;
 
 function clean(s: any): string {
   if (typeof s !== "string") return "";
@@ -71,6 +67,103 @@ function clean(s: any): string {
     }).join(" ")
   ).join("\n");
   return t;
+}
+
+function escHtml(s: string): string {
+  return String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c] || c);
+}
+
+function hexToRgb(hex: string): string {
+  const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec((hex || "").trim());
+  if (!m) return "255,59,92";
+  return `${parseInt(m[1], 16)},${parseInt(m[2], 16)},${parseInt(m[3], 16)}`;
+}
+
+function renderAccent(accent: any, primary: string, rgb: string): string {
+  if (!accent || typeof accent !== "object") return "";
+  const pos = String(accent.position || "top-right");
+  const positions: Record<string, string> = {
+    "top-left": "top:140px;left:100px;",
+    "top-right": "top:140px;right:100px;",
+    "bottom-left": "bottom:180px;left:100px;",
+    "bottom-right": "bottom:180px;right:100px;",
+    "center-left": "top:50%;left:80px;transform:translateY(-50%);",
+    "center-right": "top:50%;right:80px;transform:translateY(-50%);",
+  };
+  const posCss = positions[pos] || positions["top-right"];
+  const t = String(accent.type || "");
+  switch (t) {
+    case "stat_card": {
+      const stat = escHtml(String(accent.stat || "12k"));
+      const label = escHtml(String(accent.label || "views"));
+      return `<div style="position:absolute;${posCss}background:rgba(${rgb},0.08);border:1px solid rgba(${rgb},0.28);border-radius:16px;padding:20px 30px;z-index:3;">
+        <div style="font-family:var(--heading-font);font-size:42px;font-weight:700;color:${primary};line-height:1;">${stat}</div>
+        <div style="font-family:var(--body-font);font-size:16px;color:#666;letter-spacing:0.05em;margin-top:6px;">${label}</div>
+      </div>`;
+    }
+    case "arrow":
+      return `<svg style="position:absolute;${posCss}width:160px;height:90px;pointer-events:none;z-index:3;" viewBox="0 0 160 90">
+        <path d="M10 15 Q80 80 145 25" stroke="${primary}" stroke-width="3" stroke-dasharray="6 6" fill="none" opacity="0.7"/>
+        <path d="M135 18 L150 24 L142 38" stroke="${primary}" stroke-width="3" fill="none" opacity="0.7" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>`;
+    case "dots":
+      return `<div style="position:absolute;${posCss}display:flex;gap:12px;z-index:3;">
+        <div style="width:14px;height:14px;border-radius:50%;background:${primary};opacity:0.75;"></div>
+        <div style="width:14px;height:14px;border-radius:50%;background:${primary};opacity:0.45;"></div>
+        <div style="width:14px;height:14px;border-radius:50%;background:${primary};opacity:0.22;"></div>
+      </div>`;
+    case "star":
+      return `<svg style="position:absolute;${posCss}width:54px;height:54px;color:${primary};opacity:0.8;z-index:3;" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+      </svg>`;
+    case "underline":
+      return `<svg style="position:absolute;${posCss}width:320px;height:28px;pointer-events:none;z-index:3;" viewBox="0 0 320 28">
+        <path d="M5 14 Q160 4 315 16" stroke="${primary}" stroke-width="5" fill="none" opacity="0.7" stroke-linecap="round"/>
+      </svg>`;
+    case "circle_outline":
+      return `<div style="position:absolute;${posCss}width:90px;height:90px;border:3px solid ${primary};border-radius:50%;opacity:0.6;z-index:3;"></div>`;
+    case "diagonal_line":
+      return `<svg style="position:absolute;${posCss}width:180px;height:180px;pointer-events:none;z-index:3;" viewBox="0 0 180 180">
+        <line x1="10" y1="170" x2="170" y2="10" stroke="${primary}" stroke-width="3" opacity="0.5"/>
+      </svg>`;
+    case "side_bar":
+      return `<div style="position:absolute;left:50px;top:50%;transform:translateY(-50%);width:6px;height:520px;background:${primary};opacity:0.65;border-radius:3px;z-index:3;"></div>`;
+    default:
+      return "";
+  }
+}
+
+function renderStorySlide(s: any, primary: string): string {
+  const text = typeof s.text === "string" ? s.text : "";
+  const fontSize = Math.min(140, Math.max(28, Number(s.font_size) || 60));
+  const fontWeight = [400, 500, 600, 700, 800].includes(Number(s.font_weight)) ? Number(s.font_weight) : 500;
+  const align = ["left", "center", "right"].includes(s.text_align) ? s.text_align : "center";
+  const vPos = ["top", "center", "bottom"].includes(s.vertical_position) ? s.vertical_position : "center";
+  const hPad = Math.min(220, Math.max(40, Number(s.horizontal_padding) || 100));
+  const textColor = /^#[0-9a-f]{6}$/i.test(String(s.text_color || "")) ? s.text_color : "#1A1A1A";
+  const rgb = hexToRgb(primary);
+
+  // Build text with optional highlight pill
+  let textHtml = escHtml(text).replace(/\n/g, "<br>");
+  const highlight = typeof s.highlight_word === "string" ? s.highlight_word.trim() : "";
+  if (highlight) {
+    const safe = escHtml(highlight);
+    const re = new RegExp(`\\b(${safe.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})\\b`, "i");
+    textHtml = textHtml.replace(re, `<span style="background:rgba(${rgb},0.18);color:${primary};padding:0 14px;border-radius:10px;display:inline-block;">$1</span>`);
+  }
+
+  const vCss = vPos === "top" ? "top:200px;" : vPos === "bottom" ? "bottom:240px;" : "top:50%;transform:translateY(-50%);";
+  // For non-center align we use absolute left/right instead of horizontal centering
+  const hCss = align === "center"
+    ? `left:${hPad}px;right:${hPad}px;`
+    : align === "left" ? `left:${hPad}px;right:${hPad}px;` : `left:${hPad}px;right:${hPad}px;`;
+
+  const accentHtml = renderAccent(s.accent, primary, rgb);
+
+  return `${accentHtml}
+<div style="position:absolute;${vCss}${hCss}font-family:var(--body-font);font-weight:${fontWeight};font-size:${fontSize}px;color:${textColor};line-height:1.25;text-align:${align};letter-spacing:-0.01em;z-index:2;">
+  ${textHtml}
+</div>`;
 }
 
 async function setProgress(admin: any, id: string, step: string, stepIndex: number, totalSteps: number, message: string) {
@@ -190,16 +283,29 @@ Available icons: ${ICONS.join(", ")}
 
 Return exactly ${numSlides} slides. First = hook, last = cta_card.`;
 
-    const writePromptStory = `Write a ${numSlides}-slide TikTok carousel in STORY MODE.
+    const writePromptStory = `Design a ${numSlides}-slide TikTok carousel.
 
 BRAND: ${brand.brand_name}
-${brand.brand_tagline ? `TAGLINE: ${brand.brand_tagline}\n` : ""}${brand.brand_url ? `URL: ${brand.brand_url}\n` : ""}
-AUDIENCE: ${workspace.target_audience || "general"}
+${brand.brand_tagline ? `TAGLINE: ${brand.brand_tagline}\n` : ""}${brand.brand_url ? `URL: ${brand.brand_url}\n` : ""}AUDIENCE: ${workspace.target_audience || "general"}
+BRAND VOICE: ${workspace.brand_voice || "honest, founder, lowercase"}
 TOPIC: "${topic}"
 CTA: ${ctaText || "soft, in story voice"}
 
-Write ${numSlides} slides. Every slide uses template "story_canvas" with variables { story_text }. icon = null. text = same content as story_text.
-Slide 1 = honest, contrarian or vulnerable hook. Last slide = soft CTA in story voice.`;
+CANVAS: 1080x1920px, white background with subtle dot grid (already drawn).
+PRIMARY BRAND COLOR: ${brand.primary_color} (use sparingly for accents/highlights, never for body text).
+
+For EACH of the ${numSlides} slides, design the composition. You decide:
+- text: the words for this slide. Use \\n for line breaks. Keep it short.
+- font_size: 32-140 (px). Bigger for emphasis, smaller for context. Vary across slides.
+- font_weight: 400, 500, 600, 700, or 800.
+- text_align: "left", "center", or "right".
+- vertical_position: "top", "center", or "bottom".
+- horizontal_padding: 60-200 (px from sides).
+- highlight_word: optional, ONE word inside text to wrap with a colored background pill (uses primary color). Must match exactly.
+- accent: optional, ONE visual accent. Object: { type, position }. Types: "stat_card" (also needs stat + label), "arrow" (curved dotted), "dots" (3-dot cluster), "star", "underline" (under text), "circle_outline", "diagonal_line", "side_bar" (vertical accent line). Position: "top-left", "top-right", "bottom-left", "bottom-right", "center-left", "center-right".
+- text_color: optional, default "#1A1A1A". Only override if you want a slide where the text itself is the brand color.
+
+Compose intentionally. Move text around the canvas across slides. Use whitespace. Some slides feel huge and bold, others small and quiet. The eye should travel.`;
 
     const isStory = designStyle === "story";
     const writePrompt = isStory ? writePromptStory : writePromptDesigned;
@@ -207,13 +313,11 @@ Slide 1 = honest, contrarian or vulnerable hook. Last slide = soft CTA in story 
     let slides: any[] = [];
 
     if (isStory) {
-      // === Story Mode: Claude (Anthropic) text generation ===
       const anthropicKey = Deno.env.get("ANTHROPIC_API_KEY");
       if (!anthropicKey) {
         await admin.from("slideshows").update({ status: "failed", generation_error: "ANTHROPIC_API_KEY missing for Story Mode." }).eq("id", slideshowId);
         return j({ error: "anthropic_key_missing" }, 500);
       }
-      const userMsg = `${writePrompt}\n\nReturn STRICT JSON only, no prose, no code fences, in this shape: {"slides":[{"text":"line1\\nline2"}, ...]} with exactly ${numSlides} slides. Each "text" follows the HARD RULES above.`;
       const claudeRes = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
         headers: {
@@ -223,8 +327,12 @@ Slide 1 = honest, contrarian or vulnerable hook. Last slide = soft CTA in story 
         },
         body: JSON.stringify({
           model: "claude-sonnet-4-5-20250929",
-          max_tokens: 2000,
-          messages: [{ role: "user", content: SYSTEM_STORY + "\n\n" + userMsg }],
+          max_tokens: 3000,
+          system: SYSTEM_STORY,
+          messages: [{
+            role: "user",
+            content: `${writePrompt}\n\nReturn STRICT JSON only, no prose, no code fences. Shape:\n{"slides":[{"text":"...","font_size":72,"font_weight":600,"text_align":"left","vertical_position":"center","horizontal_padding":100,"highlight_word":"shipped","accent":{"type":"stat_card","position":"top-right","stat":"34k","label":"views"},"text_color":"#1A1A1A"}]}\n\nExactly ${numSlides} slides. Only "text" is required; everything else is optional but use them to design.`,
+          }],
         }),
       });
       if (!claudeRes.ok) {
@@ -245,7 +353,10 @@ Slide 1 = honest, contrarian or vulnerable hook. Last slide = soft CTA in story 
         template: "story_canvas",
         icon: null,
         text: typeof s.text === "string" ? s.text : "",
-        variables: {},
+        variables: {
+          story_html: renderStorySlide(s, brand.primary_color),
+          story_text: typeof s.text === "string" ? s.text : "",
+        },
       }));
     } else {
       const writeRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -276,7 +387,7 @@ Slide 1 = honest, contrarian or vulnerable hook. Last slide = soft CTA in story 
                         text: { type: "string", description: "REQUIRED. Plain-text version of the slide, 1-3 short lowercase sentences separated by \\n. This is what the viewer reads." },
                         variables: {
                           type: "object",
-                          description: "REQUIRED. Template-specific text vars — must be filled with REAL copy, never empty strings. Schemas: title_card={label,heading,subtext}; centered_text={main_text,support_text}; big_number={number,unit,context}; list_items={section_label,items:[{icon,item_title,item_description}]} (3-5 items, every item has icon from the icon list); step_number={step_number,instruction,detail}; highlight_box={context_above,highlight_text,context_below}; cta_card={cta_heading,cta_text,brand_url}; quote_style={quote_text,attribution}.",
+                          description: "REQUIRED. Template-specific text vars must be filled with REAL copy. Schemas: title_card={label,heading,subtext}; centered_text={main_text,support_text}; big_number={number,unit,context}; list_items={section_label,items:[{icon,item_title,item_description}]}; step_number={step_number,instruction,detail}; highlight_box={context_above,highlight_text,context_below}; cta_card={cta_heading,cta_text,brand_url}; quote_style={quote_text,attribution}.",
                           additionalProperties: true,
                         },
                       },
@@ -377,7 +488,9 @@ Slide 1 = honest, contrarian or vulnerable hook. Last slide = soft CTA in story 
     }
 
     for (const s of slides) {
+      const preservedHtml = s.variables?.story_html;
       s.variables = deepClean(s.variables || {});
+      if (preservedHtml) s.variables.story_html = preservedHtml; // never truncate/clean rendered HTML
       s.text = clean(s.text || "");
       s.variables = fillFromText(s.template, s.text, s.variables, s.icon);
       if (s.template === "cta_card" && !s.variables.brand_url) s.variables.brand_url = brand.brand_url || "";
@@ -397,13 +510,12 @@ Slide 1 = honest, contrarian or vulnerable hook. Last slide = soft CTA in story 
       };
     }
     if (isStory) {
-      // Force every slide template to story_canvas in case the model returned something else.
       for (const s of slides) {
         if (s.template !== "story_canvas") {
-          const txt = s.text || "";
           s.template = "story_canvas";
           s.icon = null;
-          s.variables = { story_text: txt };
+          s.variables = s.variables || {};
+          if (!s.variables.story_text) s.variables.story_text = s.text || "";
         }
       }
     }

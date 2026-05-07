@@ -251,21 +251,17 @@ export const TEMPLATES: Record<LayoutType, SlideTemplate> = {
       { key: "story_text", label: "Story text", multiline: true },
     ],
     html: `
-<div style="width:1080px;height:1920px;background:#FFFFFF;display:flex;flex-direction:column;justify-content:center;padding:80px 100px;box-sizing:border-box;position:relative;overflow:hidden;">
-  <svg style="position:absolute;top:0;left:0;width:100%;height:100%;opacity:0.06;pointer-events:none;">
+<div style="width:1080px;height:1920px;background:#FFFFFF;box-sizing:border-box;position:relative;overflow:hidden;">
+  <svg style="position:absolute;top:0;left:0;width:100%;height:100%;opacity:0.05;pointer-events:none;">
     <defs>
-      <pattern id="story_dots" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
-        <circle cx="2" cy="2" r="1.5" fill="#000000"></circle>
+      <pattern id="story_dots" x="0" y="0" width="44" height="44" patternUnits="userSpaceOnUse">
+        <circle cx="2" cy="2" r="1.6" fill="#000000"></circle>
       </pattern>
     </defs>
     <rect width="100%" height="100%" fill="url(#story_dots)"></rect>
   </svg>
-  {{story_extras}}
-  <div style="position:absolute;left:60px;top:50%;transform:translateY(-50%);width:6px;height:480px;background:var(--primary);opacity:0.65;border-radius:3px;"></div>
-  <div style="position:relative;font-family:var(--body-font);font-weight:500;font-size:54px;color:#1A1A1A;line-height:1.5;max-width:820px;margin-left:60px;letter-spacing:-0.005em;white-space:pre-wrap;">
-    {{story_text}}
-  </div>
-  <div style="position:absolute;bottom:80px;right:100px;font-family:var(--body-font);font-weight:500;font-size:22px;color:#1A1A1A;opacity:0.35;letter-spacing:0.04em;">
+  {{story_html}}
+  <div style="position:absolute;bottom:70px;right:90px;font-family:var(--body-font);font-weight:500;font-size:22px;color:#1A1A1A;opacity:0.32;letter-spacing:0.04em;z-index:5;">
     {{brand_name}}
   </div>
 </div>`.trim(),
