@@ -177,9 +177,11 @@ export function resolveSlideHtml({ brand, spec }: ResolveOptions): string {
   if (vars.brand_name === undefined) vars.brand_name = brand.brand_name;
   if (vars.brand_url === undefined) vars.brand_url = brand.brand_url || "";
 
-  // Story canvas: random visual extras per slide for variety
-  if (spec.template === "story_canvas") {
-    vars.story_extras = buildStoryExtras(brand.primary_color);
+  // story_canvas: server provides pre-rendered story_html. Fallback for legacy slides
+  // that only carry story_text: render a simple centered block.
+  if (spec.template === "story_canvas" && !vars.story_html) {
+    const txt = String(vars.story_text || "").replace(/\n/g, "<br>");
+    vars.story_html = `<div style="position:absolute;left:100px;right:100px;top:50%;transform:translateY(-50%);font-family:var(--body-font);font-weight:500;font-size:54px;color:#1A1A1A;line-height:1.4;white-space:pre-wrap;">${txt}</div>`;
   }
 
   const cssVars = `
