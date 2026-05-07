@@ -145,6 +145,15 @@ Deno.serve(async (req) => {
     const explorationRate = insights ? 0.3 : 0.7;
     const isExploration = Math.random() < explorationRate;
 
+    // Decide design style: user override > stored slideshow choice > AI pick.
+    const slideshowChoice = (slideshow as any).design_style as string | undefined;
+    const overrideRequest = (designStyleOverride && designStyleOverride !== "auto")
+      ? designStyleOverride
+      : (slideshowChoice && slideshowChoice !== "auto" ? slideshowChoice : null);
+    const designStyle: "designed" | "story" = overrideRequest === "story" || overrideRequest === "designed"
+      ? overrideRequest
+      : pick(DESIGN_STYLES);
+
     const userProvidedSlideCount = slideshow.ai_decided ? null : slideshow.num_slides;
     const hookStyle = isExploration ? pick(HOOK_STYLES) : (insights?.next_hook_suggestion ? "result" : pick(HOOK_STYLES));
     const slideCount = userProvidedSlideCount ?? insights?.best_slide_count ?? pick(SLIDE_COUNT_POOL);
