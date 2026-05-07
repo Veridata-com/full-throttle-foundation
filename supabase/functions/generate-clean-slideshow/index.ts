@@ -186,64 +186,29 @@ Available icons: ${ICONS.join(", ")}
 
 Return exactly ${numSlides} slides. First = hook, last = cta_card.`;
 
-    const writePromptStory = `Write a ${numSlides}-slide TikTok carousel in STORY MODE.
+    const writePromptStory = `Design a ${numSlides}-slide TikTok carousel.
 
 BRAND: ${brand.brand_name}
-${brand.brand_tagline ? `TAGLINE: ${brand.brand_tagline}\n` : ""}${brand.brand_url ? `URL: ${brand.brand_url}\n` : ""}
-AUDIENCE: ${workspace.target_audience || "general"}
+${brand.brand_tagline ? `TAGLINE: ${brand.brand_tagline}\n` : ""}${brand.brand_url ? `URL: ${brand.brand_url}\n` : ""}AUDIENCE: ${workspace.target_audience || "general"}
+BRAND VOICE: ${workspace.brand_voice || "honest, founder, lowercase"}
 TOPIC: "${topic}"
 CTA: ${ctaText || "soft, in story voice"}
 
-Write ${numSlides} slides. Every slide uses template "story_canvas" with variables { story_text }. icon = null. text = same content as story_text.
-Slide 1 = honest, contrarian or vulnerable hook. Last slide = soft CTA in story voice.`;
+CANVAS: 1080x1920px, white background with subtle dot grid (already drawn).
+PRIMARY BRAND COLOR: ${brand.primary_color} (use sparingly for accents/highlights, never for body text).
 
-    const isStory = designStyle === "story";
-    const writePrompt = isStory ? writePromptStory : writePromptDesigned;
+For EACH of the ${numSlides} slides, design the composition. You decide:
+- text: the words for this slide. Use \\n for line breaks. Keep it short.
+- font_size: 32-140 (px). Bigger for emphasis, smaller for context. Vary across slides.
+- font_weight: 400, 500, 600, 700, or 800.
+- text_align: "left", "center", or "right".
+- vertical_position: "top", "center", or "bottom".
+- horizontal_padding: 60-200 (px from sides).
+- highlight_word: optional, ONE word inside text to wrap with a colored background pill (uses primary color). Must match exactly.
+- accent: optional, ONE visual accent. Object: { type, position }. Types: "stat_card" (also needs stat + label), "arrow" (curved dotted), "dots" (3-dot cluster), "star", "underline" (under text), "circle_outline", "diagonal_line", "side_bar" (vertical accent line). Position: "top-left", "top-right", "bottom-left", "bottom-right", "center-left", "center-right".
+- text_color: optional, default "#1A1A1A". Only override if you want a slide where the text itself is the brand color.
 
-    let slides: any[] = [];
-
-    if (isStory) {
-      // === Story Mode: Claude (Anthropic) text generation ===
-      const anthropicKey = Deno.env.get("ANTHROPIC_API_KEY");
-      if (!anthropicKey) {
-        await admin.from("slideshows").update({ status: "failed", generation_error: "ANTHROPIC_API_KEY missing for Story Mode." }).eq("id", slideshowId);
-        return j({ error: "anthropic_key_missing" }, 500);
-      }
-      const userMsg = `${writePrompt}\n\nReturn STRICT JSON only, no prose, no code fences, in this shape: {"slides":[{"text":"line1\\nline2"}, ...]} with exactly ${numSlides} slides. Each "text" follows the HARD RULES above.`;
-      const claudeRes = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": anthropicKey,
-          "anthropic-version": "2023-06-01",
-        },
-        body: JSON.stringify({
-          model: "claude-sonnet-4-5-20250929",
-          max_tokens: 2000,
-          messages: [{ role: "user", content: SYSTEM_STORY + "\n\n" + userMsg }],
-        }),
-      });
-      if (!claudeRes.ok) {
-        const txt = await claudeRes.text();
-        console.error("claude error", claudeRes.status, txt);
-        await admin.from("slideshows").update({ status: "failed", generation_error: `Claude: ${txt.slice(0, 300)}` }).eq("id", slideshowId);
-        return j({ error: "claude_failed" }, 500);
-      }
-      const cdata = await claudeRes.json();
-      const raw = cdata?.content?.[0]?.text || "";
-      let parsedC: any = {};
-      try {
-        const m = raw.match(/\{[\s\S]*\}/);
-        parsedC = JSON.parse(m ? m[0] : raw);
-      } catch (e) { console.error("claude parse fail", raw); }
-      const arr = Array.isArray(parsedC.slides) ? parsedC.slides : [];
-      slides = arr.slice(0, numSlides).map((s: any) => ({
-        template: "story_canvas",
-        icon: null,
-        text: typeof s.text === "string" ? s.text : "",
-        variables: {},
-      }));
-    } else {
+Compose intentionally. Move text around the canvas across slides — don't always center. Use whitespace. Some slides should feel huge and bold, others small and quiet. The eye should travel.`;
       const writeRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${lovableKey}` },
