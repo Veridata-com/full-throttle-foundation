@@ -204,64 +204,109 @@ Slide 1 = honest, contrarian or vulnerable hook. Last slide = soft CTA in story 
     const isStory = designStyle === "story";
     const writePrompt = isStory ? writePromptStory : writePromptDesigned;
 
-    const writeRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${lovableKey}` },
-      body: JSON.stringify({
-        model: "openai/gpt-5",
-        messages: [
-          { role: "system", content: isStory ? SYSTEM_STORY : SYSTEM_DESIGNED },
-          { role: "user", content: writePrompt },
-        ],
-        tools: [{
-          type: "function",
-          function: {
-            name: "design_slides",
-            description: "Design a TikTok carousel of clean designed slides.",
-            parameters: {
-              type: "object",
-              properties: {
-                slides: {
-                  type: "array",
-                  items: {
-                    type: "object",
-                    properties: {
-                      template: { type: "string", enum: isStory ? ["story_canvas"] : TEMPLATES },
-                      mood_override: { type: ["string", "null"], enum: ["dark", "light", null] },
-                      icon: { type: ["string", "null"] },
-                      text: { type: "string", description: "REQUIRED. Plain-text version of the slide, 1-3 short lowercase sentences separated by \\n. This is what the viewer reads." },
-                      variables: {
-                        type: "object",
-                        description: "REQUIRED. Template-specific text vars — must be filled with REAL copy, never empty strings. Schemas: title_card={label,heading,subtext}; centered_text={main_text,support_text}; big_number={number,unit,context}; list_items={section_label,items:[{icon,item_title,item_description}]} (3-5 items, every item has icon from the icon list); step_number={step_number,instruction,detail}; highlight_box={context_above,highlight_text,context_below}; cta_card={cta_heading,cta_text,brand_url}; quote_style={quote_text,attribution}.",
-                        additionalProperties: true,
+    let slides: any[] = [];
+
+    if (isStory) {
+      // === Story Mode: Claude (Anthropic) text generation ===
+      const anthropicKey = Deno.env.get("ANTHROPIC_API_KEY");
+      if (!anthropicKey) {
+        await admin.from("slideshows").update({ status: "failed", generation_error: "ANTHROPIC_API_KEY missing for Story Mode." }).eq("id", slideshowId);
+        return j({ error: "anthropic_key_missing" }, 500);
+      }
+      const userMsg = `${writePrompt}\n\nReturn STRICT JSON only, no prose, no code fences, in this shape: {"slides":[{"text":"line1\\nline2"}, ...]} with exactly ${numSlides} slides. Each "text" follows the HARD RULES above.`;
+      const claudeRes = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": anthropicKey,
+          "anthropic-version": "2023-06-01",
+        },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 2000,
+          messages: [{ role: "user", content: SYSTEM_STORY + "\n\n" + userMsg }],
+        }),
+      });
+      if (!claudeRes.ok) {
+        const txt = await claudeRes.text();
+        console.error("claude error", claudeRes.status, txt);
+        await admin.from("slideshows").update({ status: "failed", generation_error: `Claude: ${txt.slice(0, 300)}` }).eq("id", slideshowId);
+        return j({ error: "claude_failed" }, 500);
+      }
+      const cdata = await claudeRes.json();
+      const raw = cdata?.content?.[0]?.text || "";
+      let parsedC: any = {};
+      try {
+        const m = raw.match(/\{[\s\S]*\}/);
+        parsedC = JSON.parse(m ? m[0] : raw);
+      } catch (e) { console.error("claude parse fail", raw); }
+      const arr = Array.isArray(parsedC.slides) ? parsedC.slides : [];
+      slides = arr.slice(0, numSlides).map((s: any) => ({
+        template: "story_canvas",
+        icon: null,
+        text: typeof s.text === "string" ? s.text : "",
+        variables: {},
+      }));
+    } else {
+      const writeRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${lovableKey}` },
+        body: JSON.stringify({
+          model: "openai/gpt-5",
+          messages: [
+            { role: "system", content: SYSTEM_DESIGNED },
+            { role: "user", content: writePrompt },
+          ],
+          tools: [{
+            type: "function",
+            function: {
+              name: "design_slides",
+              description: "Design a TikTok carousel of clean designed slides.",
+              parameters: {
+                type: "object",
+                properties: {
+                  slides: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        template: { type: "string", enum: TEMPLATES },
+                        mood_override: { type: ["string", "null"], enum: ["dark", "light", null] },
+                        icon: { type: ["string", "null"] },
+                        text: { type: "string", description: "REQUIRED. Plain-text version of the slide, 1-3 short lowercase sentences separated by \\n. This is what the viewer reads." },
+                        variables: {
+                          type: "object",
+                          description: "REQUIRED. Template-specific text vars — must be filled with REAL copy, never empty strings. Schemas: title_card={label,heading,subtext}; centered_text={main_text,support_text}; big_number={number,unit,context}; list_items={section_label,items:[{icon,item_title,item_description}]} (3-5 items, every item has icon from the icon list); step_number={step_number,instruction,detail}; highlight_box={context_above,highlight_text,context_below}; cta_card={cta_heading,cta_text,brand_url}; quote_style={quote_text,attribution}.",
+                          additionalProperties: true,
+                        },
                       },
+                      required: ["template", "variables", "text"],
                     },
-                    required: ["template", "variables", "text"],
                   },
                 },
+                required: ["slides"],
               },
-              required: ["slides"],
             },
-          },
-        }],
-        tool_choice: { type: "function", function: { name: "design_slides" } },
-      }),
-    });
+          }],
+          tool_choice: { type: "function", function: { name: "design_slides" } },
+        }),
+      });
 
-    if (!writeRes.ok) {
-      const txt = await writeRes.text();
-      console.error("write error", writeRes.status, txt);
-      await admin.from("slideshows").update({ status: "failed", generation_error: `AI: ${txt.slice(0, 300)}` }).eq("id", slideshowId);
-      if (writeRes.status === 429) return j({ error: "rate_limit" }, 429);
-      if (writeRes.status === 402) return j({ error: "payment_required" }, 402);
-      return j({ error: "ai_failed" }, 500);
+      if (!writeRes.ok) {
+        const txt = await writeRes.text();
+        console.error("write error", writeRes.status, txt);
+        await admin.from("slideshows").update({ status: "failed", generation_error: `AI: ${txt.slice(0, 300)}` }).eq("id", slideshowId);
+        if (writeRes.status === 429) return j({ error: "rate_limit" }, 429);
+        if (writeRes.status === 402) return j({ error: "payment_required" }, 402);
+        return j({ error: "ai_failed" }, 500);
+      }
+
+      const writeData = await writeRes.json();
+      const args = writeData?.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
+      let parsed: any = {};
+      try { parsed = JSON.parse(args || "{}"); } catch { /* noop */ }
+      slides = (parsed.slides || []).slice(0, numSlides);
     }
-
-    const writeData = await writeRes.json();
-    const args = writeData?.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
-    let parsed: any = {};
-    try { parsed = JSON.parse(args || "{}"); } catch { /* noop */ }
-    const slides: any[] = (parsed.slides || []).slice(0, numSlides);
 
     if (slides.length === 0) {
       await admin.from("slideshows").update({ status: "failed", generation_error: "AI returned no slides." }).eq("id", slideshowId);
