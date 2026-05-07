@@ -279,12 +279,21 @@ Return exactly ${numSlides} slides. First = hook, last = cta_card.`;
       const cdata = await claudeRes.json();
       const raw = cdata?.content?.[0]?.text || "";
       let parsedC: any = {};
+      const tryParse = (s: string) => { try { return JSON.parse(s); } catch { return null; } };
       try {
         const cleaned = raw.replace(/```json|```/g, "").trim();
         const m = cleaned.match(/\{[\s\S]*\}/);
-        parsedC = JSON.parse(m ? m[0] : cleaned);
+        const candidate = m ? m[0] : cleaned;
+        parsedC = tryParse(candidate)
+          ?? tryParse(candidate.replace(/[\u0000-\u001F]/g, (c) => c === "\n" ? "\\n" : c === "\r" ? "\\r" : c === "\t" ? "\\t" : ""))
+          ?? {};
       } catch (e) { console.error("claude parse fail", raw); }
       const arr = Array.isArray(parsedC.slides) ? parsedC.slides : [];
+      if (arr.length === 0) {
+        console.error("claude returned no slides. raw:", raw.slice(0, 2000));
+        await admin.from("slideshows").update({ status: "failed", generation_error: "Claude returned no parseable slides" }).eq("id", slideshowId);
+        return j({ error: "claude_no_slides" }, 500);
+      }
       slides = arr.slice(0, numSlides).map((s: any) => {
         const html = typeof s.html === "string" ? s.html : "";
         // Strip plain-text from html for the fallback "text" field (best-effort).
