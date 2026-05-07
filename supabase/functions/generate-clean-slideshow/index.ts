@@ -326,6 +326,9 @@ Slide 1 = honest, contrarian or vulnerable hook. Last slide = soft CTA in story 
           if (!has("quote_text")) v.quote_text = lines[0] || "";
           if (!has("attribution")) v.attribution = lines[1] || "";
           break;
+        case "story_canvas":
+          if (!has("story_text")) v.story_text = text || lines.join("\n") || "";
+          break;
       }
       return v;
     }
