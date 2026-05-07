@@ -72,91 +72,60 @@ function hexToRgb(hex: string): string {
   return `${parseInt(m[1], 16)},${parseInt(m[2], 16)},${parseInt(m[3], 16)}`;
 }
 
-function renderAccent(accent: any, primary: string, rgb: string): string {
-  if (!accent || typeof accent !== "object") return "";
-  const pos = String(accent.position || "top-right");
-  const positions: Record<string, string> = {
-    "top-left": "top:140px;left:100px;",
-    "top-right": "top:140px;right:100px;",
-    "bottom-left": "bottom:180px;left:100px;",
-    "bottom-right": "bottom:180px;right:100px;",
-    "center-left": "top:50%;left:80px;transform:translateY(-50%);",
-    "center-right": "top:50%;right:80px;transform:translateY(-50%);",
-  };
-  const posCss = positions[pos] || positions["top-right"];
-  const t = String(accent.type || "");
-  switch (t) {
-    case "stat_card": {
-      const stat = escHtml(String(accent.stat || "12k"));
-      const label = escHtml(String(accent.label || "views"));
-      return `<div style="position:absolute;${posCss}background:rgba(${rgb},0.08);border:1px solid rgba(${rgb},0.28);border-radius:16px;padding:20px 30px;z-index:3;">
-        <div style="font-family:var(--heading-font);font-size:42px;font-weight:700;color:${primary};line-height:1;">${stat}</div>
-        <div style="font-family:var(--body-font);font-size:16px;color:#666;letter-spacing:0.05em;margin-top:6px;">${label}</div>
-      </div>`;
-    }
-    case "arrow":
-      return `<svg style="position:absolute;${posCss}width:160px;height:90px;pointer-events:none;z-index:3;" viewBox="0 0 160 90">
-        <path d="M10 15 Q80 80 145 25" stroke="${primary}" stroke-width="3" stroke-dasharray="6 6" fill="none" opacity="0.7"/>
-        <path d="M135 18 L150 24 L142 38" stroke="${primary}" stroke-width="3" fill="none" opacity="0.7" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>`;
-    case "dots":
-      return `<div style="position:absolute;${posCss}display:flex;gap:12px;z-index:3;">
-        <div style="width:14px;height:14px;border-radius:50%;background:${primary};opacity:0.75;"></div>
-        <div style="width:14px;height:14px;border-radius:50%;background:${primary};opacity:0.45;"></div>
-        <div style="width:14px;height:14px;border-radius:50%;background:${primary};opacity:0.22;"></div>
-      </div>`;
-    case "star":
-      return `<svg style="position:absolute;${posCss}width:54px;height:54px;color:${primary};opacity:0.8;z-index:3;" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-      </svg>`;
-    case "underline":
-      return `<svg style="position:absolute;${posCss}width:320px;height:28px;pointer-events:none;z-index:3;" viewBox="0 0 320 28">
-        <path d="M5 14 Q160 4 315 16" stroke="${primary}" stroke-width="5" fill="none" opacity="0.7" stroke-linecap="round"/>
-      </svg>`;
-    case "circle_outline":
-      return `<div style="position:absolute;${posCss}width:90px;height:90px;border:3px solid ${primary};border-radius:50%;opacity:0.6;z-index:3;"></div>`;
-    case "diagonal_line":
-      return `<svg style="position:absolute;${posCss}width:180px;height:180px;pointer-events:none;z-index:3;" viewBox="0 0 180 180">
-        <line x1="10" y1="170" x2="170" y2="10" stroke="${primary}" stroke-width="3" opacity="0.5"/>
-      </svg>`;
-    case "side_bar":
-      return `<div style="position:absolute;left:50px;top:50%;transform:translateY(-50%);width:6px;height:520px;background:${primary};opacity:0.65;border-radius:3px;z-index:3;"></div>`;
-    default:
-      return "";
-  }
-}
+function buildStorySystemPrompt(brand: any, topic: string, slideCount: number): string {
+  return `You are designing a viral TikTok storytime carousel for a SaaS founder.
+You write the COMPLETE HTML for each slide (1080x1920px). The slides must work as a story across the swipe.
 
-function renderStorySlide(s: any, primary: string): string {
-  const text = typeof s.text === "string" ? s.text : "";
-  const fontSize = Math.min(140, Math.max(28, Number(s.font_size) || 60));
-  const fontWeight = [400, 500, 600, 700, 800].includes(Number(s.font_weight)) ? Number(s.font_weight) : 500;
-  const align = ["left", "center", "right"].includes(s.text_align) ? s.text_align : "center";
-  const vPos = ["top", "center", "bottom"].includes(s.vertical_position) ? s.vertical_position : "center";
-  const hPad = Math.min(220, Math.max(40, Number(s.horizontal_padding) || 100));
-  const textColor = /^#[0-9a-f]{6}$/i.test(String(s.text_color || "")) ? s.text_color : "#1A1A1A";
-  const rgb = hexToRgb(primary);
+Brand color: ${brand.primary_color}
+Brand name: ${brand.brand_name}
+URL: ${brand.brand_url || ""}
+Topic: ${topic}
+Slides: ${slideCount}
 
-  // Build text with optional highlight pill
-  let textHtml = escHtml(text).replace(/\n/g, "<br>");
-  const highlight = typeof s.highlight_word === "string" ? s.highlight_word.trim() : "";
-  if (highlight) {
-    const safe = escHtml(highlight);
-    const re = new RegExp(`\\b(${safe.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})\\b`, "i");
-    textHtml = textHtml.replace(re, `<span style="background:rgba(${rgb},0.18);color:${primary};padding:0 14px;border-radius:10px;display:inline-block;">$1</span>`);
-  }
+You decide everything: composition, typography size, where text goes, what visual elements to use.
 
-  const vCss = vPos === "top" ? "top:200px;" : vPos === "bottom" ? "bottom:240px;" : "top:50%;transform:translateY(-50%);";
-  // For non-center align we use absolute left/right instead of horizontal centering
-  const hCss = align === "center"
-    ? `left:${hPad}px;right:${hPad}px;`
-    : align === "left" ? `left:${hPad}px;right:${hPad}px;` : `left:${hPad}px;right:${hPad}px;`;
+NARRATIVE STRUCTURE:
+- Slide 1: scene-setting hook with a SPECIFIC moment, number, or confession (not summary)
+- Slides 2 to N-2: build the problem with specific moments and emotional beats
+- Slide N-1: the turning point or realization
+- Slide N: payoff that naturally introduces ${brand.brand_name}
 
-  const accentHtml = renderAccent(s.accent, primary, rgb);
+WRITING RULES (absolute):
+- Lowercase. Conversational. Like texting.
+- Specific over generic. "$47 in my bank account" not "no money".
+- Cliffhangers between slides. End with "..." or unresolved thought when possible.
+- Real moments not advice. "i refreshed stripe 50 times that night" not "track your metrics".
+- Each slide should make the viewer NEED to swipe.
+- No exclamation marks, no caps lock, no emoji, no em-dashes.
 
-  return `${accentHtml}
-<div style="position:absolute;${vCss}${hCss}font-family:var(--body-font);font-weight:${fontWeight};font-size:${fontSize}px;color:${textColor};line-height:1.25;text-align:${align};letter-spacing:-0.01em;z-index:2;">
-  ${textHtml}
-</div>`;
+DESIGN VOCABULARY (use creatively, mix and match):
+- Massive type filling the slide (font-size 180px+)
+- Tiny label + huge number combinations
+- Strikethrough text for "what I thought" vs new reality
+- Arrow showing transformation (before to after)
+- Fake terminal window with green text on dark
+- Fake notification card (like an iOS message)
+- Receipt/invoice style for money moments
+- Single highlighted word with brand color background
+- Diagonal text or rotated elements
+- Numbered list with X's and checkmarks
+- Calendar or timeline visual
+- Phone screen mockup
+- Stats with tiny labels
+- Empty space as a beat (one word in a sea of white)
+
+VISUAL CONSISTENCY:
+- Small slide counter in bottom right (1/${slideCount}, 2/${slideCount}, ...) using brand color
+- Background: pick ONE of white, off-white (#FAFAFA), or subtle dot grid; use across ALL slides
+- Use the brand color sparingly and intentionally, for emphasis only
+- Use Inter, sans-serif as the font family
+
+OUTPUT FORMAT:
+Return STRICT JSON only, no prose, no code fences. Shape:
+{"slides":[{"html":"<div style='width:1080px;height:1920px;...'>...</div>"}]}
+Exactly ${slideCount} slides. Each html must be a complete, fully-inline-styled 1080x1920 slide. No external CSS. No <script>. Just HTML and inline SVG.
+
+The story must feel like ONE founder's actual experience, with specific scenes that ladder into why ${brand.brand_name} matters.`;
 }
 
 async function setProgress(admin: any, id: string, step: string, stepIndex: number, totalSteps: number, message: string) {
