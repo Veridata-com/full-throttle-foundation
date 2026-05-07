@@ -99,7 +99,7 @@ Deno.serve(async (req) => {
     const userId = user?.id;
     if (!userId) return j({ error: "unauthorized" }, 401);
 
-    const { slideshowId } = (await req.json()) as Body;
+    const { slideshowId, designStyleOverride } = (await req.json()) as Body;
     if (!slideshowId) return j({ error: "slideshowId required" }, 400);
 
     const admin = createClient(supabaseUrl, serviceKey);
