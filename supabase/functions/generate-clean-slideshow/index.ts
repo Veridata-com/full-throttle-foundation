@@ -245,32 +245,8 @@ Available icons: ${ICONS.join(", ")}
 
 Return exactly ${numSlides} slides. First = hook, last = cta_card.`;
 
-    const writePromptStory = `Design a ${numSlides}-slide TikTok carousel.
-
-BRAND: ${brand.brand_name}
-${brand.brand_tagline ? `TAGLINE: ${brand.brand_tagline}\n` : ""}${brand.brand_url ? `URL: ${brand.brand_url}\n` : ""}AUDIENCE: ${workspace.target_audience || "general"}
-BRAND VOICE: ${workspace.brand_voice || "honest, founder, lowercase"}
-TOPIC: "${topic}"
-CTA: ${ctaText || "soft, in story voice"}
-
-CANVAS: 1080x1920px, white background with subtle dot grid (already drawn).
-PRIMARY BRAND COLOR: ${brand.primary_color} (use sparingly for accents/highlights, never for body text).
-
-For EACH of the ${numSlides} slides, design the composition. You decide:
-- text: the words for this slide. Use \\n for line breaks. Keep it short.
-- font_size: 32-140 (px). Bigger for emphasis, smaller for context. Vary across slides.
-- font_weight: 400, 500, 600, 700, or 800.
-- text_align: "left", "center", or "right".
-- vertical_position: "top", "center", or "bottom".
-- horizontal_padding: 60-200 (px from sides).
-- highlight_word: optional, ONE word inside text to wrap with a colored background pill (uses primary color). Must match exactly.
-- accent: optional, ONE visual accent. Object: { type, position }. Types: "stat_card" (also needs stat + label), "arrow" (curved dotted), "dots" (3-dot cluster), "star", "underline" (under text), "circle_outline", "diagonal_line", "side_bar" (vertical accent line). Position: "top-left", "top-right", "bottom-left", "bottom-right", "center-left", "center-right".
-- text_color: optional, default "#1A1A1A". Only override if you want a slide where the text itself is the brand color.
-
-Compose intentionally. Move text around the canvas across slides. Use whitespace. Some slides feel huge and bold, others small and quiet. The eye should travel.`;
-
     const isStory = designStyle === "story";
-    const writePrompt = isStory ? writePromptStory : writePromptDesigned;
+    const writePrompt = writePromptDesigned;
 
     let slides: any[] = [];
 
@@ -280,6 +256,7 @@ Compose intentionally. Move text around the canvas across slides. Use whitespace
         await admin.from("slideshows").update({ status: "failed", generation_error: "ANTHROPIC_API_KEY missing for Story Mode." }).eq("id", slideshowId);
         return j({ error: "anthropic_key_missing" }, 500);
       }
+      const storySystem = buildStorySystemPrompt(brand, topic, numSlides);
       const claudeRes = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
         headers: {
@@ -289,12 +266,8 @@ Compose intentionally. Move text around the canvas across slides. Use whitespace
         },
         body: JSON.stringify({
           model: "claude-sonnet-4-5-20250929",
-          max_tokens: 3000,
-          system: SYSTEM_STORY,
-          messages: [{
-            role: "user",
-            content: `${writePrompt}\n\nReturn STRICT JSON only, no prose, no code fences. Shape:\n{"slides":[{"text":"...","font_size":72,"font_weight":600,"text_align":"left","vertical_position":"center","horizontal_padding":100,"highlight_word":"shipped","accent":{"type":"stat_card","position":"top-right","stat":"34k","label":"views"},"text_color":"#1A1A1A"}]}\n\nExactly ${numSlides} slides. Only "text" is required; everything else is optional but use them to design.`,
-          }],
+          max_tokens: 8000,
+          messages: [{ role: "user", content: storySystem }],
         }),
       });
       if (!claudeRes.ok) {
@@ -307,19 +280,22 @@ Compose intentionally. Move text around the canvas across slides. Use whitespace
       const raw = cdata?.content?.[0]?.text || "";
       let parsedC: any = {};
       try {
-        const m = raw.match(/\{[\s\S]*\}/);
-        parsedC = JSON.parse(m ? m[0] : raw);
+        const cleaned = raw.replace(/```json|```/g, "").trim();
+        const m = cleaned.match(/\{[\s\S]*\}/);
+        parsedC = JSON.parse(m ? m[0] : cleaned);
       } catch (e) { console.error("claude parse fail", raw); }
       const arr = Array.isArray(parsedC.slides) ? parsedC.slides : [];
-      slides = arr.slice(0, numSlides).map((s: any) => ({
-        template: "story_canvas",
-        icon: null,
-        text: typeof s.text === "string" ? s.text : "",
-        variables: {
-          story_html: renderStorySlide(s, brand.primary_color),
-          story_text: typeof s.text === "string" ? s.text : "",
-        },
-      }));
+      slides = arr.slice(0, numSlides).map((s: any) => {
+        const html = typeof s.html === "string" ? s.html : "";
+        // Strip plain-text from html for the fallback "text" field (best-effort).
+        const textOnly = html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, 400);
+        return {
+          template: "story_canvas",
+          icon: null,
+          text: textOnly,
+          variables: { story_html: html },
+        };
+      });
     } else {
       const writeRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
