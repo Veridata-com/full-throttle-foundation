@@ -49,8 +49,8 @@ const Onboarding = () => {
 
 
   const plans = [
-    { id: "starter" as const, name: "Starter", price: "7.60", original: "19.00", renewal: "19", features: ["1 workspace", "50 slideshows / month", "500 image uploads", "All AI features"] },
-    { id: "pro" as const, name: "Pro", price: "19.60", original: "49.00", renewal: "49", popular: true, features: ["5 workspaces", "Unlimited slideshows", "Unlimited uploads", "Priority AI", "Priority support"] },
+    { id: "starter" as const, name: "Starter", price: "0.99", original: "19.00", renewal: "19", discount: "95% OFF", features: ["1 workspace", "50 slideshows / month", "500 image uploads", "All AI features"] },
+    { id: "pro" as const, name: "Pro", price: "19.60", original: "49.00", renewal: "49", discount: "60% OFF", popular: true, features: ["5 workspaces", "Unlimited slideshows", "Unlimited uploads", "Priority AI", "Priority support"] },
   ];
 
   if (syncing) {
@@ -72,12 +72,12 @@ const Onboarding = () => {
               <Sparkles className="h-5 w-5 text-primary-foreground" />
             </div>
             <h1 className="font-display text-4xl md:text-5xl font-bold mb-3">Pick your plan</h1>
-            <p className="text-white/70 text-lg">🔥 Limited time: 60% off. Cancel anytime.</p>
+            <p className="text-white/70 text-lg">🔥 Limited time launch pricing. Cancel anytime.</p>
           </div>
           <div className="grid md:grid-cols-2 gap-6 mb-8">
             {plans.map((p) => (
               <Card key={p.id} className={`p-8 relative ${p.popular ? "border-primary border-2 shadow-glow" : "shadow-card"}`}>
-                <span className="absolute -top-3 left-6 bg-success text-success-foreground text-xs font-bold px-3 py-1 rounded-full">60% OFF</span>
+                <span className="absolute -top-3 left-6 bg-success text-success-foreground text-xs font-bold px-3 py-1 rounded-full">{p.discount}</span>
                 {p.popular && <span className="absolute -top-3 right-6 bg-gradient-primary text-primary-foreground text-xs font-bold px-3 py-1 rounded-full">RECOMMENDED</span>}
                 <h3 className="font-display text-2xl font-bold">{p.name}</h3>
                 <div className="mt-4 mb-1 flex items-baseline gap-2">
