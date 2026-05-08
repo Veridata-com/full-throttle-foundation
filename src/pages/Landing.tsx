@@ -19,10 +19,26 @@ const C = {
   card:    "rgba(255,255,255,0.04)",
   text:    "#ffffff",
   muted:   "rgba(255,255,255,0.42)",
-  line:    "rgba(255,51,85,0.45)",
+  line:    "rgba(255,51,85,0.4)",
 };
 
 const BEBAS = "'Bebas Neue', 'Arial Black', sans-serif";
+
+/* Lines that fade in at the top of a section and out at the bottom */
+const SectionLines = () => (
+  <>
+    <div className="hidden md:block" aria-hidden style={{
+      position: "absolute", top: 0, bottom: 0, left: "15%",
+      width: 1, pointerEvents: "none", zIndex: 1,
+      background: `linear-gradient(to bottom, transparent, ${C.line} 70px, ${C.line} calc(100% - 70px), transparent)`,
+    }} />
+    <div className="hidden md:block" aria-hidden style={{
+      position: "absolute", top: 0, bottom: 0, right: "15%",
+      width: 1, pointerEvents: "none", zIndex: 1,
+      background: `linear-gradient(to bottom, transparent, ${C.line} 70px, ${C.line} calc(100% - 70px), transparent)`,
+    }} />
+  </>
+);
 
 const Label = ({ children }: { children: string }) => (
   <p style={{ color: C.muted, fontSize: "0.68rem", letterSpacing: "0.22em", textTransform: "uppercase", marginBottom: 12 }}>
@@ -31,7 +47,7 @@ const Label = ({ children }: { children: string }) => (
 );
 
 const SectionHead = ({ children }: { children: string }) => (
-  <h2 style={{ fontFamily: BEBAS, fontSize: "clamp(2.6rem, 6vw, 5rem)", letterSpacing: "0.02em", color: C.text, marginBottom: 56 }}>
+  <h2 style={{ fontFamily: BEBAS, fontSize: "clamp(2.4rem, 5.5vw, 4.8rem)", letterSpacing: "0.02em", color: C.text, marginBottom: 48 }}>
     {children}
   </h2>
 );
@@ -40,24 +56,6 @@ const CTAButton = ({ to, children }: { to: string; children: React.ReactNode }) 
   <Button size="lg" asChild style={{ background: C.red, boxShadow: `0 0 28px ${C.redGlow}`, height: 52, padding: "0 2rem", fontSize: "1rem", fontWeight: 600, border: "none" }}>
     <Link to={to}>{children}</Link>
   </Button>
-);
-
-/* Vertical frame line — reused for both sides */
-const FrameLine = ({ side }: { side: "left" | "right" }) => (
-  <div
-    className="hidden md:block"
-    aria-hidden
-    style={{
-      position: "absolute",
-      top: 0,
-      bottom: 0,
-      [side]: "15%",
-      width: 1,
-      pointerEvents: "none",
-      zIndex: 4,
-      background: `linear-gradient(to bottom, transparent 0px, ${C.line} 80px, ${C.line} calc(100% - 80px), transparent 100%)`,
-    }}
-  />
 );
 
 const Landing = () => {
@@ -80,13 +78,7 @@ const Landing = () => {
         description="Upload your product. Click generate. Get views and leads. No marketing skills needed."
         canonical="/"
       />
-
-      {/* Root wrapper: position:relative so frame lines span full page height */}
-      <div style={{ background: C.bg, color: C.text, fontFamily: "'DM Sans', sans-serif", position: "relative" }}>
-
-        {/* Full-page vertical frame lines */}
-        <FrameLine side="left" />
-        <FrameLine side="right" />
+      <div style={{ background: C.bg, color: C.text, fontFamily: "'DM Sans', sans-serif" }}>
 
         {/* ─── Header ─── */}
         <header style={{ borderBottom: `1px solid ${C.border}`, background: `${C.bg}e8`, backdropFilter: "blur(14px)" }} className="sticky top-0 z-50">
@@ -118,6 +110,7 @@ const Landing = () => {
 
         {/* ─── BLOCK 1: Hero ─── */}
         <section style={{ position: "relative", overflow: "hidden", minHeight: "calc(100vh - 64px)" }} className="flex items-center">
+          <SectionLines />
 
           {/* Space fabric grid */}
           <div style={{ position: "absolute", inset: 0, pointerEvents: "none" }} aria-hidden>
@@ -140,19 +133,24 @@ const Landing = () => {
             }} />
           </div>
 
-          {/* 3-column layout — side cols match frame lines at 15% */}
-          <div style={{ width: "100%", minHeight: "calc(100vh - 64px)", display: "grid", gridTemplateColumns: "15% 1fr 15%" }} className="relative z-10">
-
-            {/* Left side col */}
-            <div className="hidden md:flex" style={{ alignItems: "center", justifyContent: "center" }}>
+          {/*
+            Mobile: single column, full width
+            Desktop: 3 columns — side cols at 15% align with SectionLines
+          */}
+          <div
+            className="relative z-10 w-full grid grid-cols-1 md:grid-cols-[15%_1fr_15%]"
+            style={{ minHeight: "calc(100vh - 64px)" }}
+          >
+            {/* Left side col — desktop only */}
+            <div className="hidden md:flex items-center justify-center">
               <span style={{
                 writingMode: "vertical-rl",
                 textOrientation: "mixed",
                 transform: "rotate(180deg)",
-                fontSize: "0.58rem",
+                fontSize: "0.57rem",
                 letterSpacing: "0.26em",
                 textTransform: "uppercase",
-                color: "rgba(255,255,255,0.13)",
+                color: "rgba(255,255,255,0.12)",
                 userSelect: "none",
               }}>
                 TikTok Marketing
@@ -160,12 +158,12 @@ const Landing = () => {
             </div>
 
             {/* Center col — hero content */}
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", padding: "56px 24px" }}>
-              <div style={{ marginBottom: 26 }}><CountdownBanner /></div>
+            <div className="flex flex-col items-center justify-center text-center" style={{ padding: "60px 20px" }}>
+              <div style={{ marginBottom: 28 }}><CountdownBanner /></div>
 
               <h1 style={{
                 fontFamily: BEBAS,
-                fontSize: "clamp(2.6rem, 5.5vw, 4rem)",
+                fontSize: "clamp(1.9rem, 7vw, 4rem)",
                 letterSpacing: "0.02em",
                 lineHeight: 0.93,
                 color: C.text,
@@ -175,27 +173,27 @@ const Landing = () => {
                 <span style={{ color: C.red }}>that actually sell.</span>
               </h1>
 
-              <p style={{ color: C.muted, fontSize: "clamp(0.85rem, 1.4vw, 0.97rem)", maxWidth: 340, margin: "0 auto 1.75rem" }}>
+              <p style={{ color: C.muted, fontSize: "clamp(0.82rem, 1.4vw, 0.95rem)", maxWidth: 320, margin: "0 auto 1.75rem" }}>
                 Upload your product. One click. Views and leads. No skills, no hours wasted.
               </p>
 
               {/* Three selling-point cards */}
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, width: "100%", maxWidth: 460, margin: "0 auto 1.75rem" }}>
-                <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: "15px 8px" }}>
-                  <div style={{ fontFamily: BEBAS, fontSize: "clamp(1.7rem, 2.8vw, 2.4rem)", color: C.red, lineHeight: 1 }}>827K+</div>
-                  <div style={{ color: C.muted, fontSize: "0.62rem", marginTop: 4, letterSpacing: "0.08em", textTransform: "uppercase" }}>avg views</div>
+              <div className="grid grid-cols-3 gap-2 w-full mx-auto mb-7" style={{ maxWidth: 440 }}>
+                <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: "14px 6px" }}>
+                  <div style={{ fontFamily: BEBAS, fontSize: "clamp(1.5rem, 4vw, 2.4rem)", color: C.red, lineHeight: 1 }}>827K+</div>
+                  <div style={{ color: C.muted, fontSize: "0.6rem", marginTop: 4, letterSpacing: "0.08em", textTransform: "uppercase" }}>avg views</div>
                 </div>
-                <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: "15px 8px" }}>
-                  <div style={{ fontFamily: BEBAS, fontSize: "clamp(1.7rem, 2.8vw, 2.4rem)", color: C.red, lineHeight: 1 }}>1 CLICK</div>
-                  <div style={{ color: C.muted, fontSize: "0.62rem", marginTop: 4, letterSpacing: "0.08em", textTransform: "uppercase" }}>under 60 sec</div>
+                <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: "14px 6px" }}>
+                  <div style={{ fontFamily: BEBAS, fontSize: "clamp(1.5rem, 4vw, 2.4rem)", color: C.red, lineHeight: 1 }}>1 CLICK</div>
+                  <div style={{ color: C.muted, fontSize: "0.6rem", marginTop: 4, letterSpacing: "0.08em", textTransform: "uppercase" }}>under 60 sec</div>
                 </div>
-                <div style={{ background: C.redSub, border: `1px solid ${C.redBdr}`, borderRadius: 14, padding: "15px 8px" }}>
-                  <div style={{ fontFamily: BEBAS, fontSize: "clamp(1.7rem, 2.8vw, 2.4rem)", color: C.red, lineHeight: 1 }}>$0.99</div>
-                  <div style={{ color: C.muted, fontSize: "0.62rem", marginTop: 4, letterSpacing: "0.08em", textTransform: "uppercase" }}>to start</div>
+                <div style={{ background: C.redSub, border: `1px solid ${C.redBdr}`, borderRadius: 14, padding: "14px 6px" }}>
+                  <div style={{ fontFamily: BEBAS, fontSize: "clamp(1.5rem, 4vw, 2.4rem)", color: C.red, lineHeight: 1 }}>$0.99</div>
+                  <div style={{ color: C.muted, fontSize: "0.6rem", marginTop: 4, letterSpacing: "0.08em", textTransform: "uppercase" }}>to start</div>
                 </div>
               </div>
 
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 10, justifyContent: "center" }}>
+              <div className="flex flex-wrap gap-2.5 justify-center">
                 <CTAButton to="/auth?mode=signup">Start for $0.99 <ArrowRight className="ml-2 h-4 w-4" /></CTAButton>
                 <Button size="lg" variant="outline" asChild style={{ height: 52, padding: "0 1.5rem", fontSize: "0.95rem", borderColor: C.border, color: C.muted, background: "transparent" }}>
                   <Link to="#pricing">See plans</Link>
@@ -203,14 +201,14 @@ const Landing = () => {
               </div>
             </div>
 
-            {/* Right side col */}
-            <div className="hidden md:flex" style={{ alignItems: "center", justifyContent: "center" }}>
+            {/* Right side col — desktop only */}
+            <div className="hidden md:flex items-center justify-center">
               <span style={{
                 writingMode: "vertical-rl",
-                fontSize: "0.58rem",
+                fontSize: "0.57rem",
                 letterSpacing: "0.26em",
                 textTransform: "uppercase",
-                color: "rgba(255,255,255,0.13)",
+                color: "rgba(255,255,255,0.12)",
                 userSelect: "none",
               }}>
                 Powered by AdRise
@@ -220,20 +218,21 @@ const Landing = () => {
         </section>
 
         {/* ─── BLOCK 2: Results ─── */}
-        <section style={{ borderTop: `1px solid ${C.border}`, padding: "96px 0", background: C.bg2 }}>
-          <div className="container max-w-4xl mx-auto text-center px-4">
+        <section style={{ position: "relative", borderTop: `1px solid ${C.border}`, padding: "96px 0", background: C.bg2 }}>
+          <SectionLines />
+          <div className="container max-w-4xl mx-auto text-center px-4 relative z-10">
             <Label>Real results. Real users.</Label>
             <SectionHead>The numbers</SectionHead>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-14">
               {[
-                { big: "827K", accent: "+",     label: "Average views per post" },
-                { big: "3.2M", accent: "",      label: "Best single slideshow" },
-                { big: "3",   accent: " days",  label: "Avg. to first customer" },
-                { big: "96",  accent: "%",      label: "Gross margin" },
+                { big: "827K", accent: "+",    label: "Average views per post" },
+                { big: "3.2M", accent: "",     label: "Best single slideshow" },
+                { big: "3",   accent: " days", label: "Avg. to first customer" },
+                { big: "96",  accent: "%",     label: "Gross margin" },
               ].map((s) => (
                 <div key={s.label} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 20, padding: "28px 12px" }}>
-                  <div style={{ fontFamily: BEBAS, fontSize: "clamp(2.8rem, 4.5vw, 4rem)", lineHeight: 1, color: C.text }}>
+                  <div style={{ fontFamily: BEBAS, fontSize: "clamp(2.4rem, 4.5vw, 4rem)", lineHeight: 1, color: C.text }}>
                     {s.big}<span style={{ color: C.red }}>{s.accent}</span>
                   </div>
                   <div style={{ color: C.muted, fontSize: "0.75rem", marginTop: 10, letterSpacing: "0.04em" }}>{s.label}</div>
@@ -246,16 +245,17 @@ const Landing = () => {
         </section>
 
         {/* ─── BLOCK 3: Easy ─── */}
-        <section style={{ borderTop: `1px solid ${C.border}`, padding: "96px 0", background: C.bg }}>
-          <div className="container max-w-4xl mx-auto text-center px-4">
+        <section style={{ position: "relative", borderTop: `1px solid ${C.border}`, padding: "96px 0", background: C.bg }}>
+          <SectionLines />
+          <div className="container max-w-4xl mx-auto text-center px-4 relative z-10">
             <Label>Zero marketing skills needed</Label>
             <SectionHead>Done in under 60 seconds</SectionHead>
 
             <div className="flex flex-col md:flex-row items-stretch gap-3 mb-14">
               {[
-                { n: "01", title: "Upload",   sub: "Drop in product photos",       time: "~10 sec" },
-                { n: "02", title: "Generate", sub: "One click. AI does the rest",  time: "~30 sec" },
-                { n: "03", title: "Post",     sub: "Download and post to TikTok",  time: "~20 sec" },
+                { n: "01", title: "Upload",   sub: "Drop in product photos",      time: "~10 sec" },
+                { n: "02", title: "Generate", sub: "One click. AI does the rest", time: "~30 sec" },
+                { n: "03", title: "Post",     sub: "Download and post to TikTok", time: "~20 sec" },
               ].map((step, i) => (
                 <div key={step.n} className="flex flex-col md:flex-row items-center gap-3 flex-1">
                   <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 24, padding: "32px 20px", flex: 1, width: "100%" }} className="text-center">
@@ -280,8 +280,9 @@ const Landing = () => {
         </section>
 
         {/* ─── BLOCK 4: Price ─── */}
-        <section style={{ borderTop: `1px solid ${C.border}`, padding: "96px 0", background: C.bg2 }}>
-          <div className="container max-w-2xl mx-auto text-center px-4">
+        <section style={{ position: "relative", borderTop: `1px solid ${C.border}`, padding: "96px 0", background: C.bg2 }}>
+          <SectionLines />
+          <div className="container max-w-2xl mx-auto text-center px-4 relative z-10">
             <Label>Early beta pricing</Label>
             <SectionHead>Less than a coffee</SectionHead>
 
@@ -291,7 +292,7 @@ const Landing = () => {
             </div>
 
             <div style={{ position: "relative", display: "inline-block" }}>
-              <div style={{ fontFamily: BEBAS, fontSize: "clamp(7rem, 22vw, 13rem)", color: C.red, lineHeight: 0.88, letterSpacing: "0.01em" }}>
+              <div style={{ fontFamily: BEBAS, fontSize: "clamp(6rem, 20vw, 12rem)", color: C.red, lineHeight: 0.88, letterSpacing: "0.01em" }}>
                 $0.99
               </div>
               <div style={{ position: "absolute", bottom: -10, left: "50%", transform: "translateX(-50%)", width: 280, height: 60, background: `radial-gradient(ellipse, ${C.redGlow} 0%, transparent 70%)`, pointerEvents: "none" }} aria-hidden />

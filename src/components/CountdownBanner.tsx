@@ -42,13 +42,12 @@ export function CountdownBanner() {
   const target = user ? "/billing" : "/auth?mode=signup";
 
   return (
-    <Link to={target} style={{ display: "inline-flex", alignItems: "center", gap: 14, textDecoration: "none" }}>
+    <Link to={target} style={{ display: "inline-flex", flexDirection: "column", alignItems: "center", gap: 8, textDecoration: "none" }}>
       <span style={{
-        color: "rgba(255,255,255,0.38)",
-        fontSize: "0.65rem",
+        color: "rgba(255,255,255,0.35)",
+        fontSize: "0.62rem",
         letterSpacing: "0.2em",
         textTransform: "uppercase",
-        whiteSpace: "nowrap",
         fontFamily: "'DM Sans', sans-serif",
       }}>
         95% off ends in
@@ -61,11 +60,11 @@ export function CountdownBanner() {
             borderRadius: 7,
             padding: "5px 9px",
             textAlign: "center",
-            minWidth: 38,
+            minWidth: 36,
           }}>
             <div style={{
               fontFamily: BEBAS,
-              fontSize: "1.35rem",
+              fontSize: "1.25rem",
               color: "#ff3355",
               lineHeight: 1,
               fontVariantNumeric: "tabular-nums",
@@ -73,7 +72,7 @@ export function CountdownBanner() {
               {v}
             </div>
             <div style={{
-              fontSize: "0.48rem",
+              fontSize: "0.46rem",
               color: "rgba(255,255,255,0.28)",
               letterSpacing: "0.14em",
               marginTop: 2,
