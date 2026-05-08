@@ -38,6 +38,19 @@ Examples of the energy:
 
 "most founders are solving\\nthe wrong problem.\\nand they won't find out until it's too late."`;
 
+function generateEmbedCode(): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  const bytes = new Uint8Array(5);
+  crypto.getRandomValues(bytes);
+  return 'AR-' + Array.from(bytes).map(b => chars[b % chars.length]).join('');
+}
+
+function buildTiktokCaption(hookText: string, ctaText: string, embedCode: string): string {
+  const hook = (hookText || '').replace(/\n/g, ' ').trim();
+  const cta = (ctaText || 'Follow for more').replace(/\n/g, ' ').trim();
+  return `${hook}\n\n${cta}\n\n${embedCode}`;
+}
+
 function clean(s: any): string {
   if (typeof s !== 'string') return '';
   let t = s.replace(/[—–]/g, ', ').replace(/\*+/g, '').replace(/_+/g, '').replace(/\s+,/g, ',').replace(/,\s*,/g, ',').trim();
@@ -373,6 +386,8 @@ Use these learnings to bias your decisions. Do not mention this context in the o
     }).eq('id', slideshowId);
 
     const allTexts = slides.map((s: any) => s.text || '');
+    const embedCode = generateEmbedCode();
+    const tiktokCaption = buildTiktokCaption(allTexts[0] || '', allTexts[allTexts.length - 1] || '', embedCode);
     await admin.from('slideshows').update({
       status: 'ready',
       slides,
@@ -382,6 +397,8 @@ Use these learnings to bias your decisions. Do not mention this context in the o
       content_style: chosenStyle,
       hook_text: allTexts[0] || null,
       all_slide_texts: allTexts,
+      embed_code: embedCode,
+      tiktok_caption: tiktokCaption,
       generation_progress: { step: 'complete', step_index: 4, total_steps: 4, message: 'Your slideshow is ready!', percent: 100 },
     }).eq('id', slideshowId);
 

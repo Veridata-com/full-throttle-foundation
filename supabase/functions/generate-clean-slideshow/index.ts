@@ -28,6 +28,19 @@ const DESIGN_STYLES = ["designed", "story"] as const;
 
 function pick<T>(arr: readonly T[]): T { return arr[Math.floor(Math.random() * arr.length)]; }
 
+function generateEmbedCode(): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  const bytes = new Uint8Array(5);
+  crypto.getRandomValues(bytes);
+  return 'AR-' + Array.from(bytes).map(b => chars[b % chars.length]).join('');
+}
+
+function buildTiktokCaption(hookText: string, ctaText: string, embedCode: string): string {
+  const hook = (hookText || '').replace(/\n/g, ' ').trim();
+  const cta = (ctaText || 'Follow for more').replace(/\n/g, ' ').trim();
+  return `${hook}\n\n${cta}\n\n${embedCode}`;
+}
+
 const SYSTEM_DESIGNED = `You are an autonomous TikTok carousel designer + scriptwriter. Decide nothing about strategy — that has already been decided for you. Just write the copy and pick the templates.
 
 Rules:
@@ -482,6 +495,8 @@ Return exactly ${numSlides} slides. First = hook, last = cta_card.`;
     const allTexts = slides.map((s: any) => s.text || "");
     const templatesUsed = slides.map((s: any) => s.template);
     const iconsUsed = slides.map((s: any) => s.icon).filter(Boolean);
+    const embedCode = generateEmbedCode();
+    const tiktokCaption = buildTiktokCaption(allTexts[0] || '', allTexts[allTexts.length - 1] || '', embedCode);
 
     await admin.from("slideshows").update({
       generation_mode: "clean_designed",
@@ -493,6 +508,8 @@ Return exactly ${numSlides} slides. First = hook, last = cta_card.`;
       all_slide_texts: allTexts,
       templates_used: templatesUsed,
       icons_used: iconsUsed,
+      embed_code: embedCode,
+      tiktok_caption: tiktokCaption,
     } as any).eq("id", slideshowId);
 
     // Log decision

@@ -4,7 +4,7 @@ import { fabric } from "fabric";
 import JSZip from "jszip";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { Loader2, Download, Save, ArrowLeft, Image as ImageIcon, Plus, RotateCcw, Type, Palette, Sliders, X } from "lucide-react";
+import { Loader2, Download, Save, ArrowLeft, Image as ImageIcon, Plus, RotateCcw, Type, Palette, Sliders, X, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { SEO } from "@/components/SEO";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -148,6 +148,7 @@ const SlideshowEditor = () => {
   const [saving, setSaving] = useState(false);
   const [savingLabel, setSavingLabel] = useState<string>("");
   const [exporting, setExporting] = useState(false);
+  const [captionCopied, setCaptionCopied] = useState(false);
   const [loading, setLoading] = useState(true);
   const [titleEditing, setTitleEditing] = useState(false);
   const [title, setTitle] = useState("");
@@ -454,6 +455,15 @@ const SlideshowEditor = () => {
     toast.success("Slide downloaded!");
   };
 
+  const copyTiktokCaption = async () => {
+    const caption = slideshow?.tiktok_caption;
+    if (!caption) return;
+    await navigator.clipboard.writeText(caption);
+    setCaptionCopied(true);
+    toast.success("TikTok caption copied — paste it as your video description when posting.");
+    setTimeout(() => setCaptionCopied(false), 3000);
+  };
+
   const exportZip = async () => {
     if (!slideshow) return;
     setExporting(true);
@@ -660,6 +670,16 @@ const SlideshowEditor = () => {
                 >
                   {saving ? <Loader2 className="h-5 w-5 animate-spin" /> : <Save className="h-5 w-5" />}
                 </button>
+                {slideshow?.tiktok_caption && (
+                  <button
+                    onClick={copyTiktokCaption}
+                    style={{ color: captionCopied ? "#4ade80" : C.muted, background: "transparent", border: "none", padding: 8, borderRadius: 6, display: "flex", alignItems: "center" }}
+                    aria-label="Copy TikTok caption"
+                    title="Copy TikTok caption"
+                  >
+                    <Copy className="h-5 w-5" />
+                  </button>
+                )}
                 <button
                   onClick={exportZip}
                   disabled={exporting}
@@ -874,6 +894,13 @@ const SlideshowEditor = () => {
                   onMouseLeave={(e) => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.color = C.muted; }}>
                   <ImageIcon className="h-4 w-4" /> Download PNG
                 </button>
+                {slideshow?.tiktok_caption && (
+                  <button style={secondaryBtn} onClick={copyTiktokCaption}
+                    onMouseEnter={(e) => { e.currentTarget.style.borderColor = C.borderHover; e.currentTarget.style.color = C.text; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.color = C.muted; }}>
+                    <Copy className="h-4 w-4" /> {captionCopied ? "Copied!" : "Copy caption"}
+                  </button>
+                )}
                 <button style={primaryBtn} onClick={exportZip} disabled={exporting}
                   onMouseEnter={(e) => (e.currentTarget.style.background = C.accentHover)}
                   onMouseLeave={(e) => (e.currentTarget.style.background = C.accent)}>

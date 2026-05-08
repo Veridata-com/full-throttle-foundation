@@ -125,10 +125,28 @@ Deno.serve(async (req) => {
         const isSlideshow = Array.isArray(it.images) && it.images.length > 0;
         const slideCount = isSlideshow ? it.images.length : 1;
 
+        // Auto-match: look for embed code in the TikTok description (format: AR-XXXXX)
+        const embedMatch = caption.match(/\bAR-([A-Z0-9]{5})\b/);
+        let matchedSlideshowId: string | null = null;
+        let matchedSlideshow: any = null;
+        if (embedMatch) {
+          const embedCode = `AR-${embedMatch[1]}`;
+          const { data: sw } = await admin
+            .from('slideshows')
+            .select('id, hook_text, num_slides, content_style, topic, all_slide_texts, image_ids')
+            .eq('embed_code', embedCode)
+            .eq('user_id', userId)
+            .maybeSingle();
+          if (sw) {
+            matchedSlideshowId = sw.id;
+            matchedSlideshow = sw;
+          }
+        }
+
         // Upsert posted_slideshows by (user_id, tiktok_post_url)
         const { data: existingPost } = await admin
           .from('posted_slideshows')
-          .select('id')
+          .select('id, slideshow_id')
           .eq('user_id', userId)
           .eq('tiktok_post_url', postUrl)
           .maybeSingle();
@@ -136,26 +154,39 @@ Deno.serve(async (req) => {
         let postedId: string;
         if (existingPost) {
           postedId = existingPost.id;
-          await admin.from('posted_slideshows').update({
+          // Only update slideshow_id if not already linked and we found a match
+          const update: any = {
             sync_status: 'synced',
             last_synced_at: new Date().toISOString(),
             caption,
             thumbnail_url: thumbnail,
-          }).eq('id', postedId);
+          };
+          if (!existingPost.slideshow_id && matchedSlideshowId) {
+            update.slideshow_id = matchedSlideshowId;
+            if (matchedSlideshow) {
+              update.hook_text = matchedSlideshow.hook_text;
+              update.slide_count = matchedSlideshow.num_slides;
+              update.style = matchedSlideshow.content_style || 'storytelling';
+              update.topic = matchedSlideshow.topic || '';
+              update.all_slide_texts = matchedSlideshow.all_slide_texts || [];
+              update.image_ids = matchedSlideshow.image_ids || [];
+            }
+          }
+          await admin.from('posted_slideshows').update(update).eq('id', postedId);
           updated++;
         } else {
           const { data: ins, error: insErr } = await admin.from('posted_slideshows').insert({
             user_id: userId,
-            slideshow_id: null,
+            slideshow_id: matchedSlideshowId,
             tiktok_handle: handle,
             tiktok_account_id: accountId,
             tiktok_post_url: postUrl,
-            hook_text: hookText,
-            slide_count: slideCount,
-            style: isSlideshow ? 'storytelling' : 'video',
-            topic: '',
-            all_slide_texts: [],
-            image_ids: [],
+            hook_text: matchedSlideshow?.hook_text || hookText,
+            slide_count: matchedSlideshow?.num_slides || slideCount,
+            style: matchedSlideshow?.content_style || (isSlideshow ? 'storytelling' : 'video'),
+            topic: matchedSlideshow?.topic || '',
+            all_slide_texts: matchedSlideshow?.all_slide_texts || [],
+            image_ids: matchedSlideshow?.image_ids || [],
             posted_at: postedAt,
             sync_status: 'synced',
             last_synced_at: new Date().toISOString(),
