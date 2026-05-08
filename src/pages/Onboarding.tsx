@@ -49,8 +49,8 @@ const Onboarding = () => {
 
 
   const plans = [
-    { id: "starter" as const, name: "Starter", price: "7.60", original: "19.00", renewal: "19", features: ["1 workspace", "50 slideshows / month", "500 image uploads", "All AI features"] },
-    { id: "pro" as const, name: "Pro", price: "19.60", original: "49.00", renewal: "49", popular: true, features: ["5 workspaces", "Unlimited slideshows", "Unlimited uploads", "Priority AI", "Priority support"] },
+    { id: "starter" as const, name: "Starter", price: "0.99", original: "19.00", renewal: "19", discount: "95% OFF", features: ["1 workspace", "50 slideshows / month", "500 image uploads", "All AI features"] },
+    { id: "pro" as const, name: "Pro", price: "19.60", original: "49.00", renewal: "49", discount: "60% OFF", popular: true, features: ["5 workspaces", "Unlimited slideshows", "Unlimited uploads", "Priority AI", "Priority support"] },
   ];
 
   if (syncing) {
