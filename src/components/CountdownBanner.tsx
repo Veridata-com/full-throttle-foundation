@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Zap } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 const KEY = "adrise:discount_end";
@@ -16,15 +15,18 @@ function getEnd(): number {
   return end;
 }
 
-function format(ms: number): string {
-  if (ms <= 0) return "00d00h00m00s";
-  const s = Math.floor(ms / 1000);
-  const d = Math.floor(s / 86400);
-  const h = Math.floor((s % 86400) / 3600);
-  const m = Math.floor((s % 3600) / 60);
-  const sec = s % 60;
-  return `${String(d).padStart(2, "0")}d${String(h).padStart(2, "0")}h${String(m).padStart(2, "0")}m${String(sec).padStart(2, "0")}s`;
+function getUnits(ms: number) {
+  if (ms <= 0) return { d: "00", h: "00", m: "00", s: "00" };
+  const total = Math.floor(ms / 1000);
+  return {
+    d: String(Math.floor(total / 86400)).padStart(2, "0"),
+    h: String(Math.floor((total % 86400) / 3600)).padStart(2, "0"),
+    m: String(Math.floor((total % 3600) / 60)).padStart(2, "0"),
+    s: String(total % 60).padStart(2, "0"),
+  };
 }
+
+const BEBAS = "'Bebas Neue', 'Arial Black', sans-serif";
 
 export function CountdownBanner() {
   const { user } = useAuth();
@@ -36,15 +38,52 @@ export function CountdownBanner() {
     return () => clearInterval(t);
   }, []);
 
+  const { d, h, m, s } = getUnits(end - now);
   const target = user ? "/billing" : "/auth?mode=signup";
 
   return (
-    <Link
-      to={target}
-      className="inline-flex items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-4 py-1.5 text-sm font-medium text-primary hover:bg-primary/20 hover:shadow-glow transition-all animate-fade-in"
-    >
-      <Zap className="h-3.5 w-3.5" />
-      Up to 95% off for <span className="font-mono tabular-nums">{format(end - now)}</span>
+    <Link to={target} style={{ display: "inline-flex", alignItems: "center", gap: 14, textDecoration: "none" }}>
+      <span style={{
+        color: "rgba(255,255,255,0.38)",
+        fontSize: "0.65rem",
+        letterSpacing: "0.2em",
+        textTransform: "uppercase",
+        whiteSpace: "nowrap",
+        fontFamily: "'DM Sans', sans-serif",
+      }}>
+        95% off ends in
+      </span>
+      <div style={{ display: "flex", gap: 5 }}>
+        {[{ v: d, l: "D" }, { v: h, l: "H" }, { v: m, l: "M" }, { v: s, l: "S" }].map(({ v, l }) => (
+          <div key={l} style={{
+            background: "rgba(255,255,255,0.05)",
+            border: "1px solid rgba(255,255,255,0.09)",
+            borderRadius: 7,
+            padding: "5px 9px",
+            textAlign: "center",
+            minWidth: 38,
+          }}>
+            <div style={{
+              fontFamily: BEBAS,
+              fontSize: "1.35rem",
+              color: "#ff3355",
+              lineHeight: 1,
+              fontVariantNumeric: "tabular-nums",
+            }}>
+              {v}
+            </div>
+            <div style={{
+              fontSize: "0.48rem",
+              color: "rgba(255,255,255,0.28)",
+              letterSpacing: "0.14em",
+              marginTop: 2,
+              fontFamily: "'DM Sans', sans-serif",
+            }}>
+              {l}
+            </div>
+          </div>
+        ))}
+      </div>
     </Link>
   );
 }

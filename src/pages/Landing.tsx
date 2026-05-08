@@ -92,43 +92,127 @@ const Landing = () => {
         </header>
 
         {/* ─── BLOCK 1: Hero — all three selling points above the fold ─── */}
-        <section className="relative flex flex-col items-center justify-center text-center px-4 pt-12 pb-20" style={{ minHeight: "calc(100vh - 64px)" }}>
-          {/* bg glow */}
-          <div style={{ position: "absolute", top: "30%", left: "50%", transform: "translateX(-50%)", width: 700, height: 380, background: `radial-gradient(ellipse, ${C.redGlow} 0%, transparent 68%)`, pointerEvents: "none" }} aria-hidden />
+        <section style={{ position: "relative", overflow: "hidden", minHeight: "calc(100vh - 64px)" }} className="flex items-center">
 
-          <div className="relative z-10 w-full max-w-3xl mx-auto">
-            <div className="mb-8"><CountdownBanner /></div>
+          {/* Perspective gravity grid */}
+          <div style={{ position: "absolute", inset: 0, pointerEvents: "none" }} aria-hidden>
+            <div style={{
+              position: "absolute",
+              bottom: 0,
+              left: "-40%",
+              right: "-40%",
+              height: "60%",
+              backgroundImage: `linear-gradient(rgba(255,51,85,0.13) 1px, transparent 1px), linear-gradient(90deg, rgba(255,51,85,0.08) 1px, transparent 1px)`,
+              backgroundSize: "72px 56px",
+              transform: "perspective(540px) rotateX(62deg)",
+              transformOrigin: "50% 100%",
+              WebkitMaskImage: "linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.5) 40%, black 100%)",
+              maskImage: "linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.5) 40%, black 100%)",
+              opacity: 0.55,
+            }} />
+            {/* Horizon glow */}
+            <div style={{
+              position: "absolute",
+              bottom: "38%",
+              left: "50%",
+              transform: "translateX(-50%)",
+              width: "60%",
+              height: 1,
+              background: `linear-gradient(to right, transparent, ${C.red}55, transparent)`,
+            }} />
+          </div>
 
-            <h1 style={{ fontFamily: BEBAS, fontSize: "clamp(3.4rem, 11vw, 9rem)", letterSpacing: "0.02em", lineHeight: 0.92, color: C.text, marginBottom: "1.25rem" }}>
-              TikTok ads<br />
-              <span style={{ color: C.red }}>that actually sell.</span>
-            </h1>
+          {/* 3-column grid — desktop only */}
+          <div style={{ width: "100%", display: "grid", gridTemplateColumns: "12% 1fr 12%", minHeight: "calc(100vh - 64px)" }} className="relative z-10">
 
-            <p style={{ color: C.muted, fontSize: "clamp(0.95rem, 2vw, 1.1rem)", maxWidth: 380, margin: "0 auto 2.5rem" }}>
-              Upload your product. One click. Views and leads. No skills, no hours wasted.
-            </p>
+            {/* Left column */}
+            <div style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "center" }} className="hidden md:flex">
+              <div style={{
+                position: "absolute",
+                right: 0,
+                top: "15%",
+                bottom: "15%",
+                width: 1,
+                background: `linear-gradient(to bottom, transparent, ${C.red}50 50%, transparent)`,
+              }} />
+              <span style={{
+                writingMode: "vertical-rl",
+                textOrientation: "mixed",
+                transform: "rotate(180deg)",
+                fontSize: "0.6rem",
+                letterSpacing: "0.25em",
+                textTransform: "uppercase",
+                color: "rgba(255,255,255,0.14)",
+                userSelect: "none",
+              }}>
+                TikTok Marketing
+              </span>
+            </div>
 
-            {/* Three selling-point badges — the whole argument at a glance */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-xl mx-auto mb-10">
-              <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 18, padding: "20px 12px" }}>
-                <div style={{ fontFamily: BEBAS, fontSize: "3.2rem", color: C.red, lineHeight: 1 }}>827K+</div>
-                <div style={{ color: C.muted, fontSize: "0.72rem", marginTop: 5, letterSpacing: "0.08em", textTransform: "uppercase" }}>avg views per post</div>
+            {/* Center column — all hero content */}
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", padding: "60px 20px" }}>
+              <div style={{ marginBottom: 28 }}><CountdownBanner /></div>
+
+              <h1 style={{
+                fontFamily: BEBAS,
+                fontSize: "clamp(2.6rem, 5.5vw, 4rem)",
+                letterSpacing: "0.02em",
+                lineHeight: 0.94,
+                color: C.text,
+                marginBottom: "1rem",
+              }}>
+                TikTok ads<br />
+                <span style={{ color: C.red }}>that actually sell.</span>
+              </h1>
+
+              <p style={{ color: C.muted, fontSize: "clamp(0.85rem, 1.4vw, 0.97rem)", maxWidth: 340, margin: "0 auto 2rem" }}>
+                Upload your product. One click. Views and leads. No skills, no hours wasted.
+              </p>
+
+              {/* Three selling-point badges */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, width: "100%", maxWidth: 480, margin: "0 auto 1.75rem" }}>
+                <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 16, padding: "16px 8px" }}>
+                  <div style={{ fontFamily: BEBAS, fontSize: "clamp(1.8rem, 3vw, 2.6rem)", color: C.red, lineHeight: 1 }}>827K+</div>
+                  <div style={{ color: C.muted, fontSize: "0.65rem", marginTop: 4, letterSpacing: "0.08em", textTransform: "uppercase" }}>avg views</div>
+                </div>
+                <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 16, padding: "16px 8px" }}>
+                  <div style={{ fontFamily: BEBAS, fontSize: "clamp(1.8rem, 3vw, 2.6rem)", color: C.red, lineHeight: 1 }}>1 CLICK</div>
+                  <div style={{ color: C.muted, fontSize: "0.65rem", marginTop: 4, letterSpacing: "0.08em", textTransform: "uppercase" }}>under 60 sec</div>
+                </div>
+                <div style={{ background: C.redSub, border: `1px solid ${C.redBdr}`, borderRadius: 16, padding: "16px 8px" }}>
+                  <div style={{ fontFamily: BEBAS, fontSize: "clamp(1.8rem, 3vw, 2.6rem)", color: C.red, lineHeight: 1 }}>$0.99</div>
+                  <div style={{ color: C.muted, fontSize: "0.65rem", marginTop: 4, letterSpacing: "0.08em", textTransform: "uppercase" }}>to start</div>
+                </div>
               </div>
-              <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 18, padding: "20px 12px" }}>
-                <div style={{ fontFamily: BEBAS, fontSize: "3.2rem", color: C.red, lineHeight: 1 }}>1 CLICK</div>
-                <div style={{ color: C.muted, fontSize: "0.72rem", marginTop: 5, letterSpacing: "0.08em", textTransform: "uppercase" }}>under 60 seconds</div>
-              </div>
-              <div style={{ background: C.redSub, border: `1px solid ${C.redBdr}`, borderRadius: 18, padding: "20px 12px" }}>
-                <div style={{ fontFamily: BEBAS, fontSize: "3.2rem", color: C.red, lineHeight: 1 }}>$0.99</div>
-                <div style={{ color: C.muted, fontSize: "0.72rem", marginTop: 5, letterSpacing: "0.08em", textTransform: "uppercase" }}>to start today</div>
+
+              <div style={{ display: "flex", flexDirection: "row", flexWrap: "wrap", gap: 10, justifyContent: "center" }}>
+                <CTAButton to="/auth?mode=signup">Start for $0.99 <ArrowRight className="ml-2 h-4 w-4" /></CTAButton>
+                <Button size="lg" variant="outline" asChild style={{ height: 52, padding: "0 1.5rem", fontSize: "0.95rem", borderColor: C.border, color: C.muted, background: "transparent" }}>
+                  <Link to="#pricing">See plans</Link>
+                </Button>
               </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <CTAButton to="/auth?mode=signup">Start for $0.99 <ArrowRight className="ml-2 h-4 w-4" /></CTAButton>
-              <Button size="lg" variant="outline" asChild style={{ height: 52, padding: "0 1.75rem", fontSize: "1rem", borderColor: C.border, color: C.muted, background: "transparent" }}>
-                <Link to="#pricing">See plans</Link>
-              </Button>
+            {/* Right column */}
+            <div style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "center" }} className="hidden md:flex">
+              <div style={{
+                position: "absolute",
+                left: 0,
+                top: "15%",
+                bottom: "15%",
+                width: 1,
+                background: `linear-gradient(to bottom, transparent, ${C.red}50 50%, transparent)`,
+              }} />
+              <span style={{
+                writingMode: "vertical-rl",
+                fontSize: "0.6rem",
+                letterSpacing: "0.25em",
+                textTransform: "uppercase",
+                color: "rgba(255,255,255,0.14)",
+                userSelect: "none",
+              }}>
+                Powered by AI
+              </span>
             </div>
           </div>
         </section>
