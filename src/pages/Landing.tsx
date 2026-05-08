@@ -100,7 +100,7 @@ const Landing = () => {
             <div className="mb-8"><CountdownBanner /></div>
 
             <h1 style={{ fontFamily: BEBAS, fontSize: "clamp(3.4rem, 11vw, 9rem)", letterSpacing: "0.02em", lineHeight: 0.92, color: C.text, marginBottom: "1.25rem" }}>
-              TikTok ads<br />
+              TikTok slideshows<br />
               <span style={{ color: C.red }}>that actually sell.</span>
             </h1>
 
