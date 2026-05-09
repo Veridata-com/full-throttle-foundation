@@ -7,6 +7,8 @@ import { SEO } from "@/components/SEO";
 import { useAuth } from "@/contexts/AuthContext";
 import { Logo } from "@/components/Logo";
 import { CountdownBanner } from "@/components/CountdownBanner";
+import exampleSlide1 from "@/assets/example-slide-1.jpg";
+import exampleSlide2 from "@/assets/example-slide-2.jpg";
 
 const C = {
   bg:      "#08080f",
@@ -213,6 +215,56 @@ const Landing = () => {
               }}>
                 Powered by AdRise
               </span>
+            </div>
+          </div>
+        </section>
+
+        {/* ─── BLOCK 1.5: Proof slideshows ─── */}
+        <section style={{ position: "relative", borderTop: `1px solid ${C.border}`, padding: "96px 0", background: C.bg }}>
+          <SectionLines />
+          <div className="container max-w-5xl mx-auto px-4 relative z-10 text-center">
+            <Label>Real slideshows. Real views.</Label>
+            <SectionHead>Millions of views, zero ad spend</SectionHead>
+            <p style={{ color: C.muted, fontSize: "1rem", maxWidth: 560, margin: "0 auto 56px" }}>
+              Two slides. No editing tricks. Just text on a background — and millions of organic views.
+            </p>
+
+            <div className="grid grid-cols-2 gap-4 md:gap-8 max-w-3xl mx-auto">
+              {[
+                { src: exampleSlide2, views: "3.2M views", caption: "Founder story hook" },
+                { src: exampleSlide1, views: "1.8M views", caption: "Contrarian take hook" },
+              ].map((ex) => (
+                <div key={ex.caption} style={{ position: "relative" }}>
+                  <div style={{
+                    position: "relative",
+                    borderRadius: 20,
+                    overflow: "hidden",
+                    border: `1px solid ${C.border}`,
+                    boxShadow: `0 30px 80px -30px ${C.redGlow}, 0 10px 30px -10px rgba(0,0,0,0.6)`,
+                    aspectRatio: "9 / 12",
+                    background: C.card,
+                  }}>
+                    <img
+                      src={ex.src}
+                      alt={`TikTok slideshow with ${ex.views}`}
+                      loading="lazy"
+                      style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                    />
+                    <div style={{
+                      position: "absolute", top: 12, left: 12,
+                      background: "rgba(0,0,0,0.65)", backdropFilter: "blur(8px)",
+                      color: C.text, fontFamily: BEBAS, letterSpacing: "0.05em",
+                      fontSize: "0.95rem", padding: "6px 12px", borderRadius: 999,
+                      border: `1px solid ${C.redBdr}`,
+                    }}>
+                      <span style={{ color: C.red }}>●</span> {ex.views}
+                    </div>
+                  </div>
+                  <div style={{ color: C.muted, fontSize: "0.78rem", marginTop: 14, letterSpacing: "0.08em", textTransform: "uppercase" }}>
+                    {ex.caption}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </section>
