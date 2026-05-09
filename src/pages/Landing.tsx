@@ -225,14 +225,11 @@ const Landing = () => {
           <div className="container max-w-5xl mx-auto px-4 relative z-10 text-center">
             <Label>Real slideshows. Real views.</Label>
             <SectionHead>Millions of views, zero ad spend</SectionHead>
-            <p style={{ color: C.muted, fontSize: "1rem", maxWidth: 560, margin: "0 auto 56px" }}>
-              Two slides. No editing tricks. Just text on a background — and millions of organic views.
-            </p>
 
-            <div className="grid grid-cols-2 gap-4 md:gap-8 max-w-3xl mx-auto">
+            <div className="grid grid-cols-2 gap-4 md:gap-8 max-w-3xl mx-auto mt-14">
               {[
-                { src: exampleSlide2, views: "3.2M views", caption: "Founder story hook" },
-                { src: exampleSlide1, views: "1.8M views", caption: "Contrarian take hook" },
+                { src: exampleSlide1, views: "3.2M views", caption: "Founder story hook" },
+                { src: exampleSlide2, views: "1.8M views", caption: "Contrarian take hook" },
               ].map((ex) => (
                 <div key={ex.caption} style={{ position: "relative" }}>
                   <div style={{
