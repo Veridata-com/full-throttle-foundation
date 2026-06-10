@@ -246,32 +246,17 @@ export async function renderSlideToPng(html: string, brand: BrandIdentity): Prom
     // This gives pixel-perfect parity with the on-screen preview — no shifted
     // positions, no recolored text, no font-metric drift.
     let canvas: HTMLCanvasElement;
-    try {
-      canvas = await html2canvas(container.firstElementChild as HTMLElement, {
-        width: 1080,
-        height: 1920,
-        windowWidth: 1080,
-        windowHeight: 1920,
-        scale: 1,
-        useCORS: true,
-        allowTaint: false,
-        backgroundColor: null,
-        logging: false,
-        foreignObjectRendering: true,
-      });
-    } catch {
-      // Fallback to the standard renderer if foreignObject path fails
-      canvas = await html2canvas(container.firstElementChild as HTMLElement, {
-        width: 1080,
-        height: 1920,
-        windowWidth: 1080,
-        windowHeight: 1920,
-        scale: 1,
-        useCORS: true,
-        backgroundColor: null,
-        logging: false,
-      });
-    }
+    canvas = await html2canvas(container.firstElementChild as HTMLElement, {
+      width: 1080,
+      height: 1920,
+      windowWidth: 1080,
+      windowHeight: 1920,
+      scale: 1,
+      useCORS: true,
+      allowTaint: false,
+      backgroundColor: null,
+      logging: false,
+    });
     return await new Promise<Blob>((resolve, reject) => {
       canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("toBlob failed"))), "image/png", 0.95);
     });
