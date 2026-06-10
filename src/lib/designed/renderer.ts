@@ -212,7 +212,9 @@ export function resolveSlideHtml({ brand, spec }: ResolveOptions): string {
     html = html.replace(/<div data-icon[\s\S]*?<\/div>/g, '<div style="height:0;"></div>');
   }
 
-  return `<div style="${cssVars}">${html}</div>`;
+  // position:relative turns this wrapper into the containing block for any
+  // absolutely-positioned children in story_canvas slides.
+  return `<div style="position:relative;width:1080px;height:1920px;overflow:hidden;${cssVars}">${html}</div>`;
 }
 
 /** Render resolved HTML to a 1080×1920 PNG Blob using html2canvas. */
@@ -224,11 +226,16 @@ export async function renderSlideToPng(html: string, brand: BrandIdentity): Prom
   await waitForFont(brand.body_font, brand.body_weight);
 
   const container = document.createElement("div");
-  container.style.position = "fixed";
+  // position:fixed takes the element out of flow and sizes relative to viewport,
+  // which causes story_canvas absolute-positioned children to land in wrong spots.
+  // absolute + overflow:hidden keeps the containing block exactly 1080×1920 so
+  // every child resolves positions against the slide box, matching the preview.
+  container.style.position = "absolute";
   container.style.left = "-99999px";
   container.style.top = "0";
   container.style.width = "1080px";
   container.style.height = "1920px";
+  container.style.overflow = "hidden";
   container.style.pointerEvents = "none";
   container.innerHTML = html;
   document.body.appendChild(container);
