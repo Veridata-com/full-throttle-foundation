@@ -226,16 +226,11 @@ export async function renderSlideToPng(html: string, brand: BrandIdentity): Prom
   await waitForFont(brand.body_font, brand.body_weight);
 
   const container = document.createElement("div");
-  // position:fixed takes the element out of flow and sizes relative to viewport,
-  // which causes story_canvas absolute-positioned children to land in wrong spots.
-  // absolute + overflow:hidden keeps the containing block exactly 1080×1920 so
-  // every child resolves positions against the slide box, matching the preview.
-  container.style.position = "absolute";
+  container.style.position = "fixed";
   container.style.left = "-99999px";
   container.style.top = "0";
   container.style.width = "1080px";
   container.style.height = "1920px";
-  container.style.overflow = "hidden";
   container.style.pointerEvents = "none";
   container.innerHTML = html;
   document.body.appendChild(container);
