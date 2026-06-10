@@ -222,47 +222,65 @@ export function resolveSlideHtml({ brand, spec }: ResolveOptions): string {
   return `<div style="${cssVars}">${html}</div>`;
 }
 
-/** Render resolved HTML to a 1080×1920 PNG Blob using html2canvas. */
+/** Render resolved HTML to a 1080×1920 PNG Blob.
+ *  Uses a hidden iframe so the slide gets its own document context —
+ *  fonts load correctly, styles don't bleed from the parent page. */
 export async function renderSlideToPng(html: string, brand: BrandIdentity): Promise<Blob> {
-  // Make sure fonts are loaded before rasterizing
   ensureFontLoaded(brand.heading_font, [brand.heading_weight, "400", "600"]);
   if (brand.body_font !== brand.heading_font) ensureFontLoaded(brand.body_font, [brand.body_weight, "400", "600"]);
-  await waitForFont(brand.heading_font, brand.heading_weight);
-  await waitForFont(brand.body_font, brand.body_weight);
 
-  const container = document.createElement("div");
-  container.style.position = "fixed";
-  container.style.left = "-99999px";
-  container.style.top = "0";
-  container.style.width = "1080px";
-  container.style.height = "1920px";
-  container.style.pointerEvents = "none";
-  container.innerHTML = html;
-  document.body.appendChild(container);
+  // Collect font <link> tags already injected in the parent document so the
+  // iframe can load the same typefaces.
+  const fontLinks = Array.from(document.head.querySelectorAll('link[rel="stylesheet"]'))
+    .map((l) => (l as HTMLLinkElement).outerHTML)
+    .join("\n");
 
-  try {
-    // foreignObjectRendering uses the browser's native rendering engine
-    // (via SVG <foreignObject>) instead of html2canvas's CSS reimplementation.
-    // This gives pixel-perfect parity with the on-screen preview — no shifted
-    // positions, no recolored text, no font-metric drift.
-    let canvas: HTMLCanvasElement;
-    canvas = await html2canvas(container.firstElementChild as HTMLElement, {
-      width: 1080,
-      height: 1920,
-      windowWidth: 1080,
-      windowHeight: 1920,
-      scale: 1,
-      useCORS: true,
-      allowTaint: false,
-      backgroundColor: null,
-      logging: false,
-    });
-    return await new Promise<Blob>((resolve, reject) => {
-      canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("toBlob failed"))), "image/png", 0.95);
-    });
-  } finally {
-    document.body.removeChild(container);
-  }
+  const docHtml = `<!DOCTYPE html><html><head><meta charset="utf-8">
+${fontLinks}
+<style>*{margin:0;padding:0;box-sizing:border-box;}html,body{width:1080px;height:1920px;overflow:hidden;}</style>
+</head><body>${html}</body></html>`;
+
+  return new Promise<Blob>((resolve, reject) => {
+    const iframe = document.createElement("iframe");
+    iframe.style.cssText = "position:fixed;left:-9999px;top:0;width:1080px;height:1920px;border:none;visibility:hidden;";
+
+    const cleanup = () => { try { document.body.removeChild(iframe); } catch { /* already removed */ } };
+
+    iframe.onload = async () => {
+      try {
+        const doc = iframe.contentDocument!;
+        // Wait for fonts inside the iframe
+        if (doc.fonts?.ready) await doc.fonts.ready;
+        await new Promise((r) => setTimeout(r, 350));
+
+        const canvas = await html2canvas(doc.body, {
+          width: 1080,
+          height: 1920,
+          windowWidth: 1080,
+          windowHeight: 1920,
+          scale: 1,
+          useCORS: true,
+          allowTaint: false,
+          backgroundColor: null,
+          logging: false,
+        });
+
+        canvas.toBlob(
+          (b) => (b ? resolve(b) : reject(new Error("toBlob failed"))),
+          "image/png",
+          0.95,
+        );
+      } catch (e) {
+        reject(e);
+      } finally {
+        cleanup();
+      }
+    };
+
+    iframe.onerror = () => { cleanup(); reject(new Error("iframe failed to load")); };
+    document.body.appendChild(iframe);
+    iframe.srcdoc = docHtml;
+  });
 }
 
 /** Render + upload one slide. Returns a signed URL good for 7 days. */
