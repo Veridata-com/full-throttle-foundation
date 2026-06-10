@@ -212,9 +212,14 @@ export function resolveSlideHtml({ brand, spec }: ResolveOptions): string {
     html = html.replace(/<div data-icon[\s\S]*?<\/div>/g, '<div style="height:0;"></div>');
   }
 
-  // position:relative turns this wrapper into the containing block for any
-  // absolutely-positioned children in story_canvas slides.
-  return `<div style="position:relative;width:1080px;height:1920px;${cssVars}">${html}</div>`;
+  // For story_canvas: ensure the root div has position:relative so absolute children
+  // resolve against the 1080x1920 slide box, not the viewport. We patch the first
+  // opening <div style="..."> tag rather than wrapping (which breaks html2canvas).
+  if (spec.template === "story_canvas") {
+    html = html.replace(/^(\s*<div\s+style=")/, '$1position:relative;');
+  }
+
+  return `<div style="${cssVars}">${html}</div>`;
 }
 
 /** Render resolved HTML to a 1080×1920 PNG Blob using html2canvas. */
