@@ -2,7 +2,7 @@
 // Pipeline: template HTML + variables + brand identity → fully-resolved HTML →
 // rendered offscreen at 1080×1920 → html2canvas → PNG blob → uploaded to storage.
 
-import html2canvas from "html2canvas";
+import domtoimage from "dom-to-image-more";
 import { TEMPLATES, type LayoutType } from "./templates";
 import { getIconSvg } from "./icons";
 import { type BrandIdentity, CORNER_RADIUS_PX, FONT_OPTIONS } from "./brand";
@@ -222,7 +222,9 @@ export function resolveSlideHtml({ brand, spec }: ResolveOptions): string {
   return `<div style="${cssVars}">${html}</div>`;
 }
 
-/** Render resolved HTML to a 1080×1920 PNG Blob. */
+/** Render resolved HTML to a 1080×1920 PNG Blob.
+ *  Uses dom-to-image-more which fetches + inlines fonts and uses the
+ *  browser's native SVG renderer — pixel-perfect match to the preview. */
 export async function renderSlideToPng(html: string, brand: BrandIdentity): Promise<Blob> {
   ensureFontLoaded(brand.heading_font, [brand.heading_weight, "400", "600"]);
   if (brand.body_font !== brand.heading_font) ensureFontLoaded(brand.body_font, [brand.body_weight, "400", "600"]);
@@ -230,26 +232,18 @@ export async function renderSlideToPng(html: string, brand: BrandIdentity): Prom
   await waitForFont(brand.body_font, brand.body_weight);
 
   const container = document.createElement("div");
-  container.style.cssText = "position:fixed;left:-9999px;top:0;width:1080px;height:1920px;overflow:hidden;pointer-events:none;z-index:-1;";
+  container.style.cssText = "position:fixed;left:-9999px;top:0;width:1080px;height:1920px;overflow:hidden;pointer-events:none;";
   container.innerHTML = html;
   document.body.appendChild(container);
 
   try {
     const el = container.firstElementChild as HTMLElement;
-    const canvas = await html2canvas(el, {
+    const blob = await domtoimage.toBlob(el, {
       width: 1080,
       height: 1920,
-      windowWidth: 1080,
-      windowHeight: 1920,
-      scale: 1,
-      useCORS: true,
-      allowTaint: true,
-      backgroundColor: "#ffffff",
-      logging: false,
+      style: { transform: "none" },
     });
-    return await new Promise<Blob>((resolve, reject) => {
-      canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("toBlob failed"))), "image/png", 0.95);
-    });
+    return blob;
   } finally {
     document.body.removeChild(container);
   }
