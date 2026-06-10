@@ -141,14 +141,23 @@ export function CleanDesignedEditor({ slideshow, brand, onBack, refresh }: Props
 
   const downloadCurrentPng = async () => {
     if (!spec) return;
-    const html = resolveSlideHtml({ brand, spec });
-    const blob = await renderSlideToPng(html, brand);
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = `slide-${activeIdx + 1}.png`;
-    a.click();
-    URL.revokeObjectURL(a.href);
-    toast.success("Downloaded");
+    setExporting(true);
+    try {
+      const html = resolveSlideHtml({ brand, spec });
+      const blob = await renderSlideToPng(html, brand);
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `slide-${activeIdx + 1}.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(a.href);
+      toast.success("Downloaded");
+    } catch (e: any) {
+      toast.error(e.message || "Export failed");
+    } finally {
+      setExporting(false);
+    }
   };
 
   if (!active || !tpl) {
@@ -188,8 +197,8 @@ export function CleanDesignedEditor({ slideshow, brand, onBack, refresh }: Props
             <Button size="sm" variant="outline" onClick={() => navigate("/brand")}>
               Brand
             </Button>
-            <Button size="sm" variant="outline" onClick={downloadCurrentPng}>
-              <ImageIcon className="h-4 w-4" /> PNG
+            <Button size="sm" variant="outline" onClick={downloadCurrentPng} disabled={exporting}>
+              {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImageIcon className="h-4 w-4" />} PNG
             </Button>
             <Button size="sm" onClick={saveAll} disabled={saving || dirty.size === 0}>
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
