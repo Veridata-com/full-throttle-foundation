@@ -214,7 +214,7 @@ export function resolveSlideHtml({ brand, spec }: ResolveOptions): string {
 
   // position:relative turns this wrapper into the containing block for any
   // absolutely-positioned children in story_canvas slides.
-  return `<div style="position:relative;width:1080px;height:1920px;overflow:hidden;${cssVars}">${html}</div>`;
+  return `<div style="position:relative;width:1080px;height:1920px;${cssVars}">${html}</div>`;
 }
 
 /** Render resolved HTML to a 1080×1920 PNG Blob using html2canvas. */
