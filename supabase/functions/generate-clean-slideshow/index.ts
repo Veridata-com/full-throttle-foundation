@@ -158,6 +158,7 @@ async function setProgress(admin: any, id: string, step: string, stepIndex: numb
 }
 
 Deno.serve(async (req) => {
+  let slideshowId: string | null = null;
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   try {
     const authHeader = req.headers.get("Authorization");
@@ -174,7 +175,9 @@ Deno.serve(async (req) => {
     const userId = user?.id;
     if (!userId) return j({ error: "unauthorized" }, 401);
 
-    const { slideshowId, designStyleOverride } = (await req.json()) as Body;
+    const body = (await req.json()) as Body;
+    slideshowId = body.slideshowId;
+    const { designStyleOverride } = body;
     if (!slideshowId) return j({ error: "slideshowId required" }, 400);
 
     const admin = createClient(supabaseUrl, serviceKey);
@@ -538,6 +541,24 @@ Return exactly ${numSlides} slides. First = hook, last = cta_card.`;
     return j({ ok: true, slides, brand });
   } catch (e: any) {
     console.error("generate-clean-slideshow error", e);
+    try {
+      if (slideshowId) {
+        const supabaseUrl = Deno.env.get("SUPABASE_URL");
+        const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+        if (supabaseUrl && serviceKey) {
+          const admin = createClient(supabaseUrl, serviceKey);
+          await admin
+            .from("slideshows")
+            .update({
+              status: "failed",
+              generation_error: String(e?.message || "Generation failed").slice(0, 300),
+            })
+            .eq("id", slideshowId);
+        }
+      }
+    } catch (persistErr) {
+      console.error("generate-clean-slideshow failed-state persist error", persistErr);
+    }
     return j({ error: e.message }, 500);
   }
 });
