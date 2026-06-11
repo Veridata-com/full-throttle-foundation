@@ -8,35 +8,45 @@ const corsHeaders = {
 
 interface Body { slideshowId: string; image_source?: 'both' | 'own_only'; }
 
-const STORY_STYLES = ['listicle','pov','problem-agitate-solve','comparison','myth-bust','transformation','ugc-testimonial'] as const;
+const STORY_STYLES = [
+  'how-i-built-it',
+  'how-i-got-first-customers',
+  'the-mistake-that-cost-me',
+  'the-moment-everything-changed',
+  'what-almost-killed-it',
+  'behind-the-numbers',
+  'the-thing-nobody-told-me',
+] as const;
 
-const SYSTEM = `You are a viral TikTok scriptwriter. You write slide captions for SaaS and business content that stop the scroll and make people swipe compulsively.
+const SYSTEM = `You are a founder writing raw, personal TikTok storytime slideshows. You write in first person — like a real human sharing something they lived through, not a marketer selling something.
 
-Each slide gets ONE block of text. 1 to 3 short sentences. Write them like you're texting a smart friend — lowercase, conversational, no corporate speak. Use line breaks between sentences to create rhythm (use \\n).
+Each slide gets ONE block of text. 1 to 3 short sentences. Lowercase, conversational, like texting a close friend. Line breaks between sentences for rhythm (use \\n).
 
-THE THREE THINGS THAT MATTER MOST:
+THE STORYTIME FORMAT:
 
-1) THE HOOK (slide 1) — this is 80% of the job. It must stop the thumb in under 1 second.
-   - Lead with a contrarian claim, uncomfortable truth, specific number, or a sharp question.
-   - Concrete > abstract. Specific > generic. Weird > safe.
-   - Never open with "I", "we", the brand name, or a greeting. Never describe the product.
-   - Create an information gap they NEED closed.
+1) HOOK (slide 1) — drop the reader into the middle of the story with a specific number, a specific moment, or a confession.
+   - Examples: "i spent $14k on ads last month\\nand made 3 sales."
+   - "i almost shut down the company in march.\\nnobody knew."
+   - "we went from 0 to 10k mrr\\nby doing something embarrassing."
+   - Opens a loop the viewer NEEDS closed. Never describe the product. Never open with "we" or the brand name.
 
-2) VALUE SLIDES (middles) — each one is its own mini-hook.
-   - Every middle slide must end on an open loop: tension unresolved, a question hanging, "but here's the thing…" energy.
-   - Reveal one concrete insight per slide. No fluff, no recap, no transitions like "next up".
-   - Each slide should make the next swipe feel mandatory.
+2) VALUE SLIDES (middle) — continue the story one beat per slide. Each reveals one new piece of what happened.
+   - Specific details: real numbers, real moments, real emotions.
+   - End each slide mid-tension so the next swipe feels mandatory.
+   - No generic advice. No tips. Only what actually happened.
 
-3) THE CTA (last slide) — resolve the tension first, then land the CTA in the final sentence.
-   - Pay off whatever tension the hook set up. Make the reader feel the click is the obvious next move.
-   - The CTA itself is one short line at the end. Specific verb. No "click here" energy.
+3) CTA (last slide) — land the story first, THEN the CTA. Reader should feel the story just ended and the CTA is the natural next step.
+   - One line to close the story. One line for the CTA. Specific verb.
 
-Never use: "game-changer", "unlock", "journey", "leverage", "utilize", "dive in", "explore", exclamation marks, ALL CAPS.
+Tone: vulnerable, specific, human. Like a founder venting to a friend who gets it.
+Never use: "game-changer", "unlock", "journey", "leverage", "utilize", "dive in", "explore", exclamation marks, ALL CAPS, marketing speak.
 
 Examples of the energy:
-"nobody talks about what happens\\nafter you hit your first $10k month."
+"i hired my first employee\\nand immediately lost my two biggest clients.\\nsame week."
 
-"most founders are solving\\nthe wrong problem.\\nand they won't find out until it's too late."`;
+"the ads were 'working'.\\nfacebook said 400 conversions.\\nstripe showed 12 payments."
+
+"we had 50k impressions on our launch day.\\n14 signups.\\ni cried in my car."`;
 
 function generateEmbedCode(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -54,7 +64,6 @@ function buildTiktokCaption(hookText: string, ctaText: string, embedCode: string
 function clean(s: any): string {
   if (typeof s !== 'string') return '';
   let t = s.replace(/[—–]/g, ', ').replace(/\*+/g, '').replace(/_+/g, '').replace(/\s+,/g, ',').replace(/,\s*,/g, ',').trim();
-  // De-shout: any sentence in ALL CAPS gets converted to sentence case.
   t = t.split('\n').map((line) =>
     line.split(/(?<=[.!?])\s+/).map((sent) => {
       const letters = sent.replace(/[^A-Za-z]/g, '');
@@ -108,7 +117,6 @@ Deno.serve(async (req) => {
       if ((usage?.slideshows_generated || 0) >= 50) return j({ error: 'quota_exceeded' }, 402);
     }
 
-    // Hard cost cap (abuse ceiling): Starter $5/mo, Pro $15/mo. Reserve ~3 cents per generation.
     const { data: capOk, error: capErr } = await admin.rpc('check_and_increment_ai_cost', { _user_id: userId, _cost_cents: 3 });
     if (capErr) console.error('cost cap rpc error', capErr);
     if (capOk === false) {
@@ -125,28 +133,34 @@ Deno.serve(async (req) => {
       generation_progress: { step: 'started', step_index: 0, total_steps: 4, message: 'Analyzing your topic...', percent: 0 },
     }).eq('id', slideshowId);
 
-    // Autonomous decisions
+    // Read photo layout config stored by the frontend in generation_progress
+    const savedProgress = (slideshow.generation_progress as any) || {};
+    const photoLayout: 'one' | 'hvc' | null = savedProgress.photo_layout || null;
+    const photoOneSource: string = savedProgress.image_source || 'ai';
+    const photoOneUrl: string | null = savedProgress.image_url || null;
+    const photoOneId: string | null = savedProgress.image_id || null;
+    const photoHook = savedProgress.hook || null;
+    const photoValue = savedProgress.value || null;
+    const photoCta = savedProgress.cta || null;
+
     const HOOK_POOL = ['question','contrarian','pain','result','curiosity'];
     const { data: insights } = await admin
       .from('user_insights').select('*')
       .eq('user_id', userId).eq('is_current', true)
       .order('generated_at', { ascending: false }).limit(1).maybeSingle();
     const isExploration = Math.random() < (insights ? 0.3 : 0.7);
-    const autoHook = isExploration ? HOOK_POOL[Math.floor(Math.random()*HOOK_POOL.length)] : (HOOK_POOL[Math.floor(Math.random()*HOOK_POOL.length)]);
-    const hookStyle = slideshow.hook_style || autoHook;
+    const hookStyle = slideshow.hook_style || HOOK_POOL[Math.floor(Math.random()*HOOK_POOL.length)];
 
-    // Pick a narrative style different from recent history
     const history: string[] = Array.isArray(workspace.story_style_history) ? workspace.story_style_history : [];
     const recent = new Set(history.slice(-5));
     const available = STORY_STYLES.filter((s) => !recent.has(s));
-    const pool = available.length ? available : STORY_STYLES;
+    const pool = available.length ? available : [...STORY_STYLES];
     const chosenStyle = (insights?.best_style as any) && !isExploration ? insights.best_style as string : pool[Math.floor(Math.random() * pool.length)];
 
     await admin.from('slideshows').update({
       generation_progress: { step: 'writing_copy', step_index: 1, total_steps: 4, message: 'Writing slide scripts...', percent: 25 },
     }).eq('id', slideshowId);
 
-    // Fetch all workspace images with quality + tags (non-product)
     const { data: allImages } = await admin.from('images')
       .select('id, ai_description, ai_tags, quality, is_product_shot, file_name')
       .eq('workspace_id', workspace.id)
@@ -161,7 +175,6 @@ Deno.serve(async (req) => {
       return j({ error: 'no_product_shot' }, 400);
     }
 
-    // Optionally pull stock images from the platform library
     let stockNonProduct: any[] = [];
     if (imageSource === 'both') {
       const { data: stock } = await admin.from('stock_images').select('id, ai_description, ai_tags, public_url, category');
@@ -179,14 +192,13 @@ Deno.serve(async (req) => {
 
     const nonProduct = [...userNonProduct, ...stockNonProduct];
 
-    if (nonProduct.length === 0) {
+    if (nonProduct.length === 0 && photoLayout === null) {
       await admin.from('slideshows').update({ status: 'failed', generation_error: 'No images available. Upload images or enable stock images.' }).eq('id', slideshowId);
       return j({ error: 'no_images' }, 400);
     }
 
     const qualityRank = (q: string) => q === 'high' ? 3 : q === 'medium' ? 2 : q === 'low' ? 1 : 2;
 
-    // Variety: find images used in this workspace's last 5 slideshows and deprioritize them.
     const { data: recentSs } = await admin.from('slideshows')
       .select('slides, image_ids')
       .eq('workspace_id', workspace.id)
@@ -203,7 +215,6 @@ Deno.serve(async (req) => {
     });
     const keyOf = (i: any) => i.is_stock ? i.public_url : i.id;
 
-    // Shuffle first for randomness, then sort by (not-recent first, then quality desc).
     for (let i = nonProduct.length - 1; i > 0; i--) {
       const r = Math.floor(Math.random() * (i + 1));
       [nonProduct[i], nonProduct[r]] = [nonProduct[r], nonProduct[i]];
@@ -218,7 +229,6 @@ Deno.serve(async (req) => {
     const numSlides = Math.min(12, Math.max(3, slideshow.num_slides || 6));
     const needNonProduct = numSlides - 1;
 
-    // Build AI image context with a larger pool for variety
     const poolSize = Math.min(nonProduct.length, Math.max(40, needNonProduct * 6));
     const imageContext = nonProduct.slice(0, poolSize).map((i: any, idx: number) =>
       `#${idx} [${i.quality || 'medium'}]${recentKeys.has(keyOf(i)) ? ' [recently-used]' : ''} ${i.ai_description || i.file_name || 'image'} | tags: ${(i.ai_tags || []).join(', ')}`
@@ -227,33 +237,32 @@ Deno.serve(async (req) => {
     const topic = (slideshow as any).topic || workspace.tagline || workspace.name;
     const ctaOverride = (slideshow as any).cta_text || workspace.default_cta || 'Try it now';
 
-    const prompt = `Write a ${numSlides}-slide viral TikTok slideshow.
+    const prompt = `Write a ${numSlides}-slide founder storytime TikTok slideshow.
 
-TOPIC: "${topic}"
 PRODUCT: ${workspace.name}
+TOPIC / ANGLE: "${topic}"
 TAGLINE: ${workspace.tagline || '(none)'}
-AUDIENCE: ${workspace.target_audience || 'general'}
-BRAND VOICE: ${workspace.brand_voice || 'punchy, native to TikTok'}
-DEFAULT CTA: ${ctaOverride}
+AUDIENCE: ${workspace.target_audience || 'founders, builders'}
+BRAND VOICE: ${workspace.brand_voice || 'raw, honest, first-person'}
+CTA: ${ctaOverride}
 
-NARRATIVE STYLE THIS TIME: ${chosenStyle}
+STORYTIME STYLE THIS TIME: ${chosenStyle}
 HOOK STYLE: ${hookStyle}
 
-AVAILABLE IMAGES (pick ${needNonProduct} DISTINCT indexes — never repeat the same index, and STRONGLY prefer images NOT marked [recently-used] so this slideshow looks different from the last few):
+${photoLayout !== 'one' ? `AVAILABLE IMAGES (pick ${needNonProduct} DISTINCT indexes — never repeat the same index, prefer images NOT marked [recently-used]):
 ${imageContext || '(no images, reuse index 0)'}
 
 Image rules:
 - Pick ${needNonProduct} different indexes. No duplicates.
-- Avoid [recently-used] images unless nothing else fits the slide's meaning.
-- Match each image to its slide's actual content (use tags + description).
-- Vary the visual feel across slides — don't pick 5 near-identical shots.
+- Avoid [recently-used] images unless nothing else fits.
+- Match each image to the slide's actual content.` : 'IMAGE: the user has pre-selected an image — image_index is irrelevant, use 0 for all slides.'}
 
-Writing rules — these are non-negotiable:
-- HOOK (slide 1): the most important line in the whole script. Contrarian, uncomfortable, or a sharp specific question. Create an information gap. Don't open with "I", "we", or the brand name. Don't describe the product.
-- VALUE SLIDES (middles): each one ends on an open loop. One concrete insight per slide. Each slide makes the next swipe feel mandatory.
-- CTA SLIDE (last, returned as cta_text): resolve the tension from the hook, THEN drop the CTA in the final sentence. Specific verb. Feels like the obvious next move.
-- Format: each slide = ONE block, 1-3 short sentences, lowercase, separated by \\n line breaks.
-- No exclamation marks, no caps, no markdown, no emoji, no em-dashes.
+Writing rules — non-negotiable:
+- HOOK (slide 1): drop into the middle of the story. Specific number, specific moment, or confession. Create an information gap. No "I", "we", or brand name to open.
+- VALUE SLIDES: continue the story beat by beat. Real numbers, real emotions. End each mid-tension.
+- CTA SLIDE: close the story first, then one-line CTA. Specific verb.
+- Format: each slide = ONE block, 1-3 short sentences, lowercase, separated by \\n.
+- No exclamation marks, no caps, no markdown, no emoji, no em-dashes, no marketing speak.
 - Banned words: game-changer, unlock, journey, leverage, utilize, dive in, explore.`;
 
     const tool = {
@@ -283,18 +292,11 @@ Writing rules — these are non-negotiable:
       },
     };
 
-
-    // Self-learning personalization: inject this user's current insights into the system prompt
     let personalization = '';
     try {
       const { data: ins } = await admin
-        .from('user_insights')
-        .select('*')
-        .eq('user_id', userId)
-        .eq('is_current', true)
-        .order('generated_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
+        .from('user_insights').select('*').eq('user_id', userId).eq('is_current', true)
+        .order('generated_at', { ascending: false }).limit(1).maybeSingle();
       if (ins) {
         personalization = `\n\nPERSONALIZATION CONTEXT (this user's actual TikTok performance — weight these heavily):
 - Posts analyzed: ${ins.posts_analyzed}
@@ -346,40 +348,96 @@ Use these learnings to bias your decisions. Do not mention this context in the o
 
     const rawSlides = Array.isArray(parsed.slides) ? parsed.slides.slice(0, needNonProduct) : [];
 
+    // Helper: resolve an image slot from user photo config
+    const resolveSlot = async (slot: any): Promise<{ image_id: string | null; image_url: string | null; is_stock: boolean }> => {
+      if (!slot || slot.source === 'ai') return { image_id: null, image_url: null, is_stock: false };
+      if (slot.source === 'stock' && slot.image_url) return { image_id: null, image_url: slot.image_url, is_stock: true };
+      if (slot.source === 'own' && slot.image_id) return { image_id: slot.image_id, image_url: null, is_stock: false };
+      return { image_id: null, image_url: null, is_stock: false };
+    };
+
     const pickedImageIds: string[] = [];
     const usedIdx = new Set<number>();
     const fallbackOrder = nonProduct.map((_: any, i: number) => i);
     const nextUnused = () => fallbackOrder.find((i) => !usedIdx.has(i)) ?? 0;
-    const slides = rawSlides.map((s: any, idx: number) => {
-      let imgIdx = typeof s.image_index === 'number' ? s.image_index : idx;
-      imgIdx = Math.min(Math.max(imgIdx, 0), nonProduct.length - 1);
-      if (usedIdx.has(imgIdx)) imgIdx = nextUnused();
-      usedIdx.add(imgIdx);
-      const pick = nonProduct[imgIdx] || nonProduct[0];
-      if (pick && !pick.is_stock) pickedImageIds.push(pick.id);
+
+    const slides = await Promise.all(rawSlides.map(async (s: any, idx: number) => {
+      let imgResult: { image_id: string | null; image_url: string | null; is_stock: boolean };
+
+      if (photoLayout === 'one') {
+        // Same image for every slide
+        imgResult = await resolveSlot({ source: photoOneSource, image_url: photoOneUrl, image_id: photoOneId });
+        // If source is 'ai' or nothing was picked, fall back to normal AI selection
+        if (!imgResult.image_id && !imgResult.image_url) {
+          let imgIdx = typeof s.image_index === 'number' ? s.image_index : idx;
+          imgIdx = Math.min(Math.max(imgIdx, 0), nonProduct.length - 1);
+          if (usedIdx.has(imgIdx)) imgIdx = nextUnused();
+          usedIdx.add(imgIdx);
+          const pick = nonProduct[imgIdx] || nonProduct[0];
+          if (pick && !pick.is_stock) pickedImageIds.push(pick.id);
+          imgResult = { image_id: pick && !pick.is_stock ? pick.id : null, image_url: pick?.is_stock ? pick.public_url : null, is_stock: !!pick?.is_stock };
+        } else if (imgResult.image_id) {
+          pickedImageIds.push(imgResult.image_id);
+        }
+      } else if (photoLayout === 'hvc') {
+        // Hook = first slide, value = middle slides, cta handled below
+        const slot = idx === 0 ? photoHook : photoValue;
+        imgResult = await resolveSlot(slot);
+        if (!imgResult.image_id && !imgResult.image_url) {
+          let imgIdx = typeof s.image_index === 'number' ? s.image_index : idx;
+          imgIdx = Math.min(Math.max(imgIdx, 0), nonProduct.length - 1);
+          if (usedIdx.has(imgIdx)) imgIdx = nextUnused();
+          usedIdx.add(imgIdx);
+          const pick = nonProduct[imgIdx] || nonProduct[0];
+          if (pick && !pick.is_stock) pickedImageIds.push(pick.id);
+          imgResult = { image_id: pick && !pick.is_stock ? pick.id : null, image_url: pick?.is_stock ? pick.public_url : null, is_stock: !!pick?.is_stock };
+        } else if (imgResult.image_id) {
+          pickedImageIds.push(imgResult.image_id);
+        }
+      } else {
+        // Normal AI image selection
+        let imgIdx = typeof s.image_index === 'number' ? s.image_index : idx;
+        imgIdx = Math.min(Math.max(imgIdx, 0), nonProduct.length - 1);
+        if (usedIdx.has(imgIdx)) imgIdx = nextUnused();
+        usedIdx.add(imgIdx);
+        const pick = nonProduct[imgIdx] || nonProduct[0];
+        if (pick && !pick.is_stock) pickedImageIds.push(pick.id);
+        imgResult = { image_id: pick && !pick.is_stock ? pick.id : null, image_url: pick?.is_stock ? pick.public_url : null, is_stock: !!pick?.is_stock };
+      }
+
       return {
         id: crypto.randomUUID(),
         type: s.type || (idx === 0 ? 'hook' : 'value'),
         text: clean(s.text).slice(0, 400),
-        image_id: pick && !pick.is_stock ? pick.id : null,
-        image_url: pick?.is_stock ? pick.public_url : null,
-        is_stock: !!pick?.is_stock,
+        ...imgResult,
         fabric_state: null,
       };
-    });
+    }));
 
-    const productShot = productShots[Math.floor(Math.random() * productShots.length)];
+    // CTA slide — use hvc cta slot if specified, otherwise product shot
+    let ctaImgResult: { image_id: string | null; image_url: string | null; is_stock: boolean };
+    if (photoLayout === 'hvc' && photoCta) {
+      ctaImgResult = await resolveSlot(photoCta);
+      if (!ctaImgResult.image_id && !ctaImgResult.image_url) {
+        const productShot = productShots[Math.floor(Math.random() * productShots.length)];
+        ctaImgResult = { image_id: productShot.id, image_url: null, is_stock: false };
+        pickedImageIds.push(productShot.id);
+      } else if (ctaImgResult.image_id) {
+        pickedImageIds.push(ctaImgResult.image_id);
+      }
+    } else {
+      const productShot = productShots[Math.floor(Math.random() * productShots.length)];
+      ctaImgResult = { image_id: productShot.id, image_url: null, is_stock: false };
+      pickedImageIds.push(productShot.id);
+    }
+
     slides.push({
       id: crypto.randomUUID(),
       type: 'cta',
       text: clean(parsed.cta_text || ctaOverride).slice(0, 400),
-      image_id: productShot.id,
-      image_url: null,
-      is_stock: false,
+      ...ctaImgResult,
       fabric_state: null,
-    });
-
-    const finalImageIds = [...pickedImageIds, productShot.id];
+    } as any);
 
     await admin.from('slideshows').update({
       generation_progress: { step: 'finishing', step_index: 3, total_steps: 4, message: 'Wrapping up...', percent: 85 },
@@ -391,7 +449,7 @@ Use these learnings to bias your decisions. Do not mention this context in the o
     await admin.from('slideshows').update({
       status: 'ready',
       slides,
-      image_ids: finalImageIds,
+      image_ids: pickedImageIds,
       generation_error: null,
       hook_style: hookStyle,
       content_style: chosenStyle,
@@ -423,7 +481,7 @@ Use these learnings to bias your decisions. Do not mention this context in the o
       content_style_chosen: chosenStyle,
       generation_mode_chosen: 'photo',
       design_styles_chosen: [],
-      reasoning: `${isExploration ? 'Exploration' : 'Exploitation'}: hook=${hookStyle}, slides=${numSlides}, style=${chosenStyle}, mode=photo. ${insights ? `Based on ${insights.posts_analyzed} tracked posts.` : 'No data yet, used defaults.'}`,
+      reasoning: `${isExploration ? 'Exploration' : 'Exploitation'}: hook=${hookStyle}, slides=${numSlides}, style=${chosenStyle}, mode=photo, photoLayout=${photoLayout || 'ai'}. ${insights ? `Based on ${insights.posts_analyzed} tracked posts.` : 'No data yet, used defaults.'}`,
     });
 
     return j({ ok: true, slides, style: chosenStyle });
