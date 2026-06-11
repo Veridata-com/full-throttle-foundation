@@ -212,10 +212,11 @@ export function resolveSlideHtml({ brand, spec }: ResolveOptions): string {
     html = html.replace(/<div data-icon[\s\S]*?<\/div>/g, '<div style="height:0;"></div>');
   }
 
-  // For story_canvas: ensure the root div has position:relative so absolute children
-  // resolve against the 1080x1920 slide box, not the viewport. We patch the first
-  // opening <div style="..."> tag rather than wrapping (which breaks html2canvas).
+  // For story_canvas: strip border shorthand from inline styles — AI-generated borders
+  // are invisible in the scaled preview but show as gray outlines in the full export.
+  // Keeps border-radius, border-color, border-top etc intact.
   if (spec.template === "story_canvas") {
+    html = html.replace(/\bborder\s*:[^;]+;/gi, "");
     html = html.replace(/^(\s*<div\s+style=")/, '$1position:relative;');
   }
 
