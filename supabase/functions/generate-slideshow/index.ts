@@ -237,20 +237,28 @@ Deno.serve(async (req) => {
       `#${idx} [${i.quality || 'medium'}]${recentKeys.has(keyOf(i)) ? ' [recently-used]' : ''} ${i.ai_description || i.file_name || 'image'} | tags: ${(i.ai_tags || []).join(', ')}`
     ).join('\n');
 
-    const topic = (slideshow as any).topic || workspace.tagline || workspace.name;
+    const topic = (slideshow as any).topic || workspace.name;
     const ctaOverride = (slideshow as any).cta_text || workspace.default_cta || 'Try it now';
 
-    const prompt = `Write a ${numSlides}-slide founder storytime TikTok slideshow.
+    const prompt = `Write a ${numSlides}-slide FOUNDER STORYTIME TikTok slideshow. This is NOT an ad. It is a personal first-person story told by a founder about their real experience.
 
-PRODUCT: ${workspace.name}
-TOPIC / ANGLE: "${topic}"
-TAGLINE: ${workspace.tagline || '(none)'}
-AUDIENCE: ${workspace.target_audience || 'founders, builders'}
-BRAND VOICE: ${workspace.brand_voice || 'raw, honest, first-person'}
+PRODUCT CONTEXT (do NOT use this as the hook — use it only to know what the founder built):
+- Product: ${workspace.name}
+- What it does: ${workspace.tagline || workspace.name}
+- Audience: ${workspace.target_audience || 'founders, builders'}
+
+STORY ANGLE THIS TIME: ${chosenStyle} — write a true story FROM THE FOUNDER'S PERSPECTIVE about building, launching, or struggling with this product. Think "how i got my first 100 users" or "the week i almost gave up" or "i was $8k in debt when this happened".
+
+HOOK STYLE: ${hookStyle}
 CTA: ${ctaOverride}
 
-STORYTIME STYLE THIS TIME: ${chosenStyle}
-HOOK STYLE: ${hookStyle}
+CRITICAL RULES — break any of these and the output is wrong:
+- The hook MUST be a personal confession, specific number, or moment in time. NEVER a "what if" or a pitch.
+  BAD: "what if 7 slides got you more users than 70 videos?"
+  GOOD: "i launched to 0 users. spent $3k on ads. got 4 signups."
+- Every slide continues the story — one beat, one moment, one number.
+- NEVER write as a marketer, never pitch the product, never use "you" to address the reader in value slides.
+- Last slide: close the story THEN one-line CTA.
 
 ${photoLayout !== 'one' ? `AVAILABLE IMAGES (pick ${needNonProduct} DISTINCT indexes â€” never repeat the same index, prefer images NOT marked [recently-used]):
 ${imageContext || '(no images, reuse index 0)'}
