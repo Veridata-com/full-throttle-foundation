@@ -1,4 +1,4 @@
-// Generate a TikTok slideshow from a workspace. AI auto-picks images. Last slide = product shot.
+﻿// Generate a TikTok slideshow from a workspace. AI auto-picks images. Last slide = product shot.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
@@ -18,24 +18,24 @@ const STORY_STYLES = [
   'the-thing-nobody-told-me',
 ] as const;
 
-const SYSTEM = `You are a founder writing raw, personal TikTok storytime slideshows. You write in first person — like a real human sharing something they lived through, not a marketer selling something.
+const SYSTEM = `You are a founder writing raw, personal TikTok storytime slideshows. You write in first person â€” like a real human sharing something they lived through, not a marketer selling something.
 
 Each slide gets ONE block of text. 1 to 3 short sentences. Lowercase, conversational, like texting a close friend. Line breaks between sentences for rhythm (use \\n).
 
 THE STORYTIME FORMAT:
 
-1) HOOK (slide 1) — drop the reader into the middle of the story with a specific number, a specific moment, or a confession.
+1) HOOK (slide 1) â€” drop the reader into the middle of the story with a specific number, a specific moment, or a confession.
    - Examples: "i spent $14k on ads last month\\nand made 3 sales."
    - "i almost shut down the company in march.\\nnobody knew."
    - "we went from 0 to 10k mrr\\nby doing something embarrassing."
    - Opens a loop the viewer NEEDS closed. Never describe the product. Never open with "we" or the brand name.
 
-2) VALUE SLIDES (middle) — continue the story one beat per slide. Each reveals one new piece of what happened.
+2) VALUE SLIDES (middle) â€” continue the story one beat per slide. Each reveals one new piece of what happened.
    - Specific details: real numbers, real moments, real emotions.
    - End each slide mid-tension so the next swipe feels mandatory.
    - No generic advice. No tips. Only what actually happened.
 
-3) CTA (last slide) — land the story first, THEN the CTA. Reader should feel the story just ended and the CTA is the natural next step.
+3) CTA (last slide) â€” land the story first, THEN the CTA. Reader should feel the story just ended and the CTA is the natural next step.
    - One line to close the story. One line for the CTA. Specific verb.
 
 Tone: vulnerable, specific, human. Like a founder venting to a friend who gets it.
@@ -63,7 +63,7 @@ function buildTiktokCaption(hookText: string, ctaText: string, embedCode: string
 
 function clean(s: any): string {
   if (typeof s !== 'string') return '';
-  let t = s.replace(/[—–]/g, ', ').replace(/\*+/g, '').replace(/_+/g, '').replace(/\s+,/g, ',').replace(/,\s*,/g, ',').trim();
+  let t = s.replace(/[â€”â€“]/g, ', ').replace(/\*+/g, '').replace(/_+/g, '').replace(/\s+,/g, ',').replace(/,\s*,/g, ',').trim();
   t = t.split('\n').map((line) =>
     line.split(/(?<=[.!?])\s+/).map((sent) => {
       const letters = sent.replace(/[^A-Za-z]/g, '');
@@ -127,13 +127,7 @@ Deno.serve(async (req) => {
     const { data: workspace } = await admin.from('workspaces').select('*').eq('id', slideshow.workspace_id).single();
     if (!workspace) return j({ error: 'workspace_not_found' }, 404);
 
-    await admin.from('slideshows').update({
-      status: 'generating',
-      generation_error: null,
-      generation_progress: { step: 'started', step_index: 0, total_steps: 4, message: 'Analyzing your topic...', percent: 0 },
-    }).eq('id', slideshowId);
-
-    // Read photo layout config stored by the frontend in generation_progress
+    // Read photo layout config FIRST before any update overwrites generation_progress
     const savedProgress = (slideshow.generation_progress as any) || {};
     const photoLayout: 'one' | 'hvc' | null = savedProgress.photo_layout || null;
     const photoOneSource: string = savedProgress.image_source || 'ai';
@@ -142,6 +136,15 @@ Deno.serve(async (req) => {
     const photoHook = savedProgress.hook || null;
     const photoValue = savedProgress.value || null;
     const photoCta = savedProgress.cta || null;
+
+    // Keep photo config fields alive in every progress update so they survive overwrites
+    const photoMeta = photoLayout ? { photo_layout: photoLayout, image_source: photoOneSource, image_url: photoOneUrl, image_id: photoOneId, hook: photoHook, value: photoValue, cta: photoCta } : {};
+
+    await admin.from('slideshows').update({
+      status: 'generating',
+      generation_error: null,
+      generation_progress: { ...photoMeta, step: 'started', step_index: 0, total_steps: 4, message: 'Analyzing your topic...', percent: 0 },
+    }).eq('id', slideshowId);
 
     const HOOK_POOL = ['question','contrarian','pain','result','curiosity'];
     const { data: insights } = await admin
@@ -158,7 +161,7 @@ Deno.serve(async (req) => {
     const chosenStyle = (insights?.best_style as any) && !isExploration ? insights.best_style as string : pool[Math.floor(Math.random() * pool.length)];
 
     await admin.from('slideshows').update({
-      generation_progress: { step: 'writing_copy', step_index: 1, total_steps: 4, message: 'Writing slide scripts...', percent: 25 },
+      generation_progress: { ...photoMeta, step: 'writing_copy', step_index: 1, total_steps: 4, message: 'Writing slide scripts...', percent: 25 },
     }).eq('id', slideshowId);
 
     const { data: allImages } = await admin.from('images')
@@ -249,15 +252,15 @@ CTA: ${ctaOverride}
 STORYTIME STYLE THIS TIME: ${chosenStyle}
 HOOK STYLE: ${hookStyle}
 
-${photoLayout !== 'one' ? `AVAILABLE IMAGES (pick ${needNonProduct} DISTINCT indexes — never repeat the same index, prefer images NOT marked [recently-used]):
+${photoLayout !== 'one' ? `AVAILABLE IMAGES (pick ${needNonProduct} DISTINCT indexes â€” never repeat the same index, prefer images NOT marked [recently-used]):
 ${imageContext || '(no images, reuse index 0)'}
 
 Image rules:
 - Pick ${needNonProduct} different indexes. No duplicates.
 - Avoid [recently-used] images unless nothing else fits.
-- Match each image to the slide's actual content.` : 'IMAGE: the user has pre-selected an image — image_index is irrelevant, use 0 for all slides.'}
+- Match each image to the slide's actual content.` : 'IMAGE: the user has pre-selected an image â€” image_index is irrelevant, use 0 for all slides.'}
 
-Writing rules — non-negotiable:
+Writing rules â€” non-negotiable:
 - HOOK (slide 1): drop into the middle of the story. Specific number, specific moment, or confession. Create an information gap. No "I", "we", or brand name to open.
 - VALUE SLIDES: continue the story beat by beat. Real numbers, real emotions. End each mid-tension.
 - CTA SLIDE: close the story first, then one-line CTA. Specific verb.
@@ -298,7 +301,7 @@ Writing rules — non-negotiable:
         .from('user_insights').select('*').eq('user_id', userId).eq('is_current', true)
         .order('generated_at', { ascending: false }).limit(1).maybeSingle();
       if (ins) {
-        personalization = `\n\nPERSONALIZATION CONTEXT (this user's actual TikTok performance — weight these heavily):
+        personalization = `\n\nPERSONALIZATION CONTEXT (this user's actual TikTok performance â€” weight these heavily):
 - Posts analyzed: ${ins.posts_analyzed}
 - Best hook patterns: ${(ins.top_hook_patterns || []).join(' | ') || 'n/a'}
 - Hook patterns to AVOID: ${(ins.worst_hook_patterns || []).join(' | ') || 'n/a'}
@@ -338,7 +341,7 @@ Use these learnings to bias your decisions. Do not mention this context in the o
     }
 
     await admin.from('slideshows').update({
-      generation_progress: { step: 'rendering', step_index: 2, total_steps: 4, message: 'Selecting and arranging images...', percent: 60 },
+      generation_progress: { ...photoMeta, step: 'rendering', step_index: 2, total_steps: 4, message: 'Selecting and arranging images...', percent: 60 },
     }).eq('id', slideshowId);
 
     const data = await aiRes.json();
@@ -414,7 +417,7 @@ Use these learnings to bias your decisions. Do not mention this context in the o
       };
     }));
 
-    // CTA slide — use hvc cta slot if specified, otherwise product shot
+    // CTA slide â€” use hvc cta slot if specified, otherwise product shot
     let ctaImgResult: { image_id: string | null; image_url: string | null; is_stock: boolean };
     if (photoLayout === 'hvc' && photoCta) {
       ctaImgResult = await resolveSlot(photoCta);
@@ -440,7 +443,7 @@ Use these learnings to bias your decisions. Do not mention this context in the o
     } as any);
 
     await admin.from('slideshows').update({
-      generation_progress: { step: 'finishing', step_index: 3, total_steps: 4, message: 'Wrapping up...', percent: 85 },
+      generation_progress: { ...photoMeta, step: 'finishing', step_index: 3, total_steps: 4, message: 'Wrapping up...', percent: 85 },
     }).eq('id', slideshowId);
 
     const allTexts = slides.map((s: any) => s.text || '');
