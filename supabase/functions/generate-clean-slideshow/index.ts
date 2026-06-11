@@ -25,6 +25,15 @@ const HOOK_STYLES = ["question", "contrarian", "pain", "result", "curiosity"] as
 const CONTENT_STYLES = ["educational", "storytelling", "product_showcase", "myth-bust", "listicle"] as const;
 const SLIDE_COUNT_POOL = [6, 7, 8, 9];
 const DESIGN_STYLES = ["designed", "story"] as const;
+const AI_MODEL = "google/gemini-3-flash-preview";
+
+function summarizeAiFailure(status: number, raw: string): string {
+  const text = (raw || "").trim();
+  if (status >= 500) return "AI service is temporarily unavailable. Please try again in a minute.";
+  if (status === 429) return "AI rate limit reached. Please retry shortly.";
+  if (status === 402) return "AI credits are currently unavailable.";
+  return text.slice(0, 300) || `AI request failed (${status})`;
+}
 
 function pick<T>(arr: readonly T[]): T { return arr[Math.floor(Math.random() * arr.length)]; }
 
@@ -323,7 +332,7 @@ Return exactly ${numSlides} slides. First = hook, last = cta_card.`;
         method: "POST",
         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${lovableKey}` },
         body: JSON.stringify({
-          model: "openai/gpt-5",
+          model: AI_MODEL,
           messages: [
             { role: "system", content: SYSTEM_DESIGNED },
             { role: "user", content: writePrompt },
@@ -366,10 +375,11 @@ Return exactly ${numSlides} slides. First = hook, last = cta_card.`;
       if (!writeRes.ok) {
         const txt = await writeRes.text();
         console.error("write error", writeRes.status, txt);
-        await admin.from("slideshows").update({ status: "failed", generation_error: `AI: ${txt.slice(0, 300)}` }).eq("id", slideshowId);
+        const friendlyError = summarizeAiFailure(writeRes.status, txt);
+        await admin.from("slideshows").update({ status: "failed", generation_error: friendlyError }).eq("id", slideshowId);
         if (writeRes.status === 429) return j({ error: "rate_limit" }, 429);
         if (writeRes.status === 402) return j({ error: "payment_required" }, 402);
-        return j({ error: "ai_failed" }, 500);
+        return j({ error: "ai_failed", detail: friendlyError, fallback: writeRes.status >= 500 }, 200);
       }
 
       const writeData = await writeRes.json();
