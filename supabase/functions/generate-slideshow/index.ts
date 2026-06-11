@@ -103,8 +103,11 @@ function clean(s: any): string {
   return t;
 }
 
+const FN_VERSION = "2026-06-11-storytime-photo-v5";
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  console.log(`[generate-slideshow] running version ${FN_VERSION}`);
   try {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) return j({ error: "unauthorized" }, 401);
@@ -125,6 +128,7 @@ Deno.serve(async (req) => {
     const body = (await req.json()) as Body;
     const { slideshowId } = body;
     if (!slideshowId) return j({ error: "slideshowId required" }, 400);
+    console.log(`[generate-slideshow] body photo_layout=${body.photo_layout ?? "none"} image_source=${body.image_source ?? "none"} image_url=${body.image_url ? "set" : "none"}`);
 
     const admin = createClient(supabaseUrl, serviceKey);
 
@@ -667,7 +671,7 @@ Use these learnings to bias your decisions. Do not mention this context in the o
       reasoning: `${isExploration ? "Exploration" : "Exploitation"}: hook=${hookStyle}, slides=${numSlides}, style=${chosenStyle}, mode=photo, photoLayout=${photoLayout || "ai"}. ${insights ? `Based on ${insights.posts_analyzed} tracked posts.` : "No data yet, used defaults."}`,
     });
 
-    return j({ ok: true, slides, style: chosenStyle });
+    return j({ ok: true, slides, style: chosenStyle, version: FN_VERSION, photo_layout: photoLayout });
   } catch (e: any) {
     console.error("generate-slideshow error", e);
     return j({ error: e.message }, 500);
