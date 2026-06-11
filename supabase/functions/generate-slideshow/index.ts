@@ -103,7 +103,17 @@ function clean(s: any): string {
   return t;
 }
 
-const FN_VERSION = "2026-06-11-storytime-photo-v5";
+const FN_VERSION = "2026-06-11-storytime-photo-v6";
+
+const AI_MODEL = "google/gemini-3-flash-preview";
+
+function summarizeAiFailure(status: number, raw: string): string {
+  const text = (raw || "").trim();
+  if (status >= 500) return "AI service is temporarily unavailable. Please try again in a minute.";
+  if (status === 429) return "AI rate limit reached. Please retry shortly.";
+  if (status === 402) return "AI credits are currently unavailable.";
+  return text.slice(0, 300) || `AI request failed (${status})`;
+}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -447,7 +457,7 @@ Use these learnings to bias your decisions. Do not mention this context in the o
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${lovableKey}` },
       body: JSON.stringify({
-        model: "openai/gpt-5",
+        model: AI_MODEL,
         messages: [
           { role: "system", content: personalization + SYSTEM },
           { role: "user", content: prompt },
@@ -460,13 +470,14 @@ Use these learnings to bias your decisions. Do not mention this context in the o
     if (!aiRes.ok) {
       const txt = await aiRes.text();
       console.error("generate-slideshow AI error", aiRes.status, txt);
+      const friendlyError = summarizeAiFailure(aiRes.status, txt);
       await admin
         .from("slideshows")
-        .update({ status: "failed", generation_error: `${aiRes.status}: ${txt.slice(0, 300)}` })
+        .update({ status: "failed", generation_error: friendlyError })
         .eq("id", slideshowId);
       if (aiRes.status === 429) return j({ error: "rate_limit" }, 429);
       if (aiRes.status === 402) return j({ error: "payment_required" }, 402);
-      return j({ error: "ai_failed", detail: txt }, 500);
+      return j({ error: "ai_failed", detail: friendlyError, fallback: aiRes.status >= 500 }, 200);
     }
 
     await admin
