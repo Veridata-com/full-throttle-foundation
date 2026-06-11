@@ -221,9 +221,10 @@ const NewSlideshow = () => {
       return;
     }
 
-    // Build photo config to pass along
-    const photoConfig = chosenMode === "photo" ? {
-      layout: photoLayout,
+    // Encode photo layout + image selection into generation_progress so it's
+    // available to the edge function without requiring a new DB column.
+    const photoMeta = chosenMode === "photo" ? {
+      photo_layout: photoLayout,
       ...(photoLayout === "one" ? {
         image_source: oneSlot.source,
         image_url: oneSlot.imageUrl || null,
@@ -233,7 +234,7 @@ const NewSlideshow = () => {
         value: { source: valueSlot.source, image_url: valueSlot.imageUrl || null, image_id: valueSlot.imageId || null },
         cta: { source: ctaSlot.source, image_url: ctaSlot.imageUrl || null, image_id: ctaSlot.imageId || null },
       }),
-    } : null;
+    } : {};
 
     setLoading(true);
     try {
@@ -248,8 +249,7 @@ const NewSlideshow = () => {
         status: "generating",
         generation_mode: chosenMode === "designed" ? "clean_designed" : "photo",
         design_style: designStyle,
-        photo_config: photoConfig,
-        generation_progress: { step: "started", step_index: 0, total_steps: 4, message: "Starting…", percent: 0 },
+        generation_progress: { step: "started", step_index: 0, total_steps: 4, message: "Starting…", percent: 0, ...photoMeta },
       } as any).select().single();
       if (error) throw error;
       navigate(`/generating/${ss.id}`);
