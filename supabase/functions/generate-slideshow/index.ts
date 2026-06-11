@@ -128,7 +128,9 @@ Deno.serve(async (req) => {
     const body = (await req.json()) as Body;
     const { slideshowId } = body;
     if (!slideshowId) return j({ error: "slideshowId required" }, 400);
-    console.log(`[generate-slideshow] body photo_layout=${body.photo_layout ?? "none"} image_source=${body.image_source ?? "none"} image_url=${body.image_url ? "set" : "none"}`);
+    console.log(
+      `[generate-slideshow] body photo_layout=${body.photo_layout ?? "none"} image_source=${body.image_source ?? "none"} image_url=${body.image_url ? "set" : "none"}`,
+    );
 
     const admin = createClient(supabaseUrl, serviceKey);
 
