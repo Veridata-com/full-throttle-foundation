@@ -28,6 +28,7 @@ import Workspaces from "./pages/Workspaces";
 import ResetPassword from "./pages/ResetPassword";
 import ReleaseNotes from "./pages/ReleaseNotes";
 import AdminReleaseNotes from "./pages/AdminReleaseNotes";
+import AdminStockImages from "./pages/AdminStockImages";
 import Analytics from "./pages/Analytics";
 import Brand from "./pages/Brand";
 import Generating from "./pages/Generating";
@@ -67,6 +68,7 @@ const App = () => (
                   <Route path="/workspaces" element={<Workspaces />} />
                   <Route path="/workspaces/settings" element={<WorkspaceSettings />} />
                   <Route path="/admin/release-notes" element={<AdminReleaseNotes />} />
+                  <Route path="/admin/stock-images" element={<AdminStockImages />} />
                 </Route>
                 {/* Billing must be reachable even without an active plan (post-checkout sync) */}
                 <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
