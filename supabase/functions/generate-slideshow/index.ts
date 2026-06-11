@@ -116,6 +116,7 @@ function summarizeAiFailure(status: number, raw: string): string {
 }
 
 Deno.serve(async (req) => {
+  let slideshowId: string | null = null;
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   console.log(`[generate-slideshow] running version ${FN_VERSION}`);
   try {
@@ -136,7 +137,7 @@ Deno.serve(async (req) => {
     if (!userId) return j({ error: "unauthorized" }, 401);
 
     const body = (await req.json()) as Body;
-    const { slideshowId } = body;
+    slideshowId = body.slideshowId;
     if (!slideshowId) return j({ error: "slideshowId required" }, 400);
     console.log(
       `[generate-slideshow] body photo_layout=${body.photo_layout ?? "none"} image_source=${body.image_source ?? "none"} image_url=${body.image_url ? "set" : "none"}`,
@@ -687,6 +688,24 @@ Use these learnings to bias your decisions. Do not mention this context in the o
     return j({ ok: true, slides, style: chosenStyle, version: FN_VERSION, photo_layout: photoLayout });
   } catch (e: any) {
     console.error("generate-slideshow error", e);
+    try {
+      if (slideshowId) {
+        const supabaseUrl = Deno.env.get("SUPABASE_URL");
+        const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+        if (supabaseUrl && serviceKey) {
+          const admin = createClient(supabaseUrl, serviceKey);
+          await admin
+            .from("slideshows")
+            .update({
+              status: "failed",
+              generation_error: String(e?.message || "Generation failed").slice(0, 300),
+            })
+            .eq("id", slideshowId);
+        }
+      }
+    } catch (persistErr) {
+      console.error("generate-slideshow failed-state persist error", persistErr);
+    }
     return j({ error: e.message }, 500);
   }
 });
