@@ -6,7 +6,16 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-interface Body { slideshowId: string; image_source?: 'both' | 'own_only'; }
+interface Body {
+  slideshowId: string;
+  image_source?: 'both' | 'own_only';
+  photo_layout?: 'one' | 'hvc' | null;
+  image_url?: string | null;
+  image_id?: string | null;
+  hook?: any;
+  value?: any;
+  cta?: any;
+}
 
 const STORY_STYLES = [
   'how-i-built-it',
@@ -127,15 +136,16 @@ Deno.serve(async (req) => {
     const { data: workspace } = await admin.from('workspaces').select('*').eq('id', slideshow.workspace_id).single();
     if (!workspace) return j({ error: 'workspace_not_found' }, 404);
 
-    // Read photo layout config FIRST before any update overwrites generation_progress
+    // Photo config — read from request body (sent explicitly by Generating.tsx)
+    // with fallback to generation_progress for backwards compat
     const savedProgress = (slideshow.generation_progress as any) || {};
-    const photoLayout: 'one' | 'hvc' | null = savedProgress.photo_layout || null;
-    const photoOneSource: string = savedProgress.image_source || 'ai';
-    const photoOneUrl: string | null = savedProgress.image_url || null;
-    const photoOneId: string | null = savedProgress.image_id || null;
-    const photoHook = savedProgress.hook || null;
-    const photoValue = savedProgress.value || null;
-    const photoCta = savedProgress.cta || null;
+    const photoLayout: 'one' | 'hvc' | null = body.photo_layout ?? savedProgress.photo_layout ?? null;
+    const photoOneSource: string = body.image_source ?? savedProgress.image_source ?? 'ai';
+    const photoOneUrl: string | null = body.image_url ?? savedProgress.image_url ?? null;
+    const photoOneId: string | null = body.image_id ?? savedProgress.image_id ?? null;
+    const photoHook = body.hook ?? savedProgress.hook ?? null;
+    const photoValue = body.value ?? savedProgress.value ?? null;
+    const photoCta = body.cta ?? savedProgress.cta ?? null;
 
     // Keep photo config fields alive in every progress update so they survive overwrites
     const photoMeta = photoLayout ? { photo_layout: photoLayout, image_source: photoOneSource, image_url: photoOneUrl, image_id: photoOneId, hook: photoHook, value: photoValue, cta: photoCta } : {};

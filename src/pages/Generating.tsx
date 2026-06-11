@@ -76,8 +76,20 @@ const Generating = () => {
           });
           // renderAndPersistSlideshow sets status=ready; realtime subscriber will navigate
         } else {
+          // Pull photo config out of generation_progress and send it explicitly
+          const gp = (ss.generation_progress as any) || {};
+          const photoBody: Record<string, any> = { slideshowId: id };
+          if (gp.photo_layout) {
+            photoBody.photo_layout = gp.photo_layout;
+            photoBody.image_source = gp.image_source || 'ai';
+            photoBody.image_url    = gp.image_url    || null;
+            photoBody.image_id     = gp.image_id     || null;
+            photoBody.hook         = gp.hook         || null;
+            photoBody.value        = gp.value        || null;
+            photoBody.cta          = gp.cta          || null;
+          }
           const { error: fnErr, data: fnData } = await supabase.functions.invoke("generate-slideshow", {
-            body: { slideshowId: id },
+            body: photoBody,
           });
           if (fnErr) throw fnErr;
           const err = (fnData as any)?.error;
