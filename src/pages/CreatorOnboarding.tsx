@@ -139,6 +139,7 @@ export default function CreatorOnboarding() {
         />
         <p className="text-xs text-white/30 tracking-[0.2em] uppercase">Adrise · Creator Program</p>
       </footer>
+      </div>
     </div>
   );
 }
