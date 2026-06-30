@@ -1,5 +1,5 @@
 import { Helmet } from "react-helmet-async";
-import logo from "@/assets/alpha-logo.png.asset.json";
+import logo from "@/assets/adrise-logo.png.asset.json";
 
 interface VideoClip {
   title: string;
@@ -21,8 +21,8 @@ export default function CreatorOnboarding() {
   return (
     <div className="min-h-screen bg-black text-white selection:bg-white selection:text-black">
       <Helmet>
-        <title>Alpha — Creator Onboarding</title>
-        <meta name="description" content="Welcome to the Alpha creator program. Watch the onboarding sequence and join the Discord." />
+        <title>Adrise — Creator Onboarding</title>
+        <meta name="description" content="Welcome to the Adrise creator program. Watch the onboarding sequence and join the Discord." />
         <link rel="icon" href={logo.url} type="image/png" />
       </Helmet>
 
@@ -32,8 +32,8 @@ export default function CreatorOnboarding() {
           <div className="absolute inset-0 blur-3xl opacity-60 bg-white/20 rounded-full" />
           <img
             src={logo.url}
-            alt="Alpha"
-            className="relative h-24 w-24 md:h-28 md:w-28"
+            alt="Adrise"
+            className="relative h-24 w-24 md:h-28 md:w-28 rounded-full object-cover bg-white"
             style={{ filter: "drop-shadow(0 0 24px rgba(255,255,255,0.55))" }}
           />
         </div>
@@ -107,11 +107,11 @@ export default function CreatorOnboarding() {
       <footer className="border-t border-white/5 py-10 flex flex-col items-center gap-3">
         <img
           src={logo.url}
-          alt="Alpha"
-          className="h-6 w-6 opacity-50"
+          alt="Adrise"
+          className="h-6 w-6 opacity-50 rounded-full object-cover bg-white"
           style={{ filter: "drop-shadow(0 0 8px rgba(255,255,255,0.4))" }}
         />
-        <p className="text-xs text-white/30 tracking-[0.2em] uppercase">Alpha · Creator Program</p>
+        <p className="text-xs text-white/30 tracking-[0.2em] uppercase">Adrise · Creator Program</p>
       </footer>
     </div>
   );
