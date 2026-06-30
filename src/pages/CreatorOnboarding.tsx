@@ -19,7 +19,15 @@ const DISCORD_URL = "https://discord.gg/25XNHvszJ";
 
 export default function CreatorOnboarding() {
   return (
-    <div className="min-h-screen bg-black text-white selection:bg-white selection:text-black">
+    <div
+      className="relative min-h-screen bg-black text-white selection:bg-white selection:text-black"
+      style={{
+        backgroundImage:
+          "linear-gradient(rgba(255,255,255,0.045) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.045) 1px, transparent 1px)",
+        backgroundSize: "56px 56px",
+        backgroundPosition: "center top",
+      }}
+    >
       <Helmet>
         <title>Adrise — Creator Onboarding</title>
         <meta name="description" content="Welcome to the Adrise creator program. Watch the onboarding sequence and join the Discord." />
