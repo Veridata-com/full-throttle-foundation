@@ -1,66 +1,36 @@
+## New site: UGC Creator Onboarding
 
+Replace the public landing with a single, minimal creator onboarding page. Old app code stays in the repo (archived, unreachable via router) so nothing is lost.
 
-## Editor rebuild + AI model swap
+### Aesthetic
+- Pure black background (`#000`), neon white glow accents echoing the alpha logo
+- Tight modern typography (Space Grotesk / Inter via @fontsource)
+- Subtle outer glow on logo, buttons, video frames (`box-shadow: 0 0 40px rgba(255,255,255,0.15)`)
+- Generous whitespace, centered single-column layout
 
-### What you'll get
-A complete dark-themed slideshow editor with a working Fabric.js canvas, classic TikTok bold-stroke text style (headline + subtext as separate editable blocks), real-time caption/size/color controls, single-slide PNG download, auto-save every 30s, and AI copy generation switched to GPT-5 via the Lovable Gateway (no new API key needed).
+### Page structure (`/`)
+1. **Hero** — alpha logo (with glow), title "Welcome, creator.", short subtitle
+2. **Video sequence** — vertical stack of native `<video controls>` players, numbered "01 / Intro", "02 / How it works", etc. Each in a thin-bordered card with neon glow on hover
+3. **CTA** — "You're in. Join the creator Discord." → button linking to `https://discord.gg/25XNHvszJ` (opens new tab)
+4. Minimal footer with logo mark
 
-### Layout
-```
-┌─────────────────────────────────────────────────────────────┐
-│  ← Back   [Title]              Saving…  Save  PNG  Export ZIP│  56px toolbar
-├──────────┬──────────────────────────────────┬──────────────────┤
-│          │                                  │  TEXT CONTENT    │
-│  Slides  │                                  │  Caption ▢▢▢▢   │
-│  ▢ 1 hook│         [1080×1920 canvas        │                  │
-│  ▣ 2 val │          scaled to fit]          │  TEXT SIZE       │
-│  ▢ 3 val │                                  │  ──●────────  88 │
-│  ▢ 4 cta │                                  │                  │
-│          │   Drag · double-click · auto-save│  STYLE           │
-│          │                                  │  Fill: ⚪⚫🟡🔴 + 🎨│
-│  200px   │                                  │  Outline: same   │
-│          │                                  │                  │
-│          │                                  │  Reset · Add text│
-└──────────┴──────────────────────────────────┴──────────────────┘
-   200px              flexible                       280px
-```
+### Video handling
+- New page renders a configurable array of video entries (title + src + optional poster)
+- Initially scaffolded with 3–5 placeholder slots
+- You upload `.mp4` files; I convert each to a CDN asset via `lovable-assets` and wire the URLs into the array
+- (For this plan: scaffold the layout with empty/placeholder sources. You drop the MP4s in chat next and I swap them in.)
 
-### Bug fixes & features in `src/pages/SlideshowEditor.tsx`
+### Routing / archival
+- `src/App.tsx`: comment out all existing routes (Dashboard, Auth, Onboarding, Slideshows, Billing, etc.) and add a single `/` route → new `CreatorOnboarding` page, plus catch-all `*` → same page (or NotFound styled to match)
+- All old page files, edge functions, Supabase tables, and assets remain untouched on disk and in the database — just unreachable from the UI
+- Update `index.html` `<title>` and meta to UGC agency creator onboarding copy
+- Update favicon to the new alpha logo
 
-1. **Canvas rendering** — switch to `useEffect` mount pattern with `id="slideshow-canvas"`, dispose+reinit when switching slides, scale via CSS `transform` on a wrapper sized 1080×1920.
-2. **Two text objects (headline + subtext)** — replace the single Textbox with two `fabric.IText` objects matching the prompt (Arial Black 900, white fill, black stroke 10/7, drop shadow, paintFirst stroke). Both draggable + double-click to edit inline.
-3. **Right-panel caption textarea** — controlled input synced to the *active* text object via `selection:created/updated` handlers; typing updates fill/text in real time.
-4. **Caption size slider** — 20–200px, updates `fontSize` on active object instantly.
-5. **Color swatches** — Text fill row (white/black/yellow #FFE500/red #FF3B5C + custom color picker) and Outline row (same set). Active swatch shows white ring.
-6. **Add text block / Reset style** buttons in the bottom Actions section.
-7. **Single-slide PNG download** — discardActiveObject → `toDataURL({format:'png', multiplier:1})` → trigger anchor download → toast "Slide downloaded!".
-8. **Export ZIP** — kept exactly as-is, only refactored to use the new two-object render path.
-9. **Auto-save** — `setInterval` every 30s + on slide switch, persists `canvas.toJSON()` to `slides[i].fabric_state` in Supabase. On load, if `fabric_state` exists, `loadFromJSON()` restores it; otherwise create the two text objects from `headline`/`subtext`.
-10. **"Saving…" indicator** — small muted text in toolbar, fades out after save.
+### Files
+- **New:** `src/pages/CreatorOnboarding.tsx`, `src/assets/alpha-logo.png.asset.json` (from your upload)
+- **Edited:** `src/App.tsx` (route swap), `index.html` (title/meta/favicon), `src/index.css` (add black bg + glow utility tokens), `tailwind.config.ts` (optional glow shadow token)
+- **Untouched/archived:** everything else (old pages, components, Supabase functions, migrations)
 
-### Dark theme
-All editor surfaces hardcoded to: bg `#0A0A0A`, panels `#111111`, borders `#2A2A2A`, accent `#FF3B5C`, muted text `#A0A0A0`. Toolbar 56px, panels 200px / 280px. Buttons: 36px tall, radius 8, primary red / secondary outlined.
-
-### AI copy generation — `supabase/functions/generate-slideshow/index.ts`
-- Switch model from `google/gemini-2.5-flash` → `openai/gpt-5` (via the same Lovable Gateway URL — no key needed).
-- Replace SYSTEM prompt with the new "viral TikTok scriptwriter" prompt verbatim.
-- Update the tool schema to also return a `subtext` field (max 15 words) per slide alongside `headline` (max 10 words).
-- Update the prompt: hook (slide 1) opens with contrarian/uncomfortable/question; middles build tension with open loops; last slide resolves + drops CTA.
-- Keep ban list ("game-changer", "unlock", "journey", "leverage", "utilize", "dive in", "explore") + existing sentence-case enforcement in `clean()`.
-- Persist `subtext` on slide objects (currently set to `null`).
-
-### Database
-Add `fabric_state jsonb` to each slide object (no schema change — `slideshows.slides` is already `jsonb`). Plus persist `subtext` (already in type, currently nulled).
-
-### Out of scope (intentionally)
-- Stripe / billing — untouched
-- Image generation, library, dashboard — untouched
-- Export ZIP flow — refactored only minimally to read the two new text objects, behavior unchanged
-
-### Files changed
-- `src/pages/SlideshowEditor.tsx` — full rewrite (~400 lines)
-- `supabase/functions/generate-slideshow/index.ts` — model + prompt + schema (+subtext)
-
-### Note on the prompt's OpenAI section
-The uploaded prompt asks for direct OpenAI API + `OPENAI_API_KEY`. We're using the Lovable Gateway with `openai/gpt-5` instead per your choice — same OpenAI model, no extra key, no extra bill. If you ever want to switch to direct OpenAI billing later, it's a 5-line change.
-
+### After approval
+1. I scaffold the page with placeholder video slots
+2. You upload the Loom MP4 exports → I swap them into the video array
