@@ -23,8 +23,8 @@ export default function CreatorOnboarding() {
       className="relative min-h-screen bg-black text-white selection:bg-white selection:text-black"
       style={{
         backgroundImage:
-          "linear-gradient(rgba(255,255,255,0.045) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.045) 1px, transparent 1px)",
-        backgroundSize: "56px 56px",
+          "linear-gradient(rgba(255,255,255,0.12) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.12) 1px, transparent 1px)",
+        backgroundSize: "48px 48px",
         backgroundPosition: "center top",
       }}
     >
@@ -40,7 +40,7 @@ export default function CreatorOnboarding() {
         className="pointer-events-none absolute inset-0"
         style={{
           background:
-            "radial-gradient(ellipse at 50% 30%, transparent 0%, rgba(0,0,0,0.55) 55%, #000 90%)",
+            "radial-gradient(ellipse at 50% 40%, transparent 0%, rgba(0,0,0,0.4) 70%, #000 100%)",
         }}
       />
 
