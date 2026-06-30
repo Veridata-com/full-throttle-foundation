@@ -34,25 +34,43 @@ export default function CreatorOnboarding() {
         <link rel="icon" href={logo.url} type="image/png" />
       </Helmet>
 
+      {/* Radial vignette to fade grid edges */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background:
+            "radial-gradient(ellipse at 50% 30%, transparent 0%, rgba(0,0,0,0.55) 55%, #000 90%)",
+        }}
+      />
+
+      <div className="relative">
       {/* Hero */}
       <header className="px-6 pt-24 pb-16 flex flex-col items-center text-center">
         <div className="relative mb-10">
-          <div className="absolute inset-0 blur-3xl opacity-60 bg-white/20 rounded-full" />
+          <div className="absolute inset-0 blur-3xl opacity-80 bg-white/30 rounded-full" />
           <img
             src={logo.url}
             alt="Adrise"
             className="relative h-24 w-24 md:h-28 md:w-28 rounded-full object-cover bg-white"
-            style={{ filter: "drop-shadow(0 0 24px rgba(255,255,255,0.55))" }}
+            style={{ filter: "drop-shadow(0 0 40px rgba(255,255,255,0.85))" }}
           />
         </div>
-        <h1 className="text-4xl md:text-6xl font-semibold tracking-tight">
+        <h1
+          className="text-4xl md:text-6xl font-semibold tracking-tight"
+          style={{ textShadow: "0 0 40px rgba(255,255,255,0.45), 0 0 80px rgba(255,255,255,0.2)" }}
+        >
           Welcome, creator.
         </h1>
-        <p className="mt-5 max-w-xl text-white/60 text-base md:text-lg leading-relaxed">
+        <p
+          className="mt-5 max-w-xl text-white/70 text-base md:text-lg leading-relaxed"
+          style={{ textShadow: "0 0 24px rgba(255,255,255,0.25)" }}
+        >
           A short onboarding sequence to get you up to speed. Watch top to bottom — it takes about 15 minutes.
         </p>
         <div className="mt-12 h-px w-24 bg-gradient-to-r from-transparent via-white/40 to-transparent" />
       </header>
+
 
       {/* Video sequence */}
       <main className="mx-auto max-w-3xl px-6 pb-24 space-y-12">
