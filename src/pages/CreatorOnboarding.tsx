@@ -5,12 +5,13 @@ interface VideoClip {
   title: string;
   src: string | null;
   poster?: string;
+  youtube?: string;
 }
 
 // Drop your MP4 URLs in here (replace nulls). Order is the playback sequence.
 const CLIPS: (VideoClip & { comingSoon: string })[] = [
-  { title: "Adrise introduction video", src: null, comingSoon: "video coming on july 5th 2026" },
-  { title: "How to warm up your UGC account", src: null, comingSoon: "video coming on july 5th 2026" },
+  { title: "Adrise introduction video", src: null, youtube: "https://www.youtube.com/embed/Axf3qvymCrs", comingSoon: "video coming on july 5th 2026" },
+  { title: "How to warm up your UGC account", src: null, youtube: "https://www.youtube.com/embed/kO7QvA5eNsE", comingSoon: "video coming on july 5th 2026" },
   { title: "How to find and copy viral content", src: null, comingSoon: "video coming on july 4th 2026" },
   { title: "How to repurpose your content", src: null, comingSoon: "video coming on july 4th 2026" },
   { title: "How to schedule your content", src: null, comingSoon: "video coming on july 4th 2026" },
@@ -92,7 +93,15 @@ export default function CreatorOnboarding() {
               onMouseEnter={(e) => (e.currentTarget.style.boxShadow = "0 0 60px rgba(255,255,255,0.12)")}
               onMouseLeave={(e) => (e.currentTarget.style.boxShadow = "0 0 0 rgba(255,255,255,0)")}
             >
-              {clip.src ? (
+              {clip.youtube ? (
+                <iframe
+                  className="w-full aspect-video bg-black"
+                  src={clip.youtube}
+                  title={clip.title}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                />
+              ) : clip.src ? (
                 <video
                   controls
                   preload="metadata"
