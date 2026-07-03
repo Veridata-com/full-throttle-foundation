@@ -8,11 +8,13 @@ interface VideoClip {
 }
 
 // Drop your MP4 URLs in here (replace nulls). Order is the playback sequence.
-const CLIPS: VideoClip[] = [
-  { title: "Welcome", src: null },
-  { title: "How we work", src: null },
-  { title: "Content guidelines", src: null },
-  { title: "Getting paid", src: null },
+const CLIPS: (VideoClip & { comingSoon: string })[] = [
+  { title: "Adrise introduction video", src: null, comingSoon: "video coming on july 5th 2026" },
+  { title: "How to warm up your UGC account", src: null, comingSoon: "video coming on july 5th 2026" },
+  { title: "How to find and copy viral content", src: null, comingSoon: "video coming on july 4th 2026" },
+  { title: "How to repurpose your content", src: null, comingSoon: "video coming on july 4th 2026" },
+  { title: "How to schedule your content", src: null, comingSoon: "video coming on july 4th 2026" },
+  { title: "How to get a T-1 audience", src: null, comingSoon: "video coming on july 4th 2026" },
 ];
 
 const DISCORD_URL = "https://discord.gg/25XNHvszJ";
@@ -100,7 +102,7 @@ export default function CreatorOnboarding() {
                 />
               ) : (
                 <div className="w-full aspect-video flex items-center justify-center text-white/30 text-sm font-mono">
-                  video coming soon
+                  {clip.comingSoon}
                 </div>
               )}
             </div>
