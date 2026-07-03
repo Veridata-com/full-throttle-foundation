@@ -93,7 +93,15 @@ export default function CreatorOnboarding() {
               onMouseEnter={(e) => (e.currentTarget.style.boxShadow = "0 0 60px rgba(255,255,255,0.12)")}
               onMouseLeave={(e) => (e.currentTarget.style.boxShadow = "0 0 0 rgba(255,255,255,0)")}
             >
-              {clip.src ? (
+              {clip.youtube ? (
+                <iframe
+                  className="w-full aspect-video bg-black"
+                  src={clip.youtube}
+                  title={clip.title}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                />
+              ) : clip.src ? (
                 <video
                   controls
                   preload="metadata"
